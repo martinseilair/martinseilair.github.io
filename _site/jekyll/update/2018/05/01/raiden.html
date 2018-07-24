@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>Optimal Control | Your awesome title</title>
+<meta name="generator" content="Jekyll v3.8.0" />
+<meta property="og:title" content="Optimal Control" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Raiden Tutorial" />
+<meta property="og:description" content="Raiden Tutorial" />
+<link rel="canonical" href="http://localhost:4000/jekyll/update/2018/05/01/raiden.html" />
+<meta property="og:url" content="http://localhost:4000/jekyll/update/2018/05/01/raiden.html" />
+<meta property="og:site_name" content="Your awesome title" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-05-01T18:04:07+09:00" />
+<script type="application/ld+json">
+{"description":"Raiden Tutorial","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/05/01/raiden.html","headline":"Optimal Control","dateModified":"2018-05-01T18:04:07+09:00","datePublished":"2018-05-01T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/05/01/raiden.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Your awesome title" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Your awesome title</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Optimal Control</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-05-01T18:04:07+09:00" itemprop="datePublished">May 1, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+<h1 id="raiden-tutorial">Raiden Tutorial</h1>
+
+<p>This is a quick tutorial on how to set up an account on Raiden, how to connect and upload files, how to set up a python environment and run jobs.</p>
+
+<p>This procedure was used in February-April 2018 and might not be uptodate, but should help you figure out what is going on.</p>
+
+<p>Commands given to run in this doc have <code class="highlighter-rouge">[BRACKETS]</code> for things your should replace, e.g. <code class="highlighter-rouge">echo "Hello, [YOUR_USERNAME]!"</code>.</p>
+
+<p>Generic ressources:</p>
+<ul>
+  <li><a href="http://crane.ad18.riken.jp/V1.0/raiden-e.html">Raiden Website</a></li>
+  <li><a href="http://crane.ad18.riken.jp/V1.0/GUIDE/RAIDEN_Users_Guide_V1_3_en.pdf">Raiden User Manual</a>, <a href="https://briefcase.riken.jp/public/3PIoAAWnyU4A8MYBN3NidIyLWiCLTJEjULw4G84cyP">Other link</a></li>
+</ul>
+
+<h2 id="setting-up-an-account-on-raiden">Setting up an account on Raiden</h2>
+<p>Send an email to <a href="mailto:aip-raiden-qa@ml.riken.jp">aip-raiden-qa@ml.riken.jp</a> to ask for the creation of a new account.
+CC your supervisor in that email.
+The Raiden support team will send you a form to complete</p>
+
+<h3 id="filling-in-the-form">Filling in the form</h3>
+
+<ul>
+  <li>Your <code class="highlighter-rouge">Riken ID</code> is on your Riken ID Card in the format <code class="highlighter-rouge">No. XXXXXX</code>.</li>
+  <li>The <code class="highlighter-rouge">Group ID</code> of the Approximate Bayesian Inference team is <code class="highlighter-rouge">gabi</code>.</li>
+  <li>The <code class="highlighter-rouge">User ID</code> is simply the username you want on Raiden.</li>
+</ul>
+
+<p>You will need to provide a public SSH key for your authentification on Raiden.
+If you know how to generate SSH Keys, you can supply any public key. 
+If this is cryptic to you, you can simply use the same key you use for the Wifi access; here is how to do it.</p>
+
+<h4 id="generating-a-private-ssh-key-from-your-riken">Generating a private ssh key from your Riken</h4>
+
+<p>1) You will need your <code class="highlighter-rouge">.p12</code> certificate and the associated <code class="highlighter-rouge">PFX Password</code>. 
+    They have been sent to you through your Riken email with the subject line <code class="highlighter-rouge">VPN/Wireless LAN client certificate attached</code></p>
+
+<p>2) Extract your private key from the <code class="highlighter-rouge">.p12</code> format using the command 
+    <code class="highlighter-rouge">
+    openssl pkcs12 -in [PATH/TO/YOUR_CERTIFICATE.p12] - nocerts -nodes | openssl rsa &gt; riken_id_rsa
+   </code>
+    Store that <code class="highlighter-rouge">riken_id_rsa</code> safely, it is your private key identification file.
+    You will need it to connect to Raiden.</p>
+
+<p>3) Generate the associated public key with the command
+    <code class="highlighter-rouge">
+    ssh-keygen -y -f [PATH/TO/riken_id_rsa] &gt; riken_id_rsa.pub
+   </code>
+    This will generate the public key you need to send to the Raiden team. The content of that file should be something along the lines of
+    <code class="highlighter-rouge">
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCZMZ6BPlTqfldri4hzZAgD7MvAFQ/0ZKuq98g0OTrRss/otwAM4goS6UpKHZp0I3JbUpTWYZfvk70/glUyVsrfS5WzNwJ8wwirjYaPwcBqBG/RUxMzyaoS9tVSjj9BfdobTiQPZ/n3/hpD9VwCTJlDesAXM0SXZ0Pp8GOJHHY3G/+ZEbSmV6dhLkqSooOpHRaomV9SwSDhDMVaAkhC/CoW1taa2/P0vrPpl9CLDEOnwtPOZwA3Ag2snB2HIhDXGKqe0gsRXLs15blkTzgJ7sz/QjAHpf7EvSJbeB2W6RGGvwQghRNlrJGraLXSctxuG+Sd5PB08ds+auM9Z3lyOpkZ
+   </code></p>
+
+<p>Add your public key to the form and send it to the Raiden support team.
+They will email you when your account is created.</p>
+
+<h1 id="using-raiden">Using Raiden</h1>
+
+<h2 id="connecting">Connecting</h2>
+<p>On Windows, you can use Git Shell/Git Bash/Cmder. If you installed Git from <a href="https://desktop.github.com/">Github Desktop</a> 
+or <a href="https://git-scm.com/download/win">Git For Windows</a> you should already have a working shell with SSH support.</p>
+
+<p>To log check if you can log in, try</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh -l [USERNAME] raiden.riken.jp -i [PATH/TO/riken_id_rsa]
+</code></pre></div></div>
+
+<h3 id="tip-create-a-shortcut-to-login-to-raiden">Tip: create a shortcut to login to raiden.</h3>
+<p>On Linux, add a line in <code class="highlighter-rouge">~/.bash_aliases</code> to create an alias, such as</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>alias raiden="ssh -l [USERNAME] raiden.riken.jp -i [PATH/TO/riken_id_rsa]"
+</code></pre></div></div>
+<p>Use <code class="highlighter-rouge">source ~/.bashrc</code> to update your aliases in your current shell.</p>
+
+<h2 id="getting-files-on-raiden">Getting files on Raiden</h2>
+
+<ul>
+  <li>Windows: <a href="https://winscp.net/eng/docs/">WinSCP</a></li>
+  <li>Linux/OSX: Just mount the server using the explorer (Nautilus/Finder).
+    <ul>
+      <li>OSX: <code class="highlighter-rouge">Finder menu -&gt; Go -&gt; Connect to</code></li>
+      <li>Ubuntu: <code class="highlighter-rouge">Nautilus, left bar -&gt; Connect to Server</code></li>
+      <li>The adress is <code class="highlighter-rouge">sftp://[USERNAME]@raiden.riken.jp/home/[USERNAME]</code></li>
+    </ul>
+  </li>
+  <li>You can clone git repos in your home directory to run shared code on Raiden.</li>
+  <li>Using <code class="highlighter-rouge">rsync</code>:
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Copy the content of /home/[USERNAME]/[FOLDER] on Raiden to your local machine's /home/[USERNAME]/[FOLDER]
+rysnc -Pavh -e "ssh -i ~/.ssh/riken_id_rsa" [USERNAME]@raiden.riken.jp:/home/[USERNAME]/[FOLDER] /home/[USERNAME]/[FOLDER]
+# The reverse action:
+rysnc -Pavh -e "ssh -i ~/.ssh/riken_id_rsa" /home/[USERNAME]/[FOLDER] [USERNAME]@raiden.riken.jp:/home/[USERNAME]/[FOLDER] 
+</code></pre></div>    </div>
+    <h2 id="setting-up-an-anaconda-environment-on-raiden">Setting up an Anaconda environment on Raiden</h2>
+  </li>
+</ul>
+
+<p>Download the latest version of Miniconda to your home directory.
+You can check the url for <code class="highlighter-rouge">Python 3.6 64-bit (bash installer)</code> on the <a href="https://conda.io/miniconda.html">Miniconda Website</a></p>
+
+<p>Get the install script on the server. You can either mount the server or</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+</code></pre></div></div>
+<p>Run the install script. You will first need to make it executable using</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+</code></pre></div></div>
+<p>To install a pytorch environment on a local Unix machine or on Raiden, check <code class="highlighter-rouge">pytorch_setup.md</code></p>
+
+<h2 id="running-jobs-on-raiden">Running jobs on Raiden</h2>
+
+<p>Raiden has some pre-made containers with different versions of python, cuda, and other python libraries installed such as tensorflow, pytorch or mxnet.
+But it is possible to not use the container system and have control over the available python libraries with conda.</p>
+
+<h3 id="the-simple-version---conda-environments-on-raiden">The simple version - Conda environments on Raiden</h3>
+
+<p>The setup explained here might be sub-optimal, but it does not require a deep understanding of how Raiden works with containers.
+1) Install miniconda (see above) and create an environment with your required libraries
+2) Create aliases: open your <code class="highlighter-rouge">~/.bash_aliases</code> on Raiden and add the following lines
+    <code class="highlighter-rouge">
+	# Don't worry about the options for now
+    alias qtest="qrsh -ac d=nvcr-pytorch-1803 -jc gpu-container_g1_dev"
+    alias qprod="qsub -ac d=nvcr-pytorch-1803 -jc gpu-container_g1.168h"
+   </code>
+    Then tell Raiden to use the <code class="highlighter-rouge">.bash_aliases</code> file; open <code class="highlighter-rouge">~/.bashrc</code> and find the line saying <code class="highlighter-rouge"># User specific aliases and functions</code>. 
+	Add the following code,
+	<code class="highlighter-rouge">
+	if [ -f ~/.bash_aliases ]; then
+        . ~/.bash_aliases
+	fi
+	</code>
+	and reload your <code class="highlighter-rouge">.bashrc</code> - <code class="highlighter-rouge">source ~/.bashrc</code>.
+	This enables the following commands:
+    * <code class="highlighter-rouge">qtest</code> will give you a shell with the environment you will be running under, if you want to test things.
+	* <code class="highlighter-rouge">qtest [PATH/TO/SHELL/SCRIPT].sh</code> will submit a shell script to the test environment 
+	* <code class="highlighter-rouge">qprod [PATH/TO/SHELL/SCRIPT].sh</code> will submit 
+3) To run a python script under a specific environment, you first need to create a shell script that calls it. Create a <code class="highlighter-rouge">script.sh</code> file that contains
+    <code class="highlighter-rouge">
+    <span class="c">#!/bin/bash</span>
+    <span class="nb">source </span>miniconda3/bin/activate <span class="o">[</span>NAME OF ENVIRONMENT YOU WANT TO ACTIVATE]
+    python <span class="o">[</span>PATH/TO/PYTHON/SCRIPT/FROM/YOUR/HOME/DIR].py
+   </code>
+4) Run the script 
+	<code class="highlighter-rouge">
+	qprod script.sh 
+	</code></p>
+
+<p>The output of a qprod script is added to your home directory on Raiden, under the names <code class="highlighter-rouge">[SCRIPTNAME].sh.o[TIMESTAMP]</code> for the standard output and <code class="highlighter-rouge">[SCRIPTNAME].sh.e[TIMESTAMP]</code> for the error output.</p>
+
+<h4 id="testing-if-the-setup-works">Testing if the setup works</h4>
+
+<p>Assuming you have a Conda environment called <code class="highlighter-rouge">pytorch</code> (see <a href="pytorch_setup.md">pytorch_setup</a>), the following script tests whether Cuda is available - which it should in a GPU container.
+Create a <code class="highlighter-rouge">shell-script.sh</code> containing</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+<span class="nb">pwd
+source </span>miniconda3/bin/activate pytorch
+python <span class="nt">--version</span>
+python is-cuda-available.py
+</code></pre></div></div>
+<p>and a <code class="highlighter-rouge">is-cuda-available.py</code> python script containing</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import torch
+print(torch.cuda.is_available())
+</code></pre></div></div>
+<p>You can now run this using <code class="highlighter-rouge">qtest shell-script.sh</code>. 
+If everything worked out, it should output the python version of your conda environment and <code class="highlighter-rouge">True</code>, indicating that pytorch can use the gpu.</p>
+
+<p>If it doesn’t work, stand up, cross your arms and look confused. 
+A more senior intern should come to your assistance within 1h.
+If this strategy does not work, go make some coffee and complain about your Raiden problem when you serve fresh smelly coffee to your fellow comrades, someone will probably try to help you out.</p>
+
+<h3 id="using-raiden-builtin-containers">Using Raiden builtin containers</h3>
+
+<ul>
+  <li><code class="highlighter-rouge">qrsh</code> gives you a <code class="highlighter-rouge">Remote SHell</code> and can be used to debug scripts.</li>
+  <li><code class="highlighter-rouge">qsub</code> submits jobs to the batch processing queue</li>
+</ul>
+
+<p>Usage:</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qsub/qrsh -ac d=[CONTAINER-NAME] -jc [JOB-CLASS-NAME] [YOUR-SCRIPT-FILE.sh]
+</code></pre></div></div>
+
+<p>On Raiden, for the list of available containers, check <code class="highlighter-rouge">/usr/local/etc/container-info</code> and for the list of available job classes check <code class="highlighter-rouge">/usr/local/etc/qsub_O2N_list</code>.</p>
+
+<p>If you use a conda environment, the only thing you need to care about is the Cuda version.</p>
+
+<h2 id="managing-jobs-on-raiden">Managing jobs on Raiden</h2>
+
+<ul>
+  <li>You can look at the list of jobs you submitted using <code class="highlighter-rouge">qstat</code>.</li>
+  <li>You can kill a job that is waiting in <code class="highlighter-rouge">qstat</code> using <code class="highlighter-rouge">qdel [JOB_#]</code>. You can get the <code class="highlighter-rouge">#</code> from <code class="highlighter-rouge">qstat</code>.</li>
+  <li>To monitor current jobs, you can use <code class="highlighter-rouge">watch -n1 qstat</code> which will refresh the qstat output every second.</li>
+</ul>
+
+  </div><a class="u-url" href="/jekyll/update/2018/05/01/raiden.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Your awesome title</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Your awesome title</li><li><a class="u-email" href="mailto:your-email@example.com">your-email@example.com</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/jekyll"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">jekyll</span></a></li><li><a href="https://www.twitter.com/jekyllrb"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">jekyllrb</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

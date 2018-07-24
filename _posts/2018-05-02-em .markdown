@@ -1,0 +1,81 @@
+---
+layout: post
+title:  "Inference"
+date:   2018-05-01 18:04:07 +0900
+categories: jekyll update
+---
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+Recently I thought a lot about statistical inference and it's connections to Linear Algebra/Functional Analysis. Why should we maximize the likelihood? Why should we use EM? And what do both have in common.
+
+All the questions that I had centered around one observation: If marginalization is nothing else but a linear transformation of the input distribution, why shouldn't we just use the inverse operator to get the input distribution back?
+
+<h1>Marginal distribution</h1>
+
+The marginal distribution \\(p(y)\\) is defined as 
+
+$$ p(y) = \int_x p(y|x)p(x)dx $$
+
+in the continuous case and as
+
+$$ p(y) = \sum_x p(y|x)p(x) $$
+
+in the discrete case. To those who have some experience Linear Algebra or Functional Analysis, these expressions could look familiar. Indeed it has the same functional form as an [integral transform][int-trans]
+
+$$ (Tf)(y) = \int_x K(y,x)f(x)dx $$ 
+
+in the continuous case and an [matrix multiplication][int-trans] / linear map
+
+$$ y_i = \sum_x A_{ij} x_i $$
+
+in the discrete case.
+
+<h1>Infering \(p(x)\)</h1>
+
+Let's define some kind of running example. Let's say you have some arbitrary system that has \\(N\\) discrete states. The starting state \\(x\\) of the system is distributed according to \\(p(x)\\). You have a probabilistic dynamical model, that transforms the start state \\(x\\) and gives the next state \\(y\\). This model is described by \\(p(y\|x)\\). Now we observe samples from the state \\(y_n\\) sampled from
+
+$$ p(y) = \sum_x p(y|x)p(x) .$$
+
+In my naivity I thought it was a good idea to use Bayes Theorem for this. I thought: I don't want a point estimate of the state with the maximum likelihood, but a distribution over all states. After some more thinking and plotting I noticed, that this is not a good idea. Because the result was in the limit of infinite samples the same as maximum likelihood. In the following I want to sketch my path of reasoning.
+
+Bayes Theorem is defined as
+
+$$ p(x|y) = \frac{p(y|x)p(x)}{p(y)}  .$$
+
+The derivation makes use of the chain rule of probability, that states that \\(p (x,y) = p(x\|y)p(y) = p(y\|x)p(x) \\). By rearranging the terms you finally arrive at Bayes Theorem. The methods of Bayesian inference are all based on this formula. At the beginning you choose a prior distribution  \\( p(x) \\) , which can be used to encode prior beliefs about \\(x\\).
+Let's draw our first sample \\(y_0\\) from \\(p(y)\\) and see what happens.
+
+The main operation happening is the point wise multiplication of \\(p(y=y_0\|x)\\) and \\(p(x)\\). In the case of discrete \\(x\\) this will be a point wise mulitplication of vectors. In the case of continuous \\(x\\) this will be a point wise multiplication of functions. If you take again the analogy to Linear Algebra, \\(p(y=y_0\|x)\\) would be the \\(y_0\\)th row in the matrix \\(p(y\|x)\\). So you are essentially multiplying the prior vector with the row of \\(p(y\|x)\\) corresponding to your sample.
+
+Finally you normalize to obtain a valid probability distribution. The normalizer is therefore the sum over \\(x\\) of the point wise product \\( \sum_x p(y=y_0\|x)p(x) \\). The proabability distribution you will receive is called the posterior distribution. Your prior belief was transformed to the posterior belief. To be ready for the next sample, you just "rename" yo\the posterior to prior and start over again. This sequential process can be described as 
+
+$$ p(x|Y) = \frac{\prod_{n = 0}^N p(y=y_n|x) p(x)}{Z} $$
+
+where \\(Z\\) is simply the normalizer. So it seems, that Bayes Method is all about sequential pointwise mulitpliation of rows of \\(p(y\|x)\\). 
+But what happens if our number of samples \\(N\\) goes to \\(\infty\\)? Let's see.
+
+First concentrate on the product 
+
+$$ \prod_{n = 0}^N p(y=y_n|x) $$
+
+and use the identity \\(f = ((f)^\frac{1}{n})^n\\) to get
+
+$$ \left(\left(\prod_{n = 0}^N p(y=y_n\|x)\right)^\frac{1}{n}\right)^n .$$
+
+
+Use another identity \\(f = \exp(\log(f))\\) to arrive at
+
+$$ \left(\exp\left(\log\left(\left(\prod_{n = 0}^N p(y=y_n\|x)\right)^\frac{1}{n}\right)\right)\right)^n .$$
+
+
+
+[int-trans]: https://jekyllrb.com/docs/home
+[matmul]: https://en.wikipedia.org/wiki/Matrix_multiplication
+[int-txcvrans]: https://jekyllrb.com/docs/home
+[int-trxcvans]: https://jekyllrb.com/docs/home
+[int-trxcans]: https://jekyllrb.com/docs/home
+[int-trxxcvans]: https://jekyllrb.com/docs/home
+[int-trvans]: https://jekyllrb.com/docs/home
+[jekyll-gh]:   https://github.com/jekyll/jekyll
+[jekyll-talk]: https://talk.jekyllrb.com/

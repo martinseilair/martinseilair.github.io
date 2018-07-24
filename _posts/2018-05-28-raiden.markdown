@@ -1,0 +1,191 @@
+---
+layout: post
+title:  "Optimal Control"
+date:   2018-05-01 18:04:07 +0900
+categories: jekyll update
+---
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+# Raiden Tutorial
+
+This is a quick tutorial on how to set up an account on Raiden, how to connect and upload files, how to set up a python environment and run jobs.
+
+This procedure was used in February-April 2018 and might not be uptodate, but should help you figure out what is going on.
+
+Commands given to run in this doc have `[BRACKETS]` for things your should replace, e.g. `echo "Hello, [YOUR_USERNAME]!"`.
+
+Generic ressources:
+* [Raiden Website](http://crane.ad18.riken.jp/V1.0/raiden-e.html)
+* [Raiden User Manual](http://crane.ad18.riken.jp/V1.0/GUIDE/RAIDEN_Users_Guide_V1_3_en.pdf), [Other link](https://briefcase.riken.jp/public/3PIoAAWnyU4A8MYBN3NidIyLWiCLTJEjULw4G84cyP)
+
+##  Setting up an account on Raiden
+Send an email to [aip-raiden-qa@ml.riken.jp](mailto:aip-raiden-qa@ml.riken.jp) to ask for the creation of a new account.
+CC your supervisor in that email.
+The Raiden support team will send you a form to complete
+
+### Filling in the form 
+
+* Your `Riken ID` is on your Riken ID Card in the format `No. XXXXXX`.
+* The `Group ID` of the Approximate Bayesian Inference team is `gabi`.
+* The `User ID` is simply the username you want on Raiden.
+
+You will need to provide a public SSH key for your authentification on Raiden.
+If you know how to generate SSH Keys, you can supply any public key. 
+If this is cryptic to you, you can simply use the same key you use for the Wifi access; here is how to do it.
+
+#### Generating a private ssh key from your Riken 
+
+1) You will need your `.p12` certificate and the associated `PFX Password`. 
+    They have been sent to you through your Riken email with the subject line `VPN/Wireless LAN client certificate attached`
+
+2) Extract your private key from the `.p12` format using the command 
+    ```
+    openssl pkcs12 -in [PATH/TO/YOUR_CERTIFICATE.p12] - nocerts -nodes | openssl rsa > riken_id_rsa
+    ```
+    Store that `riken_id_rsa` safely, it is your private key identification file.
+    You will need it to connect to Raiden.
+
+3) Generate the associated public key with the command
+    ```
+    ssh-keygen -y -f [PATH/TO/riken_id_rsa] > riken_id_rsa.pub
+    ```
+    This will generate the public key you need to send to the Raiden team. The content of that file should be something along the lines of
+    ```
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCZMZ6BPlTqfldri4hzZAgD7MvAFQ/0ZKuq98g0OTrRss/otwAM4goS6UpKHZp0I3JbUpTWYZfvk70/glUyVsrfS5WzNwJ8wwirjYaPwcBqBG/RUxMzyaoS9tVSjj9BfdobTiQPZ/n3/hpD9VwCTJlDesAXM0SXZ0Pp8GOJHHY3G/+ZEbSmV6dhLkqSooOpHRaomV9SwSDhDMVaAkhC/CoW1taa2/P0vrPpl9CLDEOnwtPOZwA3Ag2snB2HIhDXGKqe0gsRXLs15blkTzgJ7sz/QjAHpf7EvSJbeB2W6RGGvwQghRNlrJGraLXSctxuG+Sd5PB08ds+auM9Z3lyOpkZ
+    ```
+
+Add your public key to the form and send it to the Raiden support team.
+They will email you when your account is created.
+
+# Using Raiden
+
+## Connecting
+On Windows, you can use Git Shell/Git Bash/Cmder. If you installed Git from [Github Desktop](https://desktop.github.com/) 
+or [Git For Windows](https://git-scm.com/download/win) you should already have a working shell with SSH support.
+
+To log check if you can log in, try
+```
+ssh -l [USERNAME] raiden.riken.jp -i [PATH/TO/riken_id_rsa]
+```
+
+### Tip: create a shortcut to login to raiden.
+On Linux, add a line in `~/.bash_aliases` to create an alias, such as 
+```
+alias raiden="ssh -l [USERNAME] raiden.riken.jp -i [PATH/TO/riken_id_rsa]"
+```
+Use `source ~/.bashrc` to update your aliases in your current shell.
+
+## Getting files on Raiden
+
+* Windows: [WinSCP](https://winscp.net/eng/docs/)
+* Linux/OSX: Just mount the server using the explorer (Nautilus/Finder).
+    * OSX: `Finder menu -> Go -> Connect to`
+    * Ubuntu: `Nautilus, left bar -> Connect to Server`
+	* The adress is `sftp://[USERNAME]@raiden.riken.jp/home/[USERNAME]`
+* You can clone git repos in your home directory to run shared code on Raiden.
+* Using `rsync`:
+```
+# Copy the content of /home/[USERNAME]/[FOLDER] on Raiden to your local machine's /home/[USERNAME]/[FOLDER]
+rysnc -Pavh -e "ssh -i ~/.ssh/riken_id_rsa" [USERNAME]@raiden.riken.jp:/home/[USERNAME]/[FOLDER] /home/[USERNAME]/[FOLDER]
+# The reverse action:
+rysnc -Pavh -e "ssh -i ~/.ssh/riken_id_rsa" /home/[USERNAME]/[FOLDER] [USERNAME]@raiden.riken.jp:/home/[USERNAME]/[FOLDER] 
+```
+## Setting up an Anaconda environment on Raiden
+
+Download the latest version of Miniconda to your home directory.
+You can check the url for `Python 3.6 64-bit (bash installer)` on the [Miniconda Website](https://conda.io/miniconda.html)
+
+Get the install script on the server. You can either mount the server or 
+```
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+```
+Run the install script. You will first need to make it executable using
+```
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+```  
+To install a pytorch environment on a local Unix machine or on Raiden, check `pytorch_setup.md`
+
+## Running jobs on Raiden
+
+Raiden has some pre-made containers with different versions of python, cuda, and other python libraries installed such as tensorflow, pytorch or mxnet.
+But it is possible to not use the container system and have control over the available python libraries with conda.
+
+### The simple version - Conda environments on Raiden
+
+The setup explained here might be sub-optimal, but it does not require a deep understanding of how Raiden works with containers.
+1) Install miniconda (see above) and create an environment with your required libraries
+2) Create aliases: open your `~/.bash_aliases` on Raiden and add the following lines
+    ```
+	# Don't worry about the options for now
+    alias qtest="qrsh -ac d=nvcr-pytorch-1803 -jc gpu-container_g1_dev"
+    alias qprod="qsub -ac d=nvcr-pytorch-1803 -jc gpu-container_g1.168h"
+    ```
+    Then tell Raiden to use the `.bash_aliases` file; open `~/.bashrc` and find the line saying `# User specific aliases and functions`. 
+	Add the following code,
+	```
+	if [ -f ~/.bash_aliases ]; then
+        . ~/.bash_aliases
+	fi
+	```
+	and reload your `.bashrc` - `source ~/.bashrc`.
+	This enables the following commands:
+    * `qtest` will give you a shell with the environment you will be running under, if you want to test things.
+	* `qtest [PATH/TO/SHELL/SCRIPT].sh` will submit a shell script to the test environment 
+	* `qprod [PATH/TO/SHELL/SCRIPT].sh` will submit 
+3) To run a python script under a specific environment, you first need to create a shell script that calls it. Create a `script.sh` file that contains
+    ```
+    #!/bin/bash
+    source miniconda3/bin/activate [NAME OF ENVIRONMENT YOU WANT TO ACTIVATE]
+    python [PATH/TO/PYTHON/SCRIPT/FROM/YOUR/HOME/DIR].py
+    ```
+4) Run the script 
+	```
+	qprod script.sh 
+	```
+	
+The output of a qprod script is added to your home directory on Raiden, under the names `[SCRIPTNAME].sh.o[TIMESTAMP]` for the standard output and `[SCRIPTNAME].sh.e[TIMESTAMP]` for the error output.
+	
+#### Testing if the setup works
+
+Assuming you have a Conda environment called `pytorch` (see [pytorch_setup](pytorch_setup.md)), the following script tests whether Cuda is available - which it should in a GPU container.
+Create a `shell-script.sh` containing 
+```
+#!/bin/bash
+pwd
+source miniconda3/bin/activate pytorch
+python --version
+python is-cuda-available.py
+```
+and a `is-cuda-available.py` python script containing
+```
+import torch
+print(torch.cuda.is_available())
+```
+You can now run this using `qtest shell-script.sh`. 
+If everything worked out, it should output the python version of your conda environment and `True`, indicating that pytorch can use the gpu.
+
+If it doesn't work, stand up, cross your arms and look confused. 
+A more senior intern should come to your assistance within 1h.
+If this strategy does not work, go make some coffee and complain about your Raiden problem when you serve fresh smelly coffee to your fellow comrades, someone will probably try to help you out.
+
+
+### Using Raiden builtin containers 
+
+* `qrsh` gives you a `Remote SHell` and can be used to debug scripts.
+* `qsub` submits jobs to the batch processing queue
+
+Usage:
+```
+qsub/qrsh -ac d=[CONTAINER-NAME] -jc [JOB-CLASS-NAME] [YOUR-SCRIPT-FILE.sh]
+```
+
+On Raiden, for the list of available containers, check `/usr/local/etc/container-info` and for the list of available job classes check `/usr/local/etc/qsub_O2N_list`.
+
+If you use a conda environment, the only thing you need to care about is the Cuda version.
+
+## Managing jobs on Raiden
+
+* You can look at the list of jobs you submitted using `qstat`.
+* You can kill a job that is waiting in `qstat` using `qdel [JOB_#]`. You can get the `#` from `qstat`.
+* To monitor current jobs, you can use `watch -n1 qstat` which will refresh the qstat output every second.

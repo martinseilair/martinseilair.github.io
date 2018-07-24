@@ -1,0 +1,640 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.0">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-06-13T14:58:40+09:00</updated><id>http://localhost:4000/</id><title type="html">Your awesome title</title><subtitle>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</subtitle><entry><title type="html">Optimal Control</title><link href="http://localhost:4000/jekyll/update/2018/05/01/raiden.html" rel="alternate" type="text/html" title="Optimal Control" /><published>2018-05-01T18:04:07+09:00</published><updated>2018-05-01T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/05/01/raiden</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/05/01/raiden.html">&lt;script src=&quot;https://d3js.org/d3.v4.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;raiden-tutorial&quot;&gt;Raiden Tutorial&lt;/h1&gt;
+
+&lt;p&gt;This is a quick tutorial on how to set up an account on Raiden, how to connect and upload files, how to set up a python environment and run jobs.&lt;/p&gt;
+
+&lt;p&gt;This procedure was used in February-April 2018 and might not be uptodate, but should help you figure out what is going on.&lt;/p&gt;
+
+&lt;p&gt;Commands given to run in this doc have &lt;code class=&quot;highlighter-rouge&quot;&gt;[BRACKETS]&lt;/code&gt; for things your should replace, e.g. &lt;code class=&quot;highlighter-rouge&quot;&gt;echo &quot;Hello, [YOUR_USERNAME]!&quot;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Generic ressources:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://crane.ad18.riken.jp/V1.0/raiden-e.html&quot;&gt;Raiden Website&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://crane.ad18.riken.jp/V1.0/GUIDE/RAIDEN_Users_Guide_V1_3_en.pdf&quot;&gt;Raiden User Manual&lt;/a&gt;, &lt;a href=&quot;https://briefcase.riken.jp/public/3PIoAAWnyU4A8MYBN3NidIyLWiCLTJEjULw4G84cyP&quot;&gt;Other link&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;setting-up-an-account-on-raiden&quot;&gt;Setting up an account on Raiden&lt;/h2&gt;
+&lt;p&gt;Send an email to &lt;a href=&quot;mailto:aip-raiden-qa@ml.riken.jp&quot;&gt;aip-raiden-qa@ml.riken.jp&lt;/a&gt; to ask for the creation of a new account.
+CC your supervisor in that email.
+The Raiden support team will send you a form to complete&lt;/p&gt;
+
+&lt;h3 id=&quot;filling-in-the-form&quot;&gt;Filling in the form&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Your &lt;code class=&quot;highlighter-rouge&quot;&gt;Riken ID&lt;/code&gt; is on your Riken ID Card in the format &lt;code class=&quot;highlighter-rouge&quot;&gt;No. XXXXXX&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;Group ID&lt;/code&gt; of the Approximate Bayesian Inference team is &lt;code class=&quot;highlighter-rouge&quot;&gt;gabi&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;User ID&lt;/code&gt; is simply the username you want on Raiden.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;You will need to provide a public SSH key for your authentification on Raiden.
+If you know how to generate SSH Keys, you can supply any public key. 
+If this is cryptic to you, you can simply use the same key you use for the Wifi access; here is how to do it.&lt;/p&gt;
+
+&lt;h4 id=&quot;generating-a-private-ssh-key-from-your-riken&quot;&gt;Generating a private ssh key from your Riken&lt;/h4&gt;
+
+&lt;p&gt;1) You will need your &lt;code class=&quot;highlighter-rouge&quot;&gt;.p12&lt;/code&gt; certificate and the associated &lt;code class=&quot;highlighter-rouge&quot;&gt;PFX Password&lt;/code&gt;. 
+    They have been sent to you through your Riken email with the subject line &lt;code class=&quot;highlighter-rouge&quot;&gt;VPN/Wireless LAN client certificate attached&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;2) Extract your private key from the &lt;code class=&quot;highlighter-rouge&quot;&gt;.p12&lt;/code&gt; format using the command 
+    &lt;code class=&quot;highlighter-rouge&quot;&gt;
+    openssl pkcs12 -in [PATH/TO/YOUR_CERTIFICATE.p12] - nocerts -nodes | openssl rsa &amp;gt; riken_id_rsa
+   &lt;/code&gt;
+    Store that &lt;code class=&quot;highlighter-rouge&quot;&gt;riken_id_rsa&lt;/code&gt; safely, it is your private key identification file.
+    You will need it to connect to Raiden.&lt;/p&gt;
+
+&lt;p&gt;3) Generate the associated public key with the command
+    &lt;code class=&quot;highlighter-rouge&quot;&gt;
+    ssh-keygen -y -f [PATH/TO/riken_id_rsa] &amp;gt; riken_id_rsa.pub
+   &lt;/code&gt;
+    This will generate the public key you need to send to the Raiden team. The content of that file should be something along the lines of
+    &lt;code class=&quot;highlighter-rouge&quot;&gt;
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCZMZ6BPlTqfldri4hzZAgD7MvAFQ/0ZKuq98g0OTrRss/otwAM4goS6UpKHZp0I3JbUpTWYZfvk70/glUyVsrfS5WzNwJ8wwirjYaPwcBqBG/RUxMzyaoS9tVSjj9BfdobTiQPZ/n3/hpD9VwCTJlDesAXM0SXZ0Pp8GOJHHY3G/+ZEbSmV6dhLkqSooOpHRaomV9SwSDhDMVaAkhC/CoW1taa2/P0vrPpl9CLDEOnwtPOZwA3Ag2snB2HIhDXGKqe0gsRXLs15blkTzgJ7sz/QjAHpf7EvSJbeB2W6RGGvwQghRNlrJGraLXSctxuG+Sd5PB08ds+auM9Z3lyOpkZ
+   &lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Add your public key to the form and send it to the Raiden support team.
+They will email you when your account is created.&lt;/p&gt;
+
+&lt;h1 id=&quot;using-raiden&quot;&gt;Using Raiden&lt;/h1&gt;
+
+&lt;h2 id=&quot;connecting&quot;&gt;Connecting&lt;/h2&gt;
+&lt;p&gt;On Windows, you can use Git Shell/Git Bash/Cmder. If you installed Git from &lt;a href=&quot;https://desktop.github.com/&quot;&gt;Github Desktop&lt;/a&gt; 
+or &lt;a href=&quot;https://git-scm.com/download/win&quot;&gt;Git For Windows&lt;/a&gt; you should already have a working shell with SSH support.&lt;/p&gt;
+
+&lt;p&gt;To log check if you can log in, try&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ssh -l [USERNAME] raiden.riken.jp -i [PATH/TO/riken_id_rsa]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;tip-create-a-shortcut-to-login-to-raiden&quot;&gt;Tip: create a shortcut to login to raiden.&lt;/h3&gt;
+&lt;p&gt;On Linux, add a line in &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.bash_aliases&lt;/code&gt; to create an alias, such as&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;alias raiden=&quot;ssh -l [USERNAME] raiden.riken.jp -i [PATH/TO/riken_id_rsa]&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Use &lt;code class=&quot;highlighter-rouge&quot;&gt;source ~/.bashrc&lt;/code&gt; to update your aliases in your current shell.&lt;/p&gt;
+
+&lt;h2 id=&quot;getting-files-on-raiden&quot;&gt;Getting files on Raiden&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Windows: &lt;a href=&quot;https://winscp.net/eng/docs/&quot;&gt;WinSCP&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Linux/OSX: Just mount the server using the explorer (Nautilus/Finder).
+    &lt;ul&gt;
+      &lt;li&gt;OSX: &lt;code class=&quot;highlighter-rouge&quot;&gt;Finder menu -&amp;gt; Go -&amp;gt; Connect to&lt;/code&gt;&lt;/li&gt;
+      &lt;li&gt;Ubuntu: &lt;code class=&quot;highlighter-rouge&quot;&gt;Nautilus, left bar -&amp;gt; Connect to Server&lt;/code&gt;&lt;/li&gt;
+      &lt;li&gt;The adress is &lt;code class=&quot;highlighter-rouge&quot;&gt;sftp://[USERNAME]@raiden.riken.jp/home/[USERNAME]&lt;/code&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;You can clone git repos in your home directory to run shared code on Raiden.&lt;/li&gt;
+  &lt;li&gt;Using &lt;code class=&quot;highlighter-rouge&quot;&gt;rsync&lt;/code&gt;:
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# Copy the content of /home/[USERNAME]/[FOLDER] on Raiden to your local machine's /home/[USERNAME]/[FOLDER]
+rysnc -Pavh -e &quot;ssh -i ~/.ssh/riken_id_rsa&quot; [USERNAME]@raiden.riken.jp:/home/[USERNAME]/[FOLDER] /home/[USERNAME]/[FOLDER]
+# The reverse action:
+rysnc -Pavh -e &quot;ssh -i ~/.ssh/riken_id_rsa&quot; /home/[USERNAME]/[FOLDER] [USERNAME]@raiden.riken.jp:/home/[USERNAME]/[FOLDER] 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+    &lt;h2 id=&quot;setting-up-an-anaconda-environment-on-raiden&quot;&gt;Setting up an Anaconda environment on Raiden&lt;/h2&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Download the latest version of Miniconda to your home directory.
+You can check the url for &lt;code class=&quot;highlighter-rouge&quot;&gt;Python 3.6 64-bit (bash installer)&lt;/code&gt; on the &lt;a href=&quot;https://conda.io/miniconda.html&quot;&gt;Miniconda Website&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Get the install script on the server. You can either mount the server or&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;Run the install script. You will first need to make it executable using&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;To install a pytorch environment on a local Unix machine or on Raiden, check &lt;code class=&quot;highlighter-rouge&quot;&gt;pytorch_setup.md&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;running-jobs-on-raiden&quot;&gt;Running jobs on Raiden&lt;/h2&gt;
+
+&lt;p&gt;Raiden has some pre-made containers with different versions of python, cuda, and other python libraries installed such as tensorflow, pytorch or mxnet.
+But it is possible to not use the container system and have control over the available python libraries with conda.&lt;/p&gt;
+
+&lt;h3 id=&quot;the-simple-version---conda-environments-on-raiden&quot;&gt;The simple version - Conda environments on Raiden&lt;/h3&gt;
+
+&lt;p&gt;The setup explained here might be sub-optimal, but it does not require a deep understanding of how Raiden works with containers.
+1) Install miniconda (see above) and create an environment with your required libraries
+2) Create aliases: open your &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.bash_aliases&lt;/code&gt; on Raiden and add the following lines
+    &lt;code class=&quot;highlighter-rouge&quot;&gt;
+	# Don't worry about the options for now
+    alias qtest=&quot;qrsh -ac d=nvcr-pytorch-1803 -jc gpu-container_g1_dev&quot;
+    alias qprod=&quot;qsub -ac d=nvcr-pytorch-1803 -jc gpu-container_g1.168h&quot;
+   &lt;/code&gt;
+    Then tell Raiden to use the &lt;code class=&quot;highlighter-rouge&quot;&gt;.bash_aliases&lt;/code&gt; file; open &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.bashrc&lt;/code&gt; and find the line saying &lt;code class=&quot;highlighter-rouge&quot;&gt;# User specific aliases and functions&lt;/code&gt;. 
+	Add the following code,
+	&lt;code class=&quot;highlighter-rouge&quot;&gt;
+	if [ -f ~/.bash_aliases ]; then
+        . ~/.bash_aliases
+	fi
+	&lt;/code&gt;
+	and reload your &lt;code class=&quot;highlighter-rouge&quot;&gt;.bashrc&lt;/code&gt; - &lt;code class=&quot;highlighter-rouge&quot;&gt;source ~/.bashrc&lt;/code&gt;.
+	This enables the following commands:
+    * &lt;code class=&quot;highlighter-rouge&quot;&gt;qtest&lt;/code&gt; will give you a shell with the environment you will be running under, if you want to test things.
+	* &lt;code class=&quot;highlighter-rouge&quot;&gt;qtest [PATH/TO/SHELL/SCRIPT].sh&lt;/code&gt; will submit a shell script to the test environment 
+	* &lt;code class=&quot;highlighter-rouge&quot;&gt;qprod [PATH/TO/SHELL/SCRIPT].sh&lt;/code&gt; will submit 
+3) To run a python script under a specific environment, you first need to create a shell script that calls it. Create a &lt;code class=&quot;highlighter-rouge&quot;&gt;script.sh&lt;/code&gt; file that contains
+    &lt;code class=&quot;highlighter-rouge&quot;&gt;
+    &lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+    &lt;span class=&quot;nb&quot;&gt;source &lt;/span&gt;miniconda3/bin/activate &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;NAME OF ENVIRONMENT YOU WANT TO ACTIVATE]
+    python &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;PATH/TO/PYTHON/SCRIPT/FROM/YOUR/HOME/DIR].py
+   &lt;/code&gt;
+4) Run the script 
+	&lt;code class=&quot;highlighter-rouge&quot;&gt;
+	qprod script.sh 
+	&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The output of a qprod script is added to your home directory on Raiden, under the names &lt;code class=&quot;highlighter-rouge&quot;&gt;[SCRIPTNAME].sh.o[TIMESTAMP]&lt;/code&gt; for the standard output and &lt;code class=&quot;highlighter-rouge&quot;&gt;[SCRIPTNAME].sh.e[TIMESTAMP]&lt;/code&gt; for the error output.&lt;/p&gt;
+
+&lt;h4 id=&quot;testing-if-the-setup-works&quot;&gt;Testing if the setup works&lt;/h4&gt;
+
+&lt;p&gt;Assuming you have a Conda environment called &lt;code class=&quot;highlighter-rouge&quot;&gt;pytorch&lt;/code&gt; (see &lt;a href=&quot;pytorch_setup.md&quot;&gt;pytorch_setup&lt;/a&gt;), the following script tests whether Cuda is available - which it should in a GPU container.
+Create a &lt;code class=&quot;highlighter-rouge&quot;&gt;shell-script.sh&lt;/code&gt; containing&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/bash&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;pwd
+source &lt;/span&gt;miniconda3/bin/activate pytorch
+python &lt;span class=&quot;nt&quot;&gt;--version&lt;/span&gt;
+python is-cuda-available.py
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;and a &lt;code class=&quot;highlighter-rouge&quot;&gt;is-cuda-available.py&lt;/code&gt; python script containing&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import torch
+print(torch.cuda.is_available())
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;You can now run this using &lt;code class=&quot;highlighter-rouge&quot;&gt;qtest shell-script.sh&lt;/code&gt;. 
+If everything worked out, it should output the python version of your conda environment and &lt;code class=&quot;highlighter-rouge&quot;&gt;True&lt;/code&gt;, indicating that pytorch can use the gpu.&lt;/p&gt;
+
+&lt;p&gt;If it doesn’t work, stand up, cross your arms and look confused. 
+A more senior intern should come to your assistance within 1h.
+If this strategy does not work, go make some coffee and complain about your Raiden problem when you serve fresh smelly coffee to your fellow comrades, someone will probably try to help you out.&lt;/p&gt;
+
+&lt;h3 id=&quot;using-raiden-builtin-containers&quot;&gt;Using Raiden builtin containers&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;qrsh&lt;/code&gt; gives you a &lt;code class=&quot;highlighter-rouge&quot;&gt;Remote SHell&lt;/code&gt; and can be used to debug scripts.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;qsub&lt;/code&gt; submits jobs to the batch processing queue&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Usage:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;qsub/qrsh -ac d=[CONTAINER-NAME] -jc [JOB-CLASS-NAME] [YOUR-SCRIPT-FILE.sh]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;On Raiden, for the list of available containers, check &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/etc/container-info&lt;/code&gt; and for the list of available job classes check &lt;code class=&quot;highlighter-rouge&quot;&gt;/usr/local/etc/qsub_O2N_list&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you use a conda environment, the only thing you need to care about is the Cuda version.&lt;/p&gt;
+
+&lt;h2 id=&quot;managing-jobs-on-raiden&quot;&gt;Managing jobs on Raiden&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;You can look at the list of jobs you submitted using &lt;code class=&quot;highlighter-rouge&quot;&gt;qstat&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;You can kill a job that is waiting in &lt;code class=&quot;highlighter-rouge&quot;&gt;qstat&lt;/code&gt; using &lt;code class=&quot;highlighter-rouge&quot;&gt;qdel [JOB_#]&lt;/code&gt;. You can get the &lt;code class=&quot;highlighter-rouge&quot;&gt;#&lt;/code&gt; from &lt;code class=&quot;highlighter-rouge&quot;&gt;qstat&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;To monitor current jobs, you can use &lt;code class=&quot;highlighter-rouge&quot;&gt;watch -n1 qstat&lt;/code&gt; which will refresh the qstat output every second.&lt;/li&gt;
+&lt;/ul&gt;</content><author><name></name></author><summary type="html">Raiden Tutorial</summary></entry><entry><title type="html">Optimal Control</title><link href="http://localhost:4000/jekyll/update/2018/05/01/optimal_control.html" rel="alternate" type="text/html" title="Optimal Control" /><published>2018-05-01T18:04:07+09:00</published><updated>2018-05-01T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/05/01/optimal_control</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/05/01/optimal_control.html">&lt;script src=&quot;https://d3js.org/d3.v4.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;In this post I want to connect the dots between terms in optimal control.&lt;/p&gt;
+
+&lt;p&gt;Hamilton-Jacobi-Bellman equation
+Bellman equation
+Riccati Equation
+Pontryagin’s Maximum Principle 
+Control Hamiltonian
+Costate Equation
+Lagrange Multiplier
+Dynamic Programming
+Message passing
+LQR
+Global/trajectory optimal
+Backward induction
+Open/closed loop&lt;/p&gt;
+
+&lt;p&gt;An optimal control problem can be characterized by several properties.&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Deterministic/stochastic&lt;/li&gt;
+  &lt;li&gt;Discrete/continuous time&lt;/li&gt;
+  &lt;li&gt;Constrained/unconstrained&lt;/li&gt;
+  &lt;li&gt;Discrete/continuous states&lt;/li&gt;
+  &lt;li&gt;Discrete/constinuous actions&lt;/li&gt;
+  &lt;li&gt;Fully/partially observable&lt;/li&gt;
+  &lt;li&gt;Known/Unknown dynamics&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;hamilton-jacobi-bellman-equation&quot;&gt;Hamilton-Jacobi-Bellman equation&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Is a partial differential equation.&lt;/li&gt;
+  &lt;li&gt;Solution of the HJB is  the value function, which gives minimum cost.&lt;/li&gt;
+  &lt;li&gt;The Bellman equation is the time discrete version of the Hamilton-Jacobi-Bellman equation.  https://en.wikipedia.org/wiki/Hamilton%E2%80%93Jacobi%E2%80%93Bellman_equation&lt;/li&gt;
+  &lt;li&gt;When solved
+    &lt;ul&gt;
+      &lt;li&gt;Locally: HJB is a necessary condition&lt;/li&gt;
+      &lt;li&gt;Globally: necessary and sufficicent condition for an optimum&lt;/li&gt;
+      &lt;li&gt;&lt;span style=&quot;color:red&quot;&gt;What does it mean, to solve locally or globally?&lt;/span&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;can be generalized to stoachstic systems&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For optimal control problem&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;V(x(0),0) = \min_u \left\{\int_0^T C(x(t),u(t))dt + D(x(T)) \right\}&lt;/script&gt;
+
+&lt;p&gt;with the constraint&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\dot{x}(t) = F(x(t),u(t))&lt;/script&gt;
+
+&lt;p&gt;the HJB equation is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\dot{V}(x,t) + \min_u \left\{\nabla V(x,t) F(x,u) + C(x,u) \right\}= 0&lt;/script&gt;
+
+&lt;p&gt;with the terminal condition&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;V(x,T) = D(x).&lt;/script&gt;
+
+&lt;p&gt;\( V(x,t) \) is the value function.&lt;/p&gt;
+
+&lt;p&gt;The formula can be derived with the help of the principle of optimality:&lt;/p&gt;
+
+&lt;p&gt;&lt;script type=&quot;math/tex&quot;&gt;V(x(t),t) = \min_u \left\{V(x(t + dt), t + dt) + \int_t^{t+dt} C(x(t),u(t))dt \right\}&lt;/script&gt;.&lt;/p&gt;
+
+&lt;p&gt;The variable \(dt\) is not infinitesimal yet.&lt;/p&gt;
+
+&lt;p&gt;The value function at time \(t\) is defined recursively as: Every control signal \(u\) is leading to another state and is connected with a cost. For all possible control signals, add the corresponding cost and the value function of the state. Choose the control signal, for which this sum is minimized.&lt;/p&gt;
+
+&lt;p&gt;Taylor expansion of \( V(x(t + dt), t + dt)\) leads to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;V(x(t + dt), t + dt) = V(x(t),t) + \dot{V}(x(t),t)dt + \nabla V(x(t),t)\dot{x}(t)dt + o(dt^2).&lt;/script&gt;
+
+&lt;p&gt;Derivation:&lt;/p&gt;
+
+&lt;p&gt;Given the function \(V(x(t), t)\) you choose the operating point \(t\) and new variable \(dt\).&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;f(dt) = V(x(t),t) + \frac{dV(x(t),t)}{d t}\|_{t = t} (t + dt - t) + o(dt^2)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;f(dt) = V(x(t),t) + \frac{(\frac{\partial V}{\partial x}\frac{\partial x}{\partial t} + \frac{\partial V}{\partial t})dt}{d t}\|_{t = t} dt + o(dt^2)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;f(dt) = V(x(t),t) + \frac{\partial V}{\partial x}\frac{\partial x}{\partial t}dt + \frac{\partial V}{\partial t}dt + o(dt^2)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;f(dt) = V(x(t),t) + \nabla V(x(t),t)\dot{x}(t)dt + \dot{V}(x(t),t)dt + o(dt^2)&lt;/script&gt;
+
+&lt;p&gt;Insert the result in the optimality equation&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;V(x(t),t) = \min_u \left\{V(x(t),t) + \nabla V(x(t),t)\dot{x}(t)dt + \dot{V}(x(t),t)dt + o(dt^2) + \int_t^{t+dt} C(x(t),u(t))dt \right\}.&lt;/script&gt;
+
+&lt;p&gt;\(V(x(t),t)\) is cancled out.&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;0 = \min_u \left\{\nabla V(x(t),t)\dot{x}(t)dt + \dot{V}(x(t),t)dt + o(dt^2) + \int_t^{t+dt} C(x(t),u(t))dt \right\}.&lt;/script&gt;
+
+&lt;p&gt;Divided by \(dt\)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;0 = \min_u \left\{\nabla V(x(t),t)\dot{x}(t) + \dot{V}(x(t),t) + o(dt) + \frac{1}{dt}\int_t^{t+dt} C(x(t),u(t))dt \right\}.&lt;/script&gt;
+
+&lt;p&gt;Take the limit as \(dt\) apporaches zero.&lt;/p&gt;
+
+&lt;p&gt;&lt;script type=&quot;math/tex&quot;&gt;0 = \min_u \left\{\nabla V(x(t),t)\dot{x}(t) + \dot{V}(x(t),t) + C(x(t),u(t)) \right\}.&lt;/script&gt;
+&lt;span style=&quot;color:red&quot;&gt;Why can you take \(\dot{V}(x(t),t)\) out of the min but not \(\nabla V(x(t),t)\dot{x}(t)\) &lt;/span&gt;  &lt;span style=&quot;color:green&quot;&gt;Because \(\dot{V}(x(t),t)\)  is independent of the the control signal?&lt;/span&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;linear-quadratic-gaussian-lqg-control&quot;&gt;Linear-quadratic-Gaussian (LQG) control&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Combination of
+    &lt;ul&gt;
+      &lt;li&gt;Kalman Filter (linear-quadratic estimator LQE)&lt;/li&gt;
+      &lt;li&gt;Linear-quadratic regulator (LQR)&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;LQE and LQR can be computed independently because of the separation principle.&lt;/li&gt;
+  &lt;li&gt;Applies in LTI and LTV&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;linear-quadratic-regulator-lqr&quot;&gt;Linear-quadratic regulator (LQR)&lt;/h1&gt;
+
+&lt;h1 id=&quot;sepration-principle&quot;&gt;Sepration principle&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Known as principle of separation of estimation and control.&lt;/li&gt;
+  &lt;li&gt;Does not hold for non-linear systems&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;kalman-filter-or-linear-quadratic-estimator-lqe&quot;&gt;Kalman filter or linear-quadratic estimator (LQE)&lt;/h1&gt;
+
+&lt;p&gt;Assume you have a system&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;x_{t+1} = A_tx_t + B_t u_t + w_t&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;y_t = C_tx_t + v_t&lt;/script&gt;
+
+&lt;p&gt;with process noise \( w_t \sim \mathcal{N}(0, Q_t) \) and observation noise \( v_t \sim \mathcal{N}(0, R_t) \).
+The posteriori state estimate is denoted as \(\hat x_{t|t}\) and the posteriori error covariance as \( P_{t|t}\). The posteriori is therefore defined as \( \mathcal{N}(\hat x_{t|t}, P_{t|t}) \).&lt;/p&gt;
+
+&lt;p&gt;In the &lt;em&gt;predict step&lt;/em&gt; the current estimate is transformed by the system dynamics (marginalization of \(x_t\)):&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}(x_{t+1}|A_tx_t + B_t u_t, Q_t)\mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.&lt;/script&gt;
+
+&lt;p&gt;With the &lt;em&gt;propagation&lt;/em&gt; formula (37, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T )&lt;/script&gt;
+
+&lt;p&gt;it follows&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t+1|t} =  A_t \hat x_{t|t} + B_tu_t&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1|t} = Q_t + A_t P_{t|t} A_t^T  .&lt;/script&gt;
+
+&lt;p&gt;The &lt;em&gt;update step&lt;/em&gt; updates the estimate according to observations \(y_t\). This step is simply Bayes rule applied.&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x|y) = \frac{p(y|x)p(x)}{p(y)}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t+1} ) = \frac{\mathcal{N}(y_{t+1}|C_tx_{t+1}, R_t )\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})}{\int_{x_{t+1}}\mathcal{N}(y_{t+1}|C_tx_{t+1}, R_t )\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t}) dx_{t+1}}&lt;/script&gt;
+
+&lt;p&gt;The numerator can be rewritten as a joint distribution (39, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b + Fa \end{matrix},\begin{matrix}A &amp; A^TF^T\\FA &amp; B + FA^TF^T\end{matrix}\right) %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;This joint distribution can be rewritten as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b \end{matrix},\begin{matrix}A &amp; C\\C^T &amp; B\end{matrix}\right) = \mathcal{N}(y|b,B)\mathcal{N}(x|a + C^TB^{-1}(y-b),A - C^T B^{-1}C) %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;In total this gives&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}(y|b + Fa,B + FA^TF^T)\mathcal{N}(x|a + A^TF^T(B + FA^TF^T)^{-1}(y-b -Fa),A - A^TF^T (B + FA^TF^T)^{-1}FA)&lt;/script&gt;
+
+&lt;p&gt;It follows&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})\mathcal{N}(y_{t+1}|C_tx_{t+1}, R_t ) = \mathcal{N}(y_{t+1}|C_t\hat x_{t+1|t},R_t + C_tP_{t+1|t}^TC_t^T)\mathcal{N}(x_{t+1}|\hat x_{t+1|t} + P_{t+1|t}^TC_t^T(R_t + C_tP_{t+1|t}^TC_t^T)^{-1}(y_{t+1}-C_t\hat x_{t+1}),P_{t+1|t} - P_{t+1|t}^TC_t^T (R_t + C_tP_{t+1|t}^TC_t^T)^{-1}C_tP_{t+1|t}).&lt;/script&gt;
+
+&lt;p&gt;The denominator can be further simplified also with the &lt;em&gt;propagation&lt;/em&gt; formula (37, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{x_{t+1}}\mathcal{N}(y_{t+1}|C_tx_{t+1}, R_t )\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t}) dx_{t+1} =  \int_{x_{t+1}}\mathcal{N}(x|C_ty, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}({y_{t+1}}|C_t\hat x_{t+1|t}, R_t + C_tP_{t+1|t}C_t^T ).&lt;/script&gt;
+
+&lt;p&gt;Therefore,&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t+1} ) = \frac{\mathcal{N}(y_{t+1}|C_t\hat x_{t+1|t},R_t + C_tP_{t+1|t}^TC_t^T)\mathcal{N}(x_{t+1}|\hat x_{t+1|t} + P_{t+1|t}^TC_t^T(R_t + C_tP_{t+1|t}^TC_t^T)^{-1}(y_{t+1}-C_t\hat x_{t+1}),P_{t+1|t} - P_{t+1|t}^TC_t^T (R_t + C_tP_{t+1|t}^TC_t^T)^{-1}C_tP_{t+1|t})}{\mathcal{N}({y_{t+1}}|C_t\hat x_{t+1|t}, R_t + C_tP_{t+1|t}C_t^T )}&lt;/script&gt;
+
+&lt;p&gt;becomes&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t+1} ) = \mathcal{N}(x_{t+1}|\hat x_{t+1|t} + P_{t+1|t}^TC_t^T(R_t + C_tP_{t+1|t}^TC_t^T)^{-1}(y_{t+1}-C_t\hat x_{t+1}),P_{t+1|t} - P_{t+1|t}^TC_t^T (R_t + C_tP_{t+1|t}^TC_t^T)^{-1}C_tP_{t+1|t}) .&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t+1|t+1} = \hat x_{t+1|t} + P_{t+1|t}^TC_t^T(R_t + C_tP_{t+1|t}^TC_t^T)^{-1}(y_{t+1}-C_t\hat x_{t+1})&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1|t+1} = P_{t+1|t} - P_{t+1|t}^TC_t^T (R_t + C_tP_{t+1|t}^TC_t^T)^{-1}C_tP_{t+1|t}&lt;/script&gt;
+
+&lt;p&gt;Define \(S_t = R_t + C_tP_{t+1|t}C_t^T\), \(K_t = P_{t+1|t}C_t^TS_t^{-1} \) and \( z_t = y_{t+1}-C_t\hat x_{t+1|t}\).&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t+1|t+1} = \hat x_{t+1|t} + K_t z_t&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1|t+1} = (I - P_{t+1|t}^TC_t^T (R_t + C_tP_{t+1|t}^TC_t^T)^{-1}C_t)P_{t+1|t} = (I - K_tC_t)P_{t+1|t}&lt;/script&gt;
+
+&lt;p&gt;Predict and summary step together:&lt;/p&gt;
+
+&lt;p&gt;Define \(S_t = R_t + C_t(Q_t + A_t P_{t|t} A_t^T)C_t^T\), \(K_t = (Q_t + A_t P_{t|t} A_t^T)C_t^TS_t^{-1} \) and \( z_t = y_{t+1}-C_t(A_t \hat x_{t|t} + B_tu_t))\).&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t+1|t+1} = \hat x_{t+1|t}  + K_t (y_{t+1}-C_t\hat x_{t+1|t}) = (I - K_tC_t)x_{t+1|t} + K_ty_{t+1} = (I - K_tC_t)(A_t \hat x_{t|t} + B_tu_t) + K_ty_{t+1} =  (I - K_tC_t)A_t \hat x_{t|t} + (I - K_tC_t)B_tu_t + K_ty_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1|t+1} = (I - K_tC_t)(Q_t + A_t P_{t|t} A_t^T)&lt;/script&gt;
+
+&lt;p&gt;What is the meaning of \(z_t\) and \(S_t\)? The denominator of the update step is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t+1}|C_t\hat x_{t+1|t},R_t + C_tP_{t+1|t}^TC_t^T)&lt;/script&gt;
+
+&lt;p&gt;and can be transformed by (34, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)&lt;/script&gt;
+
+&lt;p&gt;to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t+1} - C_t\hat x_{t+1|t}|0,R_t + C_tP_{t+1|t}^TC_t^T).&lt;/script&gt;
+
+&lt;p&gt;Therefore, \(z_t\) gives you the derivation of the expected observation and the real observation.
+The random variable \(z_t\) has therefore zero mean. \(S_t\) is simply the variance of the expected output.&lt;/p&gt;
+
+&lt;p&gt;How does the formulas of the estimator degrade, if you assume a deterministic system (zero variance).&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;S_t = C_tP_{t+1|t} C_t^T&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;K_t = P_{t+1|t} C_t^T(C_tP_{t+1|t} C_t^T)^{-1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;(I - K_tC_t)(A_t \hat x_{t|t} + B_tu_t) + K_ty_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;(I - K_tC_t)(A_t \hat x_{t|t} + B_tu_t) + K_t C_t x_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;(I - P_{t+1|t} C_t^T(C_tP_{t+1|t} C_t^T)^{-1}C_t)\hat x_{t|t+1} + P_{t+1|t} C_t^T(C_tP_{t+1|t} C_t^T)^{-1} y_{t+1}&lt;/script&gt;
+
+&lt;p&gt;IST WAHRSCHEINLICH FALSCH!&lt;/p&gt;
+
+&lt;p&gt;WEIGHTED NULLSPACE PROJECTION!!!!!  If not, it’s a weighting of old and new. Special cases :&lt;/p&gt;
+
+&lt;p&gt;If \(P_{t+1|t}\) is zero: Old estimate is preserved.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;\(P_{t+1|t}\) is diagonal.
+    &lt;ul&gt;
+      &lt;li&gt;If \(P_{t+1|t}^{ii}\) is inifinity: If this dimension is in the nullspace of C, than this value will be solely based on the observation. If not it will be zero.&lt;/li&gt;
+      &lt;li&gt;If \(P_{t+1|t}^{ii}\) is 1: If this dimension is in the nullspace of C, the estimate of the observation will be taken over. Otherwise it will be the old estimate.&lt;/li&gt;
+      &lt;li&gt;If \(P_{t+1|t}^{ii}\) is less than 1: Compromise between old and new estimate. More weight for the old estimate.&lt;/li&gt;
+      &lt;li&gt;If \(P_{t+1|t}^{ii}\) is greather than 1: Compromise between old and new estimate. More weight for the new estimate.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;\(P_{t+1|t}\) is not diagonal. Even if a dimension is not in the nullspace of C, through the coupling you can also update the other dimensions. Effectively this could be treated as a transformation of C. You make an LDL transformation of \(P_{t+1|t} = L_{t+1|t} D_{t+1|t}L_{t+1|t}^T\). Then \(\tilde C_{t+1|t} = C_{t+1|t}L_t\) is the transformed (whitened?) observation matrix. The function becomes&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;(I - L_{t+1|t} D_{t+1|t} \tilde C_t^T(\tilde C_tD_{t+1|t} \tilde C_t^T)^{-1})\hat x_{t|t+1} + L_{t+1|t} D_{t+1|t} \tilde C_t^T(\tilde C_tD_{t+1|t} \tilde C_t^T)^{-1} x_{t+1}&lt;/script&gt;
+
+&lt;h1 id=&quot;bayes-rule-for-deterministic-linear-dynamical-system-but-unknown-initial-state&quot;&gt;Bayes rule for deterministic linear dynamical system, but unknown initial state.&lt;/h1&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x|y) = \frac{p(y|x)p(x)}{p(y)}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|\hat a, \hat A ) = \frac{\mathcal{N}(y|b + Fx,B)\mathcal{N}(x|a,A)}{\int_{x}\mathcal{N}(y|b + Fx,B)\mathcal{N}(x|a,A) dx}&lt;/script&gt;
+
+&lt;p&gt;The numerator can be rewritten as a joint distribution (39, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}(y|b + Fx,B)\mathcal{N}(x|a,A) = \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b + Fa \end{matrix},\begin{matrix}A &amp; A^TF^T\\FA &amp; B + FA^TF^T\end{matrix}\right) %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;This joint distribution can be rewritten as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b \end{matrix},\begin{matrix}A &amp; C\\C^T &amp; B\end{matrix}\right) = \mathcal{N}(y|b,B)\mathcal{N}(x|a + C^TB^{-1}(y-b),A - C^T B^{-1}C) %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;In total this gives&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y|b + Fx,B)\mathcal{N}(x|a,A) = \mathcal{N}(y|b + Fa,B + FA^TF^T)\mathcal{N}(x|a + A^TF^T(B + FA^TF^T)^{-1}(y-b -Fa),A - A^TF^T (B + FA^TF^T)^{-1}FA)&lt;/script&gt;
+
+&lt;p&gt;The denominator can be further simplified also with the &lt;em&gt;propagation&lt;/em&gt; formula (37, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_x \mathcal{N}(y|b + Fx,B)\mathcal{N}(x|a,A) dx  = \mathcal{N}(y|Fa + b, B + FAF^T)&lt;/script&gt;
+
+&lt;p&gt;The whole Bayesian expression will be&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|\hat a, \hat A ) = \mathcal{N}(x|a + A^TF^T(B + FA^TF^T)^{-1}(y-b -Fa),A - A^TF^T (B + FA^TF^T)^{-1}FA)&lt;/script&gt;
+
+&lt;p&gt;Now assume deterministic observation without offset&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|\hat a, \hat A ) = \mathcal{N}(x|a + A^TF^T(FA^TF^T)^{-1}(y-Fa),A - A^TF^T (FA^TF^T)^{-1}FA)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat a = a + A^TF^T(FA^TF^T)^{-1}(y-Fa) = (I - A^TF^T(FA^TF^T)^{-1}F)a + A^TF^T(FA^TF^T)^{-1}y&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat A = (I - A^TF^T (FA^TF^T)^{-1}F)A + (A^TF^T (FA^TF^T)^{-1}F) 0&lt;/script&gt;
+
+&lt;h1 id=&quot;information-step&quot;&gt;Information step&lt;/h1&gt;
+
+&lt;p&gt;If I take an action this will update my estimate of the belief of the observation. Certain observations are giving more information than others. I should try to increase the probability of these observations.
+For control problem: Only those observations should have higher probability, which are important for my policy.&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;a_t^* = \mathrm{argmax}_{a_t} \mathbb{E}_{p(o_{t+1}|a_t)}[ D_{KL}(b(s_t)\|b(s_{t+1}|o_{t+1}, a_t))]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;b(s_{t+1}|o_{t+1}, a_t) = \frac{p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t}{p(o_{t+1}|a_t)}&lt;/script&gt;
+
+&lt;p&gt;with&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(o_{t+1}|a_t) = \int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t ds_{t+1} .&lt;/script&gt;
+
+&lt;p&gt;The distributions depend on \(s_t\) and \(s_{t+1}\). Is this a reasonable approach? Or should I just try to minimize the entropy of the new state?&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;a_t^* = \mathrm{argmax}_{a_t} \mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \int_{s_{t+1}} b(s_{t+1}|o_{t+1}, a_t) \log(b(s_{t+1}|o_{t+1}, a_t))  d_{s_{t+1}}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \int_{s_{t+1}} \frac{p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t}{p(o_{t+1}|a_t)} \log\left(\frac{p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t}{p(o_{t+1}|a_t)}\right)  d_{s_{t+1}}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{p(o_{t+1}|a_t)}\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(\frac{p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t}{p(o_{t+1}|a_t)}\right)  d_{s_{t+1}}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{p(o_{t+1}|a_t)} D_{KL}\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\|p(o_{t+1}|a_t)\right)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{p(o_{t+1}|a_t)}\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \left(\log\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\right) + \log\left(p(o_{t+1}|a_t)\right)\right)  d_{s_{t+1}}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{p(o_{t+1}|a_t)}\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\right)  d_{s_{t+1}} + \frac{1}{p(o_{t+1}|a_t)}\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(p(o_{t+1}|a_t)\right)  d_{s_{t+1}}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{p(o_{t+1}|a_t)}\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\right)  d_{s_{t+1}} + \frac{\log\left(p(o_{t+1}|a_t)\right)}{p(o_{t+1}|a_t)}\underbrace{\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t   d_{s_{t+1}}}_{p(o_{t+1}|a_t)}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{p(o_{t+1}|a_t)}\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\right)  d_{s_{t+1}} + \log\left(p(o_{t+1}|a_t)\right)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] = \int_{o_{t+1}} p(o_{t+1}|a_t)\left[\frac{1}{p(o_{t+1}|a_t)}\int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\right)  d_{s_{t+1}} + \log\left(p(o_{t+1}|a_t)\right) \right] do_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] = \int_{o_{t+1}} \int_{s_{t+1}} p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\right)  d_{s_{t+1}} + p(o_{t+1}|a_t)\log\left(p(o_{t+1}|a_t)\right)  do_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] =  \int_{s_{t+1}} \int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \int_{o_{t+1}}p(o_{t+1}|s_{t+1}) \log\left(p(o_{t+1}|s_{t+1})\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t\right)  do_{t+1}d_{s_{t+1}} + \int_{o_{t+1}}p(o_{t+1}|a_t)\log\left(p(o_{t+1}|a_t)\right)  do_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] =  \int_{s_{t+1}} \int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \int_{o_{t+1}}p(o_{t+1}|s_{t+1}) \left(\log\left(p(o_{t+1}|s_{t+1})\right) + \log\left(\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \right) \right) do_{t+1}d_{s_{t+1}} + \int_{o_{t+1}}p(o_{t+1}|a_t)\log\left(p(o_{t+1}|a_t)\right)  do_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] =  \int_{s_{t+1}} \int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \int_{o_{t+1}}p(o_{t+1}|s_{t+1}) \log\left(p(o_{t+1}|s_{t+1})\right)  do_{t+1}d_{s_{t+1}} + \int_{s_{t+1}} \int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \int_{o_{t+1}}p(o_{t+1}|s_{t+1}) \log\left(\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \right) do_{t+1}d_{s_{t+1}} + \int_{o_{t+1}}p(o_{t+1}|a_t)\log\left(p(o_{t+1}|a_t)\right)  do_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] =  \int_{s_{t+1}} \int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \int_{o_{t+1}}p(o_{t+1}|s_{t+1}) \log\left(p(o_{t+1}|s_{t+1})\right)  do_{t+1}d_{s_{t+1}} + \int_{s_{t+1}} \int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \log\left(\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t \right) \underbrace{\int_{o_{t+1}}p(o_{t+1}|s_{t+1})  do_{t+1}}_{=1}d_{s_{t+1}} + \int_{o_{t+1}}p(o_{t+1}|a_t)\log\left(p(o_{t+1}|a_t)\right)  do_{t+1}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] =  -\int_{s_{t+1}} \int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t H[p(o_{t+1}|s_{t+1})]d_{s_{t+1}} - H[\int_{s_t}p(s_{t+1}|s_t,a_t)b(s_t)ds_t] - H[p(o_{t+1}|a_t)]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathbb{E}_{p(o_{t+1}|a_t)}[ -H(b(s_{t+1}|o_{t+1}, a_t))] =  -\int_{s_{t+1}} p(s_{t+1}|a_t) H[o_{t+1}|s_{t+1}]d_{s_{t+1}} - H[s_{t+1}|a_t] - H[o_{t+1}|a_t]&lt;/script&gt;
+
+&lt;p&gt;Assume Linear model from Kalman Filter:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{2}\log \det (2\pi e P_{t+1|t+1})&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;H(b(s_{t+1}|o_{t+1}, a_t)) = \frac{1}{2}\log \det (2\pi e (I - P_{t+1|t}^TC_t^T (R_t + C_tP_{t+1|t}^TC_t^T)^{-1}C_t)P_{t+1|t} ))&lt;/script&gt;
+
+&lt;p&gt;Entropy of belief state is independent of observation and action! Actions are not used for getting better information. There is no trade off between an reward maximizing step and information step. Every action gives you the same amount of information. Separation principle: Actions are just for reducing controller cost, only the mean of the information state is used, it does not depend on the variance.&lt;/p&gt;
+
+&lt;h1 id=&quot;kalman-filter-for-continuous-time-systems&quot;&gt;Kalman-Filter for continuous-time systems&lt;/h1&gt;
+
+&lt;h1 id=&quot;bayes-filter-for-general-continuous-time-systems&quot;&gt;Bayes-Filter for general continuous-time systems&lt;/h1&gt;
+
+&lt;h1 id=&quot;observability-in-general-continuous-time-systems&quot;&gt;Observability in general continuous-time systems&lt;/h1&gt;
+
+&lt;h1 id=&quot;linear-dynamical-system-with-arbitrary-state-distribution&quot;&gt;Linear dynamical system with arbitrary state distribution&lt;/h1&gt;
+
+&lt;h1 id=&quot;observability-in-discrete-linear-dynamical-systems&quot;&gt;Observability in discrete linear dynamical systems&lt;/h1&gt;
+
+&lt;p&gt;The Kalman filter is only updating the current state. But with the new information also old states can be updated.&lt;/p&gt;
+
+&lt;p&gt;In order to update past states you have to send messages backwards. These messages are again calculated locally:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;m(x_{t};d_t, D_t) = \int_{x_{t+1}} \mathcal{N}(x_{t+1}|Ax_t + B u_t, Q_t) m(x_{t+1};d_{t+1}, D_{t+1})  dx_{t+1}  \mathcal{N}(y_{t}|C_tx_{t}, R_t)&lt;/script&gt;
+
+&lt;p&gt;The first message is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;m(x_T;d_T, D_T) = \frac{\mathcal{N}(y_T|C_Tx_T, R_T)\mathcal{N}(x_T|a, \infty)}{\int_{x_T}\mathcal{N}(y_T|C_Tx_T, R_T)\mathcal{N}(x_T|a, \infty)d_{x_T}} = \mathcal{N}(x|a + \infty^TC_T^T(R_T + C_T\infty^TC_T^T)^{-1}(y_T-C_Ta),\infty - \infty^TC_T^T (R_T + C_T\infty^TC_T^T)^{-1}C_T\infty)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;d_T = a + \infty^TC_T^T(R_T + C_T\infty^TC_T^T)^{-1}(y_T-C_Ta) = a + IC_T^T(\frac{1}{\infty}R_T + C_TIC_T^T)^{-1}(y_T-C_Ta) = a + C_T^T(C_TC_T^T)^{-1}(y_T-C_Ta) =  C_T^T(C_TC_T^T)^{-1}y_T&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;D_T = \infty - \infty^TC_T^T (R_T + C_T\infty^TC_T^T)^{-1}C_T\infty = \infty - \infty^TC_T^T (R_T + C_T\infty^TC_T^T)^{-1}C_T\infty&lt;/script&gt;</content><author><name></name></author><summary type="html"></summary></entry><entry><title type="html">Inference</title><link href="http://localhost:4000/jekyll/update/2018/05/01/em.html" rel="alternate" type="text/html" title="Inference" /><published>2018-05-01T18:04:07+09:00</published><updated>2018-05-01T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/05/01/em</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/05/01/em.html">&lt;script src=&quot;https://d3js.org/d3.v4.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;Recently I thought a lot about statistical inference and it’s connections to Linear Algebra/Functional Analysis. Why should we maximize the likelihood? Why should we use EM? And what do both have in common.&lt;/p&gt;
+
+&lt;p&gt;All the questions that I had centered around one observation: If marginalization is nothing else but a linear transformation of the input distribution, why shouldn’t we just use the inverse operator to get the input distribution back?&lt;/p&gt;
+
+&lt;h1&gt;Marginal distribution&lt;/h1&gt;
+
+&lt;p&gt;The marginal distribution \(p(y)\) is defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y) = \int_x p(y|x)p(x)dx&lt;/script&gt;
+
+&lt;p&gt;in the continuous case and as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y) = \sum_x p(y|x)p(x)&lt;/script&gt;
+
+&lt;p&gt;in the discrete case. To those who have some experience Linear Algebra or Functional Analysis, these expressions could look familiar. Indeed it has the same functional form as an &lt;a href=&quot;https://jekyllrb.com/docs/home&quot;&gt;integral transform&lt;/a&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;(Tf)(y) = \int_x K(y,x)f(x)dx&lt;/script&gt;
+
+&lt;p&gt;in the continuous case and an &lt;a href=&quot;https://jekyllrb.com/docs/home&quot;&gt;matrix multiplication&lt;/a&gt; / linear map&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;y_i = \sum_x A_{ij} x_i&lt;/script&gt;
+
+&lt;p&gt;in the discrete case.&lt;/p&gt;
+
+&lt;h1&gt;Infering \(p(x)\)&lt;/h1&gt;
+
+&lt;p&gt;Let’s define some kind of running example. Let’s say you have some arbitrary system that has \(N\) discrete states. The starting state \(x\) of the system is distributed according to \(p(x)\). You have a probabilistic dynamical model, that transforms the start state \(x\) and gives the next state \(y\). This model is described by \(p(y|x)\). Now we observe samples from the state \(y_n\) sampled from&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y) = \sum_x p(y|x)p(x) .&lt;/script&gt;
+
+&lt;p&gt;In my naivity I thought it was a good idea to use Bayes Theorem for this. I thought: I don’t want a point estimate of the state with the maximum likelihood, but a distribution over all states. After some more thinking and plotting I noticed, that this is not a good idea. Because the result was in the limit of infinite samples the same as maximum likelihood. In the following I want to sketch my path of reasoning.&lt;/p&gt;
+
+&lt;p&gt;Bayes Theorem is defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x|y) = \frac{p(y|x)p(x)}{p(y)}  .&lt;/script&gt;
+
+&lt;p&gt;The derivation makes use of the chain rule of probability, that states that \(p (x,y) = p(x|y)p(y) = p(y|x)p(x) \). By rearranging the terms you finally arrive at Bayes Theorem. The methods of Bayesian inference are all based on this formula. At the beginning you choose a prior distribution  \( p(x) \) , which can be used to encode prior beliefs about \(x\).
+Let’s draw our first sample \(y_0\) from \(p(y)\) and see what happens.&lt;/p&gt;
+
+&lt;p&gt;The main operation happening is the point wise multiplication of \(p(y=y_0|x)\) and \(p(x)\). In the case of discrete \(x\) this will be a point wise mulitplication of vectors. In the case of continuous \(x\) this will be a point wise multiplication of functions. If you take again the analogy to Linear Algebra, \(p(y=y_0|x)\) would be the \(y_0\)th row in the matrix \(p(y|x)\). So you are essentially multiplying the prior vector with the row of \(p(y|x)\) corresponding to your sample.&lt;/p&gt;
+
+&lt;p&gt;Finally you normalize to obtain a valid probability distribution. The normalizer is therefore the sum over \(x\) of the point wise product \( \sum_x p(y=y_0|x)p(x) \). The proabability distribution you will receive is called the posterior distribution. Your prior belief was transformed to the posterior belief. To be ready for the next sample, you just “rename” yo\the posterior to prior and start over again. This sequential process can be described as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x|Y) = \frac{\prod_{n = 0}^N p(y=y_n|x) p(x)}{Z}&lt;/script&gt;
+
+&lt;p&gt;where \(Z\) is simply the normalizer. So it seems, that Bayes Method is all about sequential pointwise mulitpliation of rows of \(p(y|x)\). 
+But what happens if our number of samples \(N\) goes to \(\infty\)? Let’s see.&lt;/p&gt;
+
+&lt;p&gt;First concentrate on the product&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\prod_{n = 0}^N p(y=y_n|x)&lt;/script&gt;
+
+&lt;p&gt;and use the identity \(f = ((f)^\frac{1}{n})^n\) to get&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\left(\left(\prod_{n = 0}^N p(y=y_n\|x)\right)^\frac{1}{n}\right)^n .&lt;/script&gt;
+
+&lt;p&gt;Use another identity \(f = \exp(\log(f))\) to arrive at&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\left(\exp\left(\log\left(\left(\prod_{n = 0}^N p(y=y_n\|x)\right)^\frac{1}{n}\right)\right)\right)^n .&lt;/script&gt;</content><author><name></name></author><summary type="html"></summary></entry><entry><title type="html">Bernoulli distribution</title><link href="http://localhost:4000/jekyll/update/2018/05/01/welcome-to-jekyll.html" rel="alternate" type="text/html" title="Bernoulli distribution" /><published>2018-05-01T18:04:07+09:00</published><updated>2018-05-01T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/05/01/welcome-to-jekyll</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/05/01/welcome-to-jekyll.html">&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;Introductions to basic probability distributions are often more confusing than actually helping. Many definitions seem randomly and are not properly justified. If there is additionally a lack of visual representation, many times learning will become meotizing instead of understanding.
+In this series I try to give a visual approach to some basic proabability distributions.&lt;/p&gt;
+
+&lt;p&gt;In this first post I want to take a closer look at the Bernoulli distribution.&lt;/p&gt;
+
+&lt;h1&gt; Definition &lt;/h1&gt;
+
+&lt;p&gt;The Bernoulli distribution is most of the time defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathrm{Bernoulli}(x|\mu) = \mu^x(1-\mu)^{1-x},&lt;/script&gt;
+
+&lt;p&gt;where \(x \in \{0,1\}\) and \(\mu \in [0,1]\).&lt;/p&gt;
+
+&lt;p&gt;At a first glance this looks very random and in some sense it also is.&lt;/p&gt;
+
+&lt;p&gt;Check out the &lt;a href=&quot;https://jekyllrb.com/docs/home&quot;&gt;Jekyll docs&lt;/a&gt; for more info on how to get the most out of Jekyll. File all bugs/feature requests at &lt;a href=&quot;https://github.com/jekyll/jekyll&quot;&gt;Jekyll’s GitHub repo&lt;/a&gt;. If you have questions, you can ask them on &lt;a href=&quot;https://talk.jekyllrb.com/&quot;&gt;Jekyll Talk&lt;/a&gt;.&lt;/p&gt;</content><author><name></name></author><summary type="html"></summary></entry></feed>
