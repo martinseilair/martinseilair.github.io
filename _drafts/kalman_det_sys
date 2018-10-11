@@ -1,0 +1,56 @@
+
+
+## Deterministic system
+Let's assume our linear state space model is deterministic. In this case the covariance of the process noise \\(Q_t\\) and the covariance of the observation noise \\(R_t\\) would be zero.
+The equations of the prediction step will simplify to
+
+$$ \hat x_{t+1|t} =  A_t \hat x_{t|t} + B_tu_t $$
+
+$$ P_{t+1|t} = A_t P_{t|t} A_t^T. $$
+
+The eqautions of the update step will simplify to
+
+
+
+$$ \hat x_{t|t} = \hat x_{t|t-1} + P_{t|t-1}C_t^T(C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}) $$
+
+$$ P_{t|t} = P_{t|t-1} - P_{t|t-1}C_t^T (C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1} $$
+
+
+By rearranging the first equation we obtain
+
+$$ \hat x_{t|t} = (I - P_{t|t-1}C_t^T(C_tP_{t|t-1}C_t^T)^{-1}C_t)\hat x_{t|t-1} + P_{t|t-1}C_t^T(C_tP_{t|t-1}C_t^T)^{-1}y_{t} $$
+
+
+
+
+
+By defining \\(D = P_{t\|t-1}\\) and \\(A = C_t^T \\) we get 
+
+$$ \hat x_{t|t} = (I - DA(A^TDA)^{-1}A^T)\hat x_{t|t-1} + DA(A^TDA)^{-1}y_{t}. $$
+
+
+The second term looks very similar to the weighted least squares solution
+
+In the first term we can identify the matrix \\(P = DA(A^TDA)^{-1}A^T\\), which is an orthogonal projection onto A using an inner product defined by matrix \\(D\\). 
+
+
+$$ \hat x_{t|t} = (I - DA(A^TDA)^{-1}A^T)\hat x_{t|t-1} + DA(A^TDA)^{-1}y_t^{\perp}+ DA(A^TDA)^{-1}A^Tx_t^{||}  $$
+
+
+
+## Interpretation of the Kalman gain \\(K_t\\)
+
+The Kalman gain \\(K_t\\) has the form of a weighted regularized pseudo inverse.
+The Kalman gain only appears in the update step. 
+
+$$ \hat x_{t|t} = \hat x_{t|t-1} + K_t z_t $$
+
+If we replace \\(z_t\\) and rearrange the terms we get
+
+
+$$ \hat x_{t|t} = (I - K_tC_t)x_{t|t-1} + K_ty_{t}. $$
+
+
+The new estimate is the sum of the weighted regularized pseudo inverse of \\(y_t\\) and the null space projection of \\(x_{t\|t-1}\\). This can be interpreted as some kind of linear weighting based on the uncertainty of the current state estimate, the uncertainty of the observation and the loss of information, which occurs by observing.
+
