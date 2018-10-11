@@ -7,6 +7,199 @@ excerpt_separator: <!--more-->
 ---
 The concept and the equations of the [Kalman filter](https://en.wikipedia.org/wiki/Kalman_filter) can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using [Bayesian inference](https://en.wikipedia.org/wiki/Bayesian_inference). It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
 <!--more-->
+
+
+
+<script type="text/javascript">
+    function draw_ssm(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 50;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	if (t<T-1) input_ns.push({title: "\\( u_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
+        state_ns.push({title: "\\( x_" + t +" \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:"#FFFFFF"});
+        output_ns.push({title: "\\( y_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:""})
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
+        }
+      }
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    }
+
+    function draw_ssm_ind(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 4;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<T-1) ind+=(t-T+1)
+
+
+      	if (t<T-1) input_ns.push({title: "\\( u_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
+
+      	statefill = (t==T-1) ? "#e3e5feff" :statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+        output_ns.push({title: "\\( y_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
+
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:""})
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
+        }
+      }
+
+
+    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+
+    edges.push({source: bstate_h, target: state_ns[0], dash:"5,5"})
+    edges.push({source: binput_h, target: state_ns[0], dash:"5,5"})
+
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    }
+
+    function draw_ssm_indi(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<2) ind+=(t-2)
+      	if (t>2) ind+="+"+(t-2)
+
+
+      	input_ns.push({title: "\\( u_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
+
+      	statefill = (t==2) ? "#e3e5feff" :statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+        output_ns.push({title: "\\( y_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
+
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:""})
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
+        }
+      }
+
+    estate_h = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    einput_h = {x: input_ns[T-1].x + 2*Math.sqrt(2)*radius, y: input_ns[T-1].y+ 2*Math.sqrt(2)*radius}
+    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+
+
+    edges.push({source: state_ns[T-1], target: estate_h, dash:"5,5"})
+    edges.push({source: bstate_h, target: state_ns[0], dash:"5,5"})
+    edges.push({source: input_ns[T-1], target: einput_h, dash:"5,5"})
+    edges.push({source: binput_h, target: state_ns[0], dash:"5,5"})
+
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    }
+
+	function draw_ssm_obs(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 50;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	if (t<T-1) input_ns.push({title: "\\( u_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
+        state_ns.push({title: "\\( x_" + t +" \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:"#FFFFFF"});
+
+        if (t==0||t==4) output_ns.push({title: "\\( y_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
+        if (t==2) {
+        	output_ns.push({title: "\\( z_" + t + " \\)", type: "prob", x: margin_x + dist_x*(t+0.5) , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
+			output_ns.push({title: "\\( y_" + t + " \\)", type: "prob", x: margin_x + dist_x*(t-0.5) , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
+        }
+        
+
+
+
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
+        }
+      }
+
+      edges.push({source: state_ns[0], target: output_ns[0], dash:""})
+      edges.push({source: state_ns[2], target: output_ns[1], dash:""})
+      edges.push({source: state_ns[2], target: output_ns[2], dash:""})
+      edges.push({source: state_ns[4], target: output_ns[3], dash:""})
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    }
+ </script>
+
 <script src="//d3js.org/d3.v3.js" charset="utf-8"></script>
 
 First of all, let's try to formulate the main idea of Kalman filtering in one sentence:
@@ -354,199 +547,3 @@ MathJax.Hub.Config({
 
 
 
-
-
-<script type="text/javascript">
-    function draw_ssm(svg){
-
-
-      var radius = 30;
-      var dist_x = 120;
-      var dist_y = 120;
-      var margin_x = 50;
-      var margin_y = 50;
-      var markersize = 10;
-
-      var input_ns = [];
-      var state_ns = [];
-      var output_ns = [];
-      var edges = [];
-      var T = 5;
-
-      for (var t = 0; t<T;t++){
-
-
-      	if (t<T-1) input_ns.push({title: "\\( u_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
-        state_ns.push({title: "\\( x_" + t +" \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:"#FFFFFF"});
-        output_ns.push({title: "\\( y_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
-
-
-        edges.push({source: state_ns[t], target: output_ns[t], dash:""})
-        if (t>0) {
-        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
-        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
-        }
-      }
-
-  	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
-    }
-
-    function draw_ssm_ind(svg){
-
-
-      var radius = 30;
-      var dist_x = 120;
-      var dist_y = 120;
-      var margin_x = 100;
-      var margin_y = 50;
-      var markersize = 10;
-
-      var input_ns = [];
-      var state_ns = [];
-      var output_ns = [];
-      var edges = [];
-      var T = 4;
-
-      for (var t = 0; t<T;t++){
-
-
-      	ind = "t"
-
-      	if (t<T-1) ind+=(t-T+1)
-
-
-      	if (t<T-1) input_ns.push({title: "\\( u_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
-
-      	statefill = (t==T-1) ? "#e3e5feff" :statefill = "#FFFFFF";
-        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
-        output_ns.push({title: "\\( y_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
-
-
-
-        edges.push({source: state_ns[t], target: output_ns[t], dash:""})
-        if (t>0) {
-        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
-        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
-        }
-      }
-
-
-    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
-    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
-
-    edges.push({source: bstate_h, target: state_ns[0], dash:"5,5"})
-    edges.push({source: binput_h, target: state_ns[0], dash:"5,5"})
-
-
-  	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
-    }
-
-    function draw_ssm_indi(svg){
-
-
-      var radius = 30;
-      var dist_x = 120;
-      var dist_y = 120;
-      var margin_x = 100;
-      var margin_y = 50;
-      var markersize = 10;
-
-      var input_ns = [];
-      var state_ns = [];
-      var output_ns = [];
-      var edges = [];
-      var T = 5;
-
-      for (var t = 0; t<T;t++){
-
-
-      	ind = "t"
-
-      	if (t<2) ind+=(t-2)
-      	if (t>2) ind+="+"+(t-2)
-
-
-      	input_ns.push({title: "\\( u_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
-
-      	statefill = (t==2) ? "#e3e5feff" :statefill = "#FFFFFF";
-        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
-        output_ns.push({title: "\\( y_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
-
-
-
-        edges.push({source: state_ns[t], target: output_ns[t], dash:""})
-        if (t>0) {
-        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
-        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
-        }
-      }
-
-    estate_h = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
-    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
-    einput_h = {x: input_ns[T-1].x + 2*Math.sqrt(2)*radius, y: input_ns[T-1].y+ 2*Math.sqrt(2)*radius}
-    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
-
-
-    edges.push({source: state_ns[T-1], target: estate_h, dash:"5,5"})
-    edges.push({source: bstate_h, target: state_ns[0], dash:"5,5"})
-    edges.push({source: input_ns[T-1], target: einput_h, dash:"5,5"})
-    edges.push({source: binput_h, target: state_ns[0], dash:"5,5"})
-
-
-  	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
-    }
-
-	function draw_ssm_obs(svg){
-
-
-      var radius = 30;
-      var dist_x = 120;
-      var dist_y = 120;
-      var margin_x = 50;
-      var margin_y = 50;
-      var markersize = 10;
-
-      var input_ns = [];
-      var state_ns = [];
-      var output_ns = [];
-      var edges = [];
-      var T = 5;
-
-      for (var t = 0; t<T;t++){
-
-
-      	if (t<T-1) input_ns.push({title: "\\( u_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
-        state_ns.push({title: "\\( x_" + t +" \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:"#FFFFFF"});
-
-        if (t==0||t==4) output_ns.push({title: "\\( y_" + t + " \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
-        if (t==2) {
-        	output_ns.push({title: "\\( z_" + t + " \\)", type: "prob", x: margin_x + dist_x*(t+0.5) , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
-			output_ns.push({title: "\\( y_" + t + " \\)", type: "prob", x: margin_x + dist_x*(t-0.5) , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
-        }
-        
-
-
-
-        if (t>0) {
-        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
-        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
-        }
-      }
-
-      edges.push({source: state_ns[0], target: output_ns[0], dash:""})
-      edges.push({source: state_ns[2], target: output_ns[1], dash:""})
-      edges.push({source: state_ns[2], target: output_ns[2], dash:""})
-      edges.push({source: state_ns[4], target: output_ns[3], dash:""})
-
-  	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
-    }
-
-
-
-
-
- </script>
