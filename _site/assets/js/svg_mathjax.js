@@ -47,6 +47,7 @@ Svg_MathJax = (function() {
             });
         });
     }
+    
 
     function _install(options) {
         var items = [];
@@ -61,6 +62,7 @@ Svg_MathJax = (function() {
                 mathbucket.appendChild(d);
                 var mathmarkup = m[2].replace(/^\$(.*)\$$/,'\\($1\\)');
                 d.appendChild(document.createTextNode(mathmarkup));
+                d.style.display = "none";
                 t.textContent = '';	
                 items.push([t,d,m[1]]);
             });
