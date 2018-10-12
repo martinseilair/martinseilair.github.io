@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-12T10:22:45+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-12T12:07:32+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
@@ -33,8 +33,11 @@
         }
       }
 
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
     }
 
     function draw_ssm_ind(svg){
@@ -43,7 +46,7 @@
       var radius = 30;
       var dist_x = 120;
       var dist_y = 120;
-      var margin_x = 100;
+      var margin_x = 120;
       var margin_y = 50;
       var markersize = 10;
 
@@ -85,11 +88,14 @@
 
 
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+
+  	var svg_w = margin_x + dist_x*(T-1) + 50;
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
     }
 
     function draw_ssm_indi(svg){
-
 
       var radius = 30;
       var dist_x = 120;
@@ -141,7 +147,10 @@
 
 
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
     }
 
 	function draw_ssm_obs(svg){
@@ -187,7 +196,12 @@
       edges.push({source: state_ns[4], target: output_ns[3], dash:&quot;&quot;})
 
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+
     }
  &lt;/script&gt;
 
@@ -195,7 +209,7 @@
 
 &lt;p&gt;First of all, let’s try to formulate the main idea of Kalman filtering in one sentence:&lt;/p&gt;
 
-&lt;div style=&quot;width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px&quot;&gt;
+&lt;div class=&quot;important_box&quot;&gt;
   &lt;p&gt;The &lt;strong&gt;Kalman filter&lt;/strong&gt; is used to &lt;strong&gt;infer&lt;/strong&gt; the current state of a &lt;strong&gt;linear Gaussian state space model&lt;/strong&gt; given all observations and inputs up to the current timestep and a Gaussian prior distribution of the initial state.&lt;/p&gt;
 &lt;/div&gt;
 
@@ -223,7 +237,7 @@ y_t &amp;= C_tx_t + v_t \end{align} %]]&gt;&lt;/script&gt;
 
 &lt;p&gt;Linear Gaussian state space models can also be described in the language of &lt;a href=&quot;https://en.wikipedia.org/wiki/Graphical_model&quot;&gt;probabilistic graphical models&lt;/a&gt; (or more precisely in the language of &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_network&quot;&gt;Bayesian networks&lt;/a&gt;). The figure below shows such a model up to time \(T = 4\).&lt;/p&gt;
 
-&lt;svg style=&quot;display: block;margin: auto;text-align: center;&quot; onload=&quot;draw_ssm(this);&quot; width=&quot;600&quot; height=&quot;350&quot;&gt;&lt;/svg&gt;
+&lt;svg class=&quot;pgm_centered&quot; onload=&quot;draw_ssm(this);&quot;&gt;&lt;/svg&gt;
 
 &lt;p&gt;Every node represents a random variable and the edges are representing conditional dependencies between the respective nodes. Random variables, that are observed (or given) are shaded in light blue. In our case this is the output \(y_t\) and the input \(u_t\). The state \(x_t\) is not observed (or latent).&lt;/p&gt;
 
@@ -241,19 +255,19 @@ y_t &amp;= C_tx_t + v_t \end{align} %]]&gt;&lt;/script&gt;
   &lt;li&gt;&lt;strong&gt;Filtering&lt;/strong&gt;: What is my belief about the &lt;strong&gt;current state&lt;/strong&gt; \(x_t\) given all observations and inputs?&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;div style=&quot;font-size:150%&quot;&gt; 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ &lt;/div&gt;
+&lt;div class=&quot;big_eq&quot;&gt; 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ &lt;/div&gt;
 
 &lt;ul&gt;
   &lt;li&gt;&lt;strong&gt;Smoothing&lt;/strong&gt;: What is my belief about &lt;strong&gt;all states&lt;/strong&gt; \(x_t, … ,x_0\) given all observations and inputs?&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;div style=&quot;font-size:150%&quot;&gt; $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
+&lt;div class=&quot;big_eq&quot;&gt; $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
 
 &lt;ul&gt;
   &lt;li&gt;&lt;strong&gt;Prediction&lt;/strong&gt;: What is my belief about the &lt;strong&gt;next state&lt;/strong&gt; \(x_{t+1}\) given all observations and inputs?&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;div style=&quot;font-size:150%&quot;&gt; $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
+&lt;div class=&quot;big_eq&quot;&gt; $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
 
 &lt;p&gt;The name Kalman &lt;em&gt;filter&lt;/em&gt; reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(u_0,…,u_{t-1}\).
 Now that we have defined what we are looking for, let’s try to find a way to efficiently calculate it. We will start by finding a recursive method for &lt;em&gt;general&lt;/em&gt; dynamical models defined by the probabilistic graphical model above.&lt;/p&gt;
@@ -267,7 +281,7 @@ To unclutter the notation we will use \(\Box_{n:m}\) for \(\Box_n,…,\Box_m\).&
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t,y_{0:t-1},u_{0:t-1})p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})}.&lt;/script&gt;
 
-&lt;div style=&quot;border-style: solid;border-color:gray;width:100%;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px&quot;&gt;
+&lt;div class=&quot;extra_box&quot;&gt;
   &lt;p&gt;If you are not very familiar with Bayes’ rule this can be quite confusing. There are much more moving parts than in the very simple definition. Nonetheless, there is an intuitive explanation.
 It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\) in the past (every term is conditioned on \(\mathcal{W}\)):&lt;/p&gt;
 
@@ -280,10 +294,10 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})}.&lt;/script&gt;
 
-&lt;div style=&quot;border-style: solid;border-color:gray;width:100%;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px&quot;&gt;
+&lt;div class=&quot;extra_box&quot;&gt;
   &lt;p&gt;This conditional independence property is not obvious as well. When it comes to conditional dependencies, it is always a good idea to look at the graphical model.&lt;/p&gt;
 
-  &lt;svg style=&quot;display: block;margin: auto;text-align: center;&quot; onload=&quot;draw_ssm_ind(this);&quot; width=&quot;500&quot; height=&quot;350&quot;&gt;&lt;/svg&gt;
+  &lt;svg class=&quot;pgm_centered&quot; onload=&quot;draw_ssm_ind(this);&quot;&gt;&lt;/svg&gt;
   &lt;p&gt;In the figure above we notice that the node \(x_t\) is shaded (observed). This node blocks the way of \(y_{0:t-1}\) and  \(u_{0:t-1}\) to \(y_t\). We have proven the conditional independence &lt;em&gt;visually&lt;/em&gt;. You can learn more about conditional independence in probabilistic graphical models in &lt;a href=&quot;https://www.microsoft.com/en-us/research/people/cmbishop/#!prml-book&quot;&gt;Pattern Recognition and Machine Learning&lt;/a&gt; (Chapter 8.2).&lt;/p&gt;
 &lt;/div&gt;
 &lt;p&gt;The denominator is simply the integral of the numerator&lt;/p&gt;
@@ -306,8 +320,8 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 &lt;p&gt;Let’s summarize our results!&lt;/p&gt;
 
-&lt;div style=&quot;width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px&quot;&gt;
-  &lt;p&gt;&lt;span style=&quot;font-family:'Arial Black';&quot;&gt;Bayes filter for state space models&lt;/span&gt;&lt;/p&gt;
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Bayes filter for state space models&lt;/h1&gt;
 
   &lt;p&gt;The recursive formula for the Bayes filter in state space models consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
 
@@ -323,7 +337,7 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 &lt;p&gt;Up to this point, we assumed that we obtain exactly one observation at every timestep. This rather limiting assumption is violated in many real-life scenarios. Multiple or even no observations per timestep are possible. This behavior is exemplified in the probabilistic graphical model below.&lt;/p&gt;
 
-&lt;svg style=&quot;display: block;margin: auto;text-align: center;&quot; onload=&quot;draw_ssm_obs(this);&quot; width=&quot;600&quot; height=&quot;350&quot;&gt;&lt;/svg&gt;
+&lt;svg class=&quot;pgm_centered&quot; onload=&quot;draw_ssm_obs(this);&quot;&gt;&lt;/svg&gt;
 
 &lt;p&gt;Fortunately, handling these cases is very simple. For every observation we make, we calculate the update step with the newest estimate available. Furthermore, it is not necessary that the observations are coming from the same output function (illustrated by the outputs \(y_2\) and \(z_2\) at \(t=2\)). &lt;a href=&quot;https://en.wikipedia.org/wiki/Information_integration&quot;&gt;Information integration/fusion&lt;/a&gt; is very natural in Bayesian inference.&lt;/p&gt;
 
@@ -354,7 +368,7 @@ p(x_t|y_{0:t-1},u_{0:t-1}) &amp;:= \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) 
 The expression \(\hat x_{t|t}\) is called the &lt;em&gt;updated&lt;/em&gt; state estimate and \( P_{t|t}\) the &lt;em&gt;updated&lt;/em&gt; error covariance. Moreover, \(\hat x_{t|t-1}\) is called the &lt;em&gt;predicted&lt;/em&gt; state estimate and \( P_{t|t-1}\) the &lt;em&gt;predicted&lt;/em&gt; error covariance.&lt;/p&gt;
 
 &lt;p&gt;In summary, these are the equations for the Bayes filter in linear Gaussian state space models:&lt;/p&gt;
-&lt;div style=&quot;width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px&quot;&gt;
+&lt;div class=&quot;important_box&quot;&gt;
 
   &lt;p&gt;&lt;strong&gt;Prediction step&lt;/strong&gt;&lt;/p&gt;
 
@@ -424,8 +438,8 @@ The expression \(\hat x_{t|t}\) is called the &lt;em&gt;updated&lt;/em&gt; state
 
 &lt;p&gt;Let’s summarize our results:&lt;/p&gt;
 
-&lt;div style=&quot;width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px&quot;&gt;
-  &lt;p&gt;&lt;span style=&quot;font-family:'Arial Black';&quot;&gt;Bayes filter in linear Gaussian state space models&lt;/span&gt;&lt;/p&gt;
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Bayes filter in linear Gaussian state space models&lt;/h1&gt;
 
   &lt;p&gt;The recursive formula for the Bayes filter in linear Gaussian state space models consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
 
@@ -473,8 +487,8 @@ In the next section, we will split these equations up to finally obtain the form
 
 &lt;p&gt;This leads us to the final equations of the Kalman filter.&lt;/p&gt;
 
-&lt;div style=&quot;width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px&quot;&gt;
-  &lt;p&gt;&lt;span style=&quot;font-family:'Arial Black';&quot;&gt;Equations of the Kalman filter&lt;/span&gt;&lt;/p&gt;
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Equations of the Kalman filter&lt;/h1&gt;
 
   &lt;p&gt;The recursive formula for the Kalman filter consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
 
@@ -513,16 +527,21 @@ The random variable \(z_t\) has a Gaussian distribution with zero mean and varia
 
 &lt;script src=&quot;http://localhost:4000/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
 
-&lt;script type=&quot;text/x-mathjax-config&quot;&gt;
-MathJax.Hub.Config({
-  CommonHTML: { linebreaks: { automatic: true } },
-  &quot;HTML-CSS&quot;: { linebreaks: { automatic: true } },
-         SVG: { linebreaks: { automatic: true } }
-});
-&lt;/script&gt;
-
 &lt;script type=&quot;text/javascript&quot; src=&quot;http://localhost:4000/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
 
 &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/x-mathjax-config&quot;&gt;
+
+var mq = window.matchMedia( &quot;(max-width: 570px)&quot; );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  &quot;HTML-CSS&quot;: { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+&lt;/script&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;new Svg_MathJax().install();&lt;/script&gt;</content><author><name></name></author><summary type="html">The concept and the equations of the Kalman filter can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using Bayesian inference. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.</summary></entry></feed>
