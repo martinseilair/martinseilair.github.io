@@ -332,12 +332,16 @@ table {
 div.important_box {
   width: 100%;
   background-color: #fffbde;
-  padding: 5%;
+  padding: 15px;
   -webkit-box-sizing: border-box;
   /* Safari/Chrome, other WebKit */
   -moz-box-sizing: border-box;
   /* Firefox, other Gecko */
-  box-sizing: border-box; }
+  box-sizing: border-box;
+  margin-bottom: 15px; }
+
+div.important_box :last-child {
+  margin-bottom: 0px !important; }
 
 div.important_box h1 {
   font-family: 'Arial Black';
@@ -345,14 +349,19 @@ div.important_box h1 {
 
 div.extra_box {
   border-style: solid;
+  border-color: #DDDDDD;
   width: 100%;
   max-width: 100%;
-  padding: 5%;
+  padding: 15px;
   -webkit-box-sizing: border-box;
   /* Safari/Chrome, other WebKit */
   -moz-box-sizing: border-box;
   /* Firefox, other Gecko */
-  box-sizing: border-box; }
+  box-sizing: border-box;
+  margin-bottom: 15px; }
+
+div.extra_box :last-child {
+  margin-bottom: 0px !important; }
 
 .big_eq {
   font-size: 150%; }
@@ -365,6 +374,12 @@ div.extra_box {
     max-width: 100%;
     overflow-x: auto  !important;
     overflow-y: auto  !important; }
+
+  div.important_box {
+    padding: 5%; }
+
+  div.extra_box {
+    padding: 5%; }
 
   .MathJax_SVG {
     font-size: 90%  !important; }

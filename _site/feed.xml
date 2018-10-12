@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-12T12:30:12+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-12T15:28:28+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
@@ -479,6 +479,26 @@ In the next section, we will split these equations up to finally obtain the form
   &lt;/li&gt;
 &lt;/ul&gt;
 
+&lt;div class=&quot;extra_box&quot;&gt;
+
+  &lt;p&gt;&lt;strong&gt;What is the meaning of \(z_t\) and \(S_t\)?&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;The denominator of the update step is&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t}|C_t\hat x_{t|t-1},R_t + C_tP_{t|t-1}^TC_t^T)&lt;/script&gt;
+
+  &lt;p&gt;and can be transformed by (Formula 34, Toussaint)&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)&lt;/script&gt;
+
+  &lt;p&gt;to obtain the expression&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).&lt;/script&gt;
+
+  &lt;p&gt;Therefore, the innovation \(z_t\) is the derivation of the expected output and the observed output.
+The random variable \(z_t\) has a Gaussian distribution with zero mean and variance \(S_t\).&lt;/p&gt;
+&lt;/div&gt;
+
 &lt;p&gt;Let’s plug these definitions into the equations of our update step&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t|t} = \hat x_{t|t-1} + \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}(\underbrace{y_{t}-C_t\hat x_{t}}_{z_t})&lt;/script&gt;
@@ -509,21 +529,18 @@ P_{t|t} &amp;= (I - K_tC_t)P_{t|t-1}.
 
 &lt;/div&gt;
 
-&lt;h2 id=&quot;interpreation-of-z_t-and-s_t&quot;&gt;Interpreation of \(z_t\) and \(S_t\)&lt;/h2&gt;
-&lt;p&gt;What is the meaning of \(z_t\) and \(S_t\)? The denominator of the update step is&lt;/p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
 
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t}|C_t\hat x_{t|t-1},R_t + C_tP_{t|t-1}^TC_t^T)&lt;/script&gt;
+&lt;p&gt;This article presented the derivation of the Kalman filter from first principles using Bayesian inference. The goal was to derive the Kalman filter in a clear and straightforward fashion. The steps were designed to be as atomic as possible, in order to be comprehensible for readers, who are not so familiar with the tools we used. Summarized, the derivation was performed in the following four subsequent steps:&lt;/p&gt;
 
-&lt;p&gt;and can be transformed by (Formula 34, Toussaint)&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;We realized, that we have to calculate \( p(x_{t}|y_0,…,y_t,u_0,…,u_{t-1}) \).&lt;/li&gt;
+  &lt;li&gt;Derived the recursive equations of the Bayes filter to efficiently calculate this distribution.&lt;/li&gt;
+  &lt;li&gt;Inserted the corresponding distributions of the linear Gaussian state space model.&lt;/li&gt;
+  &lt;li&gt;Added some “sugar” to obtain the usual equations of the Kalman filter.&lt;/li&gt;
+&lt;/ol&gt;
 
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)&lt;/script&gt;
-
-&lt;p&gt;to&lt;/p&gt;
-
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).&lt;/script&gt;
-
-&lt;p&gt;Therefore, \(z_t\) gives you the derivation of the expected output and the observed output.
-The random variable \(z_t\) has a Gaussian distribution with zero mean and variance \(S_t\).&lt;/p&gt;
+&lt;p&gt;Thank you!&lt;/p&gt;
 
 &lt;script src=&quot;http://localhost:4000/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
 

@@ -492,8 +492,25 @@ In order to obtain the familiar equations of the Kalman filter we have to define
 
 	$$ K_t = P_{t|t-1}C_t^TS_t^{-1}  $$ 
 
+<div class="extra_box" markdown="1">
 
+**What is the meaning of \\(z_t\\) and \\(S_t\\)?**
 
+The denominator of the update step is 
+
+$$ \mathcal{N}(y_{t}|C_t\hat x_{t|t-1},R_t + C_tP_{t|t-1}^TC_t^T) $$
+
+and can be transformed by (Formula 34, Toussaint)
+
+$$ \mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)  $$
+
+to obtain the expression
+
+$$ \mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).  $$
+
+Therefore, the innovation \\(z_t\\) is the derivation of the expected output and the observed output.
+The random variable \\(z_t\\) has a Gaussian distribution with zero mean and variance \\(S_t\\).
+</div>
 
 Let's plug these definitions into the equations of our update step
 
@@ -523,28 +540,19 @@ K_t &= P_{t|t-1}C_t^TS_t^{-1} \\
 P_{t|t} &= (I - K_tC_t)P_{t|t-1}.
 \end{align} $$
 
-
-
-
 </div>
 
+## Summary
 
+This article presented the derivation of the Kalman filter from first principles using Bayesian inference. The goal was to derive the Kalman filter in a clear and straightforward fashion. The steps were designed to be as atomic as possible, in order to be comprehensible for readers, who are not so familiar with the tools we used. Summarized, the derivation was performed in the following four subsequent steps: 
 
-## Interpreation of \\(z_t\\) and \\(S_t\\)
-What is the meaning of \\(z_t\\) and \\(S_t\\)? The denominator of the update step is 
+1. We realized, that we have to calculate \\( p(x_{t}\|y_0,...,y_t,u_0,...,u_{t-1}) \\).
+2. Derived the recursive equations of the Bayes filter to efficiently calculate this distribution.
+3. Inserted the corresponding distributions of the linear Gaussian state space model.
+4. Added some "sugar" to obtain the usual equations of the Kalman filter.
 
-$$ \mathcal{N}(y_{t}|C_t\hat x_{t|t-1},R_t + C_tP_{t|t-1}^TC_t^T) $$
+Thank you!
 
-and can be transformed by (Formula 34, Toussaint)
-
-$$ \mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)  $$
-
-to
-
-$$ \mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).  $$
-
-Therefore, \\(z_t\\) gives you the derivation of the expected output and the observed output.
-The random variable \\(z_t\\) has a Gaussian distribution with zero mean and variance \\(S_t\\).
 
 
 <script src="{{ base.url | prepend: site.url }}/assets/js/d3_graphical_model.js"></script>
