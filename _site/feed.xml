@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-11T23:44:06+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-12T10:22:45+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
@@ -238,13 +238,13 @@ y_t &amp;= C_tx_t + v_t \end{align} %]]&gt;&lt;/script&gt;
 &lt;p&gt;This idea is very general and can be applied to dynamical models quite easily. The most common inference tasks in dynamical models are filtering, smoothing and prediction. These methods differ only in the form of the posterior distribution.&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;strong&gt;Filtering&lt;/strong&gt;: What is my belief about the &lt;strong&gt;last state&lt;/strong&gt; \(x_t\) given all observations and inputs?&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Filtering&lt;/strong&gt;: What is my belief about the &lt;strong&gt;current state&lt;/strong&gt; \(x_t\) given all observations and inputs?&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;div style=&quot;font-size:150%&quot;&gt; 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ &lt;/div&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;strong&gt;Smoothing&lt;/strong&gt;: What is my belief about the &lt;strong&gt;all states&lt;/strong&gt; \(x_t, … ,x_0\) given all observations and inputs?&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Smoothing&lt;/strong&gt;: What is my belief about &lt;strong&gt;all states&lt;/strong&gt; \(x_t, … ,x_0\) given all observations and inputs?&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;div style=&quot;font-size:150%&quot;&gt; $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
@@ -255,7 +255,7 @@ y_t &amp;= C_tx_t + v_t \end{align} %]]&gt;&lt;/script&gt;
 
 &lt;div style=&quot;font-size:150%&quot;&gt; $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
 
-&lt;p&gt;The name Kalman &lt;em&gt;filter&lt;/em&gt; reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(y_0,…,u_{t-1}\).
+&lt;p&gt;The name Kalman &lt;em&gt;filter&lt;/em&gt; reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(u_0,…,u_{t-1}\).
 Now that we have defined what we are looking for, let’s try to find a way to efficiently calculate it. We will start by finding a recursive method for &lt;em&gt;general&lt;/em&gt; dynamical models defined by the probabilistic graphical model above.&lt;/p&gt;
 
 &lt;h2 id=&quot;bayes-filter-for-state-space-models&quot;&gt;Bayes filter for state space models&lt;/h2&gt;
@@ -290,7 +290,7 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y_t|y_{0:t-1},u_{0:t-1}) = \int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) dx_t .&lt;/script&gt;
 
-&lt;p&gt;Great! Now we have the first step of our approach. But now we obtained the new expression \(p(x_t|y_{0:t-1},u_{0:t-1})\) that we have to calculate as well. Using marginalization we can express it as&lt;/p&gt;
+&lt;p&gt;Great! We successfully expressed our equation in simpler terms. In return, we obtained the new expression \(p(x_t|y_{0:t-1},u_{0:t-1})\), which we have to calculate as well. Using marginalization we can express it as&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t-1},u_{0:t-1}) = \int_{x_{t-1}} p(x_t,x_{t-1}|y_{0:t-1},u_{0:t-1}) dx_{t-1}.&lt;/script&gt;
 
@@ -416,7 +416,7 @@ The expression \(\hat x_{t|t}\) is called the &lt;em&gt;updated&lt;/em&gt; state
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
 
-&lt;p&gt;If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), that was cancelled out. The denominator can be simplified with the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, Toussaint)&lt;/p&gt;
+&lt;p&gt;If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), which was canceled out. The denominator can be simplified with the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, Toussaint)&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{x_{t}}\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|C_t\hat x_{t|t-1}, R_t + C_tP_{t|t-1}C_t^T ).&lt;/script&gt;
 
@@ -441,7 +441,7 @@ P_{t|t} &amp;= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|
 
 &lt;/div&gt;
 &lt;p&gt;That’s it! We derived the equations of the Bayes filter in linear Gaussian state space models, which is nothing else but the good old Kalman filter.
-In the next section, we will split up these equations to finally obtain the formulation normally used for the Kalman filter.&lt;/p&gt;
+In the next section, we will split these equations up to finally obtain the formulation normally used for the Kalman filter.&lt;/p&gt;
 
 &lt;h2 id=&quot;kalman-filter&quot;&gt;Kalman filter&lt;/h2&gt;
 

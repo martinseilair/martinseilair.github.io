@@ -249,11 +249,11 @@ with likelihood \\(p(\mathcal{D}\|x)\\) and evidence \\(p(\mathcal{D})\\).
 
 This idea is very general and can be applied to dynamical models quite easily. The most common inference tasks in dynamical models are filtering, smoothing and prediction. These methods differ only in the form of the posterior distribution.
 
-* **Filtering**: What is my belief about the **last state** \\(x_t\\) given all observations and inputs?
+* **Filtering**: What is my belief about the **current state** \\(x_t\\) given all observations and inputs?
 
 <div style="font-size:150%"> 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ </div>
 
-* **Smoothing**: What is my belief about the **all states** \\(x_t, ... ,x_0\\) given all observations and inputs?
+* **Smoothing**: What is my belief about **all states** \\(x_t, ... ,x_0\\) given all observations and inputs?
 
 <div style="font-size:150%"> $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
 
@@ -261,7 +261,7 @@ This idea is very general and can be applied to dynamical models quite easily. T
 
 <div style="font-size:150%"> $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
 
-The name Kalman *filter* reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \\(x_t\\) based on all recent observations \\(y_0,...,y_t\\) and inputs \\(y_0,...,u_{t-1}\\).
+The name Kalman *filter* reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \\(x_t\\) based on all recent observations \\(y_0,...,y_t\\) and inputs \\(u_0,...,u_{t-1}\\).
 Now that we have defined what we are looking for, let's try to find a way to efficiently calculate it. We will start by finding a recursive method for *general* dynamical models defined by the probabilistic graphical model above.
 
 ## Bayes filter for state space models
@@ -296,7 +296,7 @@ The denominator is simply the integral of the numerator
 
 $$ p(y_t|y_{0:t-1},u_{0:t-1}) = \int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) dx_t .$$
 
-Great! Now we have the first step of our approach. But now we obtained the new expression \\(p(x_t\|y_{0:t-1},u_{0:t-1})\\) that we have to calculate as well. Using marginalization we can express it as 
+Great! We successfully expressed our equation in simpler terms. In return, we obtained the new expression \\(p(x_t\|y_{0:t-1},u_{0:t-1})\\), which we have to calculate as well. Using marginalization we can express it as 
 
 $$ p(x_t|y_{0:t-1},u_{0:t-1}) = \int_{x_{t-1}} p(x_t,x_{t-1}|y_{0:t-1},u_{0:t-1}) dx_{t-1}. $$ 
 
@@ -433,7 +433,7 @@ If we look closely at the final expression, we see that \\(p(y)\\) is canceling 
 
 $$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
 
-If our reasoning is correct the denominator should be equal to \\(\mathcal{N}(y_{t}\|C_t\hat x_{t\|t},R_t + C_tP_{t\|t-1}C_t^T)\\), that was cancelled out. The denominator can be simplified with the *propagation* formula (Formula 37, Toussaint)
+If our reasoning is correct the denominator should be equal to \\(\mathcal{N}(y_{t}\|C_t\hat x_{t\|t},R_t + C_tP_{t\|t-1}C_t^T)\\), which was canceled out. The denominator can be simplified with the *propagation* formula (Formula 37, Toussaint)
 
 $$ \int_{x_{t}}\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|C_t\hat x_{t|t-1}, R_t + C_tP_{t|t-1}C_t^T ).$$
 
@@ -459,7 +459,7 @@ P_{t|t} &= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}
 
 </div>
 That's it! We derived the equations of the Bayes filter in linear Gaussian state space models, which is nothing else but the good old Kalman filter.
-In the next section, we will split up these equations to finally obtain the formulation normally used for the Kalman filter.
+In the next section, we will split these equations up to finally obtain the formulation normally used for the Kalman filter.
 
 
 ## Kalman filter

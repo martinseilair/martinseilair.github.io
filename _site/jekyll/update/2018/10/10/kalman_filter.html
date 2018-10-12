@@ -274,13 +274,13 @@ y_t &= C_tx_t + v_t \end{align} %]]></script>
 <p>This idea is very general and can be applied to dynamical models quite easily. The most common inference tasks in dynamical models are filtering, smoothing and prediction. These methods differ only in the form of the posterior distribution.</p>
 
 <ul>
-  <li><strong>Filtering</strong>: What is my belief about the <strong>last state</strong> \(x_t\) given all observations and inputs?</li>
+  <li><strong>Filtering</strong>: What is my belief about the <strong>current state</strong> \(x_t\) given all observations and inputs?</li>
 </ul>
 
 <div style="font-size:150%"> 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ </div>
 
 <ul>
-  <li><strong>Smoothing</strong>: What is my belief about the <strong>all states</strong> \(x_t, … ,x_0\) given all observations and inputs?</li>
+  <li><strong>Smoothing</strong>: What is my belief about <strong>all states</strong> \(x_t, … ,x_0\) given all observations and inputs?</li>
 </ul>
 
 <div style="font-size:150%"> $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
@@ -291,7 +291,7 @@ y_t &= C_tx_t + v_t \end{align} %]]></script>
 
 <div style="font-size:150%"> $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
 
-<p>The name Kalman <em>filter</em> reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(y_0,…,u_{t-1}\).
+<p>The name Kalman <em>filter</em> reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(u_0,…,u_{t-1}\).
 Now that we have defined what we are looking for, let’s try to find a way to efficiently calculate it. We will start by finding a recursive method for <em>general</em> dynamical models defined by the probabilistic graphical model above.</p>
 
 <h2 id="bayes-filter-for-state-space-models">Bayes filter for state space models</h2>
@@ -326,7 +326,7 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 <script type="math/tex; mode=display">p(y_t|y_{0:t-1},u_{0:t-1}) = \int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) dx_t .</script>
 
-<p>Great! Now we have the first step of our approach. But now we obtained the new expression \(p(x_t|y_{0:t-1},u_{0:t-1})\) that we have to calculate as well. Using marginalization we can express it as</p>
+<p>Great! We successfully expressed our equation in simpler terms. In return, we obtained the new expression \(p(x_t|y_{0:t-1},u_{0:t-1})\), which we have to calculate as well. Using marginalization we can express it as</p>
 
 <script type="math/tex; mode=display">p(x_t|y_{0:t-1},u_{0:t-1}) = \int_{x_{t-1}} p(x_t,x_{t-1}|y_{0:t-1},u_{0:t-1}) dx_{t-1}.</script>
 
@@ -452,7 +452,7 @@ The expression \(\hat x_{t|t}\) is called the <em>updated</em> state estimate an
 
 <script type="math/tex; mode=display">\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).</script>
 
-<p>If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), that was cancelled out. The denominator can be simplified with the <em>propagation</em> formula (Formula 37, Toussaint)</p>
+<p>If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), which was canceled out. The denominator can be simplified with the <em>propagation</em> formula (Formula 37, Toussaint)</p>
 
 <script type="math/tex; mode=display">\int_{x_{t}}\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|C_t\hat x_{t|t-1}, R_t + C_tP_{t|t-1}C_t^T ).</script>
 
@@ -477,7 +477,7 @@ P_{t|t} &= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}
 
 </div>
 <p>That’s it! We derived the equations of the Bayes filter in linear Gaussian state space models, which is nothing else but the good old Kalman filter.
-In the next section, we will split up these equations to finally obtain the formulation normally used for the Kalman filter.</p>
+In the next section, we will split these equations up to finally obtain the formulation normally used for the Kalman filter.</p>
 
 <h2 id="kalman-filter">Kalman filter</h2>
 
