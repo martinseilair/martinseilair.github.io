@@ -551,7 +551,6 @@ This article presented the derivation of the Kalman filter from first principles
 3. Inserted the corresponding distributions of the linear Gaussian state space model.
 4. Added some "sugar" to obtain the usual equations of the Kalman filter.
 
-Thank you!
 
 
 
