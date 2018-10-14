@@ -3,8 +3,9 @@ This script is based on the directed-graph-creator by Colorado Reed:
 https://bl.ocks.org/cjrd/6863459
 */
 
-function create_graph(svg, nodes, edges, radius,markersize){
+function create_graph(svg, nodes, edges, radius, markersize, svg_w, svg_h){
   var defs = svg.append('svg:defs');
+  svg.attr("viewBox","0 0 " + svg_w + " " + svg_h);
   defs.append('svg:marker')
     .attr('id', 'end-arrow')
     .attr('viewBox', '0 -5 10 10')
@@ -52,4 +53,6 @@ function create_graph(svg, nodes, edges, radius,markersize){
         .text(d.title);
 
   });
+
+
 };

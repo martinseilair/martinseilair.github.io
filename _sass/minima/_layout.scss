@@ -207,3 +207,84 @@
     }
   }
 }
+
+
+
+div.important_box{
+  width:100%;
+  background-color:#fffbde;
+  padding: 15px;
+  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+  box-sizing: border-box;
+  margin-bottom: 15px;
+}
+
+div.important_box :last-child {
+  margin-bottom: 0px !important;
+}
+
+
+div.important_box h1{
+  font-family:'Arial Black';
+  font-size: 100%;
+}
+
+
+div.extra_box{
+  border-style: solid;
+  border-color:#DDDDDD;
+  width:100%;
+  max-width:100%;
+  padding: 15px;
+  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+  box-sizing: border-box;
+  margin-bottom: 15px;
+}
+
+div.extra_box :last-child {
+  margin-bottom: 0px !important;
+}
+
+  .big_eq {
+    font-size:150%
+  }
+
+
+@include media-query($on-palm) {
+  .MathJax_Display  {
+      font-size: 90%  !important;
+  }
+
+  .MathJax_SVG_Display  {
+      max-width:100%;
+      overflow-x: auto  !important; 
+      overflow-y: auto  !important;
+  }
+
+div.important_box{
+  padding: 5%;
+}
+
+div.extra_box{
+  padding: 5%;
+}
+
+  .MathJax_SVG  {
+      font-size: 90%  !important;
+  }
+
+  .big_eq {
+    font-size:110%
+  }
+
+}
+
+
+svg.pgm_centered {
+  display: block;
+  margin: auto;
+  text-align: center;
+  max-width: 100%;
+}

@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"The concept and the equations of the Kalman filter can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using Bayesian inference. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html","headline":"Derivation of the Kalman filter","dateModified":"2018-10-10T19:35:07+09:00","datePublished":"2018-10-10T19:35:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<link rel="stylesheet" href="/assets/main.css?1539325940527672303"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
@@ -69,8 +69,11 @@
         }
       }
 
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
     }
 
     function draw_ssm_ind(svg){
@@ -79,7 +82,7 @@
       var radius = 30;
       var dist_x = 120;
       var dist_y = 120;
-      var margin_x = 100;
+      var margin_x = 120;
       var margin_y = 50;
       var markersize = 10;
 
@@ -121,11 +124,14 @@
 
 
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+
+  	var svg_w = margin_x + dist_x*(T-1) + 50;
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
     }
 
     function draw_ssm_indi(svg){
-
 
       var radius = 30;
       var dist_x = 120;
@@ -177,7 +183,10 @@
 
 
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
     }
 
 	function draw_ssm_obs(svg){
@@ -223,7 +232,12 @@
       edges.push({source: state_ns[4], target: output_ns[3], dash:""})
 
   	nodes = input_ns.concat(state_ns).concat(output_ns);
-    create_graph(d3.select(svg), nodes, edges, radius, markersize);
+
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+
     }
  </script>
 
@@ -231,7 +245,7 @@
 
 <p>First of all, let’s try to formulate the main idea of Kalman filtering in one sentence:</p>
 
-<div style="width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px">
+<div class="important_box">
   <p>The <strong>Kalman filter</strong> is used to <strong>infer</strong> the current state of a <strong>linear Gaussian state space model</strong> given all observations and inputs up to the current timestep and a Gaussian prior distribution of the initial state.</p>
 </div>
 
@@ -259,7 +273,7 @@ y_t &= C_tx_t + v_t \end{align} %]]></script>
 
 <p>Linear Gaussian state space models can also be described in the language of <a href="https://en.wikipedia.org/wiki/Graphical_model">probabilistic graphical models</a> (or more precisely in the language of <a href="https://en.wikipedia.org/wiki/Bayesian_network">Bayesian networks</a>). The figure below shows such a model up to time \(T = 4\).</p>
 
-<svg style="display: block;margin: auto;text-align: center;" onload="draw_ssm(this);" width="600" height="350"></svg>
+<svg class="pgm_centered" onload="draw_ssm(this);"></svg>
 
 <p>Every node represents a random variable and the edges are representing conditional dependencies between the respective nodes. Random variables, that are observed (or given) are shaded in light blue. In our case this is the output \(y_t\) and the input \(u_t\). The state \(x_t\) is not observed (or latent).</p>
 
@@ -274,24 +288,24 @@ y_t &= C_tx_t + v_t \end{align} %]]></script>
 <p>This idea is very general and can be applied to dynamical models quite easily. The most common inference tasks in dynamical models are filtering, smoothing and prediction. These methods differ only in the form of the posterior distribution.</p>
 
 <ul>
-  <li><strong>Filtering</strong>: What is my belief about the <strong>last state</strong> \(x_t\) given all observations and inputs?</li>
+  <li><strong>Filtering</strong>: What is my belief about the <strong>current state</strong> \(x_t\) given all observations and inputs?</li>
 </ul>
 
-<div style="font-size:150%"> 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ </div>
+<div class="big_eq"> 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ </div>
 
 <ul>
-  <li><strong>Smoothing</strong>: What is my belief about the <strong>all states</strong> \(x_t, … ,x_0\) given all observations and inputs?</li>
+  <li><strong>Smoothing</strong>: What is my belief about <strong>all states</strong> \(x_t, … ,x_0\) given all observations and inputs?</li>
 </ul>
 
-<div style="font-size:150%"> $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
+<div class="big_eq"> $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
 
 <ul>
   <li><strong>Prediction</strong>: What is my belief about the <strong>next state</strong> \(x_{t+1}\) given all observations and inputs?</li>
 </ul>
 
-<div style="font-size:150%"> $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
+<div class="big_eq"> $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ </div>
 
-<p>The name Kalman <em>filter</em> reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(y_0,…,u_{t-1}\).
+<p>The name Kalman <em>filter</em> reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(u_0,…,u_{t-1}\).
 Now that we have defined what we are looking for, let’s try to find a way to efficiently calculate it. We will start by finding a recursive method for <em>general</em> dynamical models defined by the probabilistic graphical model above.</p>
 
 <h2 id="bayes-filter-for-state-space-models">Bayes filter for state space models</h2>
@@ -303,7 +317,7 @@ To unclutter the notation we will use \(\Box_{n:m}\) for \(\Box_n,…,\Box_m\).<
 
 <script type="math/tex; mode=display">p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t,y_{0:t-1},u_{0:t-1})p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})}.</script>
 
-<div style="border-style: solid;border-color:gray;width:100%;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px">
+<div class="extra_box">
   <p>If you are not very familiar with Bayes’ rule this can be quite confusing. There are much more moving parts than in the very simple definition. Nonetheless, there is an intuitive explanation.
 It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\) in the past (every term is conditioned on \(\mathcal{W}\)):</p>
 
@@ -316,17 +330,17 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 <script type="math/tex; mode=display">p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})}.</script>
 
-<div style="border-style: solid;border-color:gray;width:100%;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px">
+<div class="extra_box">
   <p>This conditional independence property is not obvious as well. When it comes to conditional dependencies, it is always a good idea to look at the graphical model.</p>
 
-  <svg style="display: block;margin: auto;text-align: center;" onload="draw_ssm_ind(this);" width="500" height="350"></svg>
+  <svg class="pgm_centered" onload="draw_ssm_ind(this);"></svg>
   <p>In the figure above we notice that the node \(x_t\) is shaded (observed). This node blocks the way of \(y_{0:t-1}\) and  \(u_{0:t-1}\) to \(y_t\). We have proven the conditional independence <em>visually</em>. You can learn more about conditional independence in probabilistic graphical models in <a href="https://www.microsoft.com/en-us/research/people/cmbishop/#!prml-book">Pattern Recognition and Machine Learning</a> (Chapter 8.2).</p>
 </div>
 <p>The denominator is simply the integral of the numerator</p>
 
 <script type="math/tex; mode=display">p(y_t|y_{0:t-1},u_{0:t-1}) = \int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) dx_t .</script>
 
-<p>Great! Now we have the first step of our approach. But now we obtained the new expression \(p(x_t|y_{0:t-1},u_{0:t-1})\) that we have to calculate as well. Using marginalization we can express it as</p>
+<p>Great! We successfully expressed our equation in simpler terms. In return, we obtained the new expression \(p(x_t|y_{0:t-1},u_{0:t-1})\), which we have to calculate as well. Using marginalization we can express it as</p>
 
 <script type="math/tex; mode=display">p(x_t|y_{0:t-1},u_{0:t-1}) = \int_{x_{t-1}} p(x_t,x_{t-1}|y_{0:t-1},u_{0:t-1}) dx_{t-1}.</script>
 
@@ -342,8 +356,8 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 <p>Let’s summarize our results!</p>
 
-<div style="width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px">
-  <p><span style="font-family:'Arial Black';">Bayes filter for state space models</span></p>
+<div class="important_box">
+  <h1>Bayes filter for state space models</h1>
 
   <p>The recursive formula for the Bayes filter in state space models consists of the <strong>prediction step</strong></p>
 
@@ -359,7 +373,7 @@ It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\
 
 <p>Up to this point, we assumed that we obtain exactly one observation at every timestep. This rather limiting assumption is violated in many real-life scenarios. Multiple or even no observations per timestep are possible. This behavior is exemplified in the probabilistic graphical model below.</p>
 
-<svg style="display: block;margin: auto;text-align: center;" onload="draw_ssm_obs(this);" width="600" height="350"></svg>
+<svg class="pgm_centered" onload="draw_ssm_obs(this);"></svg>
 
 <p>Fortunately, handling these cases is very simple. For every observation we make, we calculate the update step with the newest estimate available. Furthermore, it is not necessary that the observations are coming from the same output function (illustrated by the outputs \(y_2\) and \(z_2\) at \(t=2\)). <a href="https://en.wikipedia.org/wiki/Information_integration">Information integration/fusion</a> is very natural in Bayesian inference.</p>
 
@@ -390,7 +404,7 @@ p(x_t|y_{0:t-1},u_{0:t-1}) &:= \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) .
 The expression \(\hat x_{t|t}\) is called the <em>updated</em> state estimate and \( P_{t|t}\) the <em>updated</em> error covariance. Moreover, \(\hat x_{t|t-1}\) is called the <em>predicted</em> state estimate and \( P_{t|t-1}\) the <em>predicted</em> error covariance.</p>
 
 <p>In summary, these are the equations for the Bayes filter in linear Gaussian state space models:</p>
-<div style="width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px">
+<div class="important_box">
 
   <p><strong>Prediction step</strong></p>
 
@@ -452,7 +466,7 @@ The expression \(\hat x_{t|t}\) is called the <em>updated</em> state estimate an
 
 <script type="math/tex; mode=display">\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).</script>
 
-<p>If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), that was cancelled out. The denominator can be simplified with the <em>propagation</em> formula (Formula 37, Toussaint)</p>
+<p>If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), which was canceled out. The denominator can be simplified with the <em>propagation</em> formula (Formula 37, Toussaint)</p>
 
 <script type="math/tex; mode=display">\int_{x_{t}}\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|C_t\hat x_{t|t-1}, R_t + C_tP_{t|t-1}C_t^T ).</script>
 
@@ -460,8 +474,8 @@ The expression \(\hat x_{t|t}\) is called the <em>updated</em> state estimate an
 
 <p>Let’s summarize our results:</p>
 
-<div style="width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px">
-  <p><span style="font-family:'Arial Black';">Bayes filter in linear Gaussian state space models</span></p>
+<div class="important_box">
+  <h1>Bayes filter in linear Gaussian state space models</h1>
 
   <p>The recursive formula for the Bayes filter in linear Gaussian state space models consists of the <strong>prediction step</strong></p>
 
@@ -477,7 +491,7 @@ P_{t|t} &= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}
 
 </div>
 <p>That’s it! We derived the equations of the Bayes filter in linear Gaussian state space models, which is nothing else but the good old Kalman filter.
-In the next section, we will split up these equations to finally obtain the formulation normally used for the Kalman filter.</p>
+In the next section, we will split these equations up to finally obtain the formulation normally used for the Kalman filter.</p>
 
 <h2 id="kalman-filter">Kalman filter</h2>
 
@@ -501,6 +515,26 @@ In the next section, we will split up these equations to finally obtain the form
   </li>
 </ul>
 
+<div class="extra_box">
+
+  <p><strong>What is the meaning of \(z_t\) and \(S_t\)?</strong></p>
+
+  <p>The denominator of the update step is</p>
+
+  <script type="math/tex; mode=display">\mathcal{N}(y_{t}|C_t\hat x_{t|t-1},R_t + C_tP_{t|t-1}^TC_t^T)</script>
+
+  <p>and can be transformed by (Formula 34, Toussaint)</p>
+
+  <script type="math/tex; mode=display">\mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)</script>
+
+  <p>to obtain the expression</p>
+
+  <script type="math/tex; mode=display">\mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).</script>
+
+  <p>Therefore, the innovation \(z_t\) is the derivation of the expected output and the observed output.
+The random variable \(z_t\) has a Gaussian distribution with zero mean and variance \(S_t\).</p>
+</div>
+
 <p>Let’s plug these definitions into the equations of our update step</p>
 
 <script type="math/tex; mode=display">\hat x_{t|t} = \hat x_{t|t-1} + \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}(\underbrace{y_{t}-C_t\hat x_{t}}_{z_t})</script>
@@ -509,8 +543,8 @@ In the next section, we will split up these equations to finally obtain the form
 
 <p>This leads us to the final equations of the Kalman filter.</p>
 
-<div style="width:100%;background-color:#fffbde;padding-top: 15px;padding-bottom: 1px;padding-left: 15px;padding-right: 15px;margin-bottom:14px">
-  <p><span style="font-family:'Arial Black';">Equations of the Kalman filter</span></p>
+<div class="important_box">
+  <h1>Equations of the Kalman filter</h1>
 
   <p>The recursive formula for the Kalman filter consists of the <strong>prediction step</strong></p>
 
@@ -531,35 +565,35 @@ P_{t|t} &= (I - K_tC_t)P_{t|t-1}.
 
 </div>
 
-<h2 id="interpreation-of-z_t-and-s_t">Interpreation of \(z_t\) and \(S_t\)</h2>
-<p>What is the meaning of \(z_t\) and \(S_t\)? The denominator of the update step is</p>
+<h2 id="summary">Summary</h2>
 
-<script type="math/tex; mode=display">\mathcal{N}(y_{t}|C_t\hat x_{t|t-1},R_t + C_tP_{t|t-1}^TC_t^T)</script>
+<p>This article presented the derivation of the Kalman filter from first principles using Bayesian inference. The goal was to derive the Kalman filter in a clear and straightforward fashion. The steps were designed to be as atomic as possible, in order to be comprehensible for readers, who are not so familiar with the tools we used. Summarized, the derivation was performed in the following four subsequent steps:</p>
 
-<p>and can be transformed by (Formula 34, Toussaint)</p>
-
-<script type="math/tex; mode=display">\mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)</script>
-
-<p>to</p>
-
-<script type="math/tex; mode=display">\mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).</script>
-
-<p>Therefore, \(z_t\) gives you the derivation of the expected output and the observed output.
-The random variable \(z_t\) has a Gaussian distribution with zero mean and variance \(S_t\).</p>
+<ol>
+  <li>We realized, that we have to calculate \( p(x_{t}|y_0,…,y_t,u_0,…,u_{t-1}) \).</li>
+  <li>Derived the recursive equations of the Bayes filter to efficiently calculate this distribution.</li>
+  <li>Inserted the corresponding distributions of the linear Gaussian state space model.</li>
+  <li>Added some “sugar” to obtain the usual equations of the Kalman filter.</li>
+</ol>
 
 <script src="http://localhost:4000/assets/js/d3_graphical_model.js"></script>
-
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  CommonHTML: { linebreaks: { automatic: true } },
-  "HTML-CSS": { linebreaks: { automatic: true } },
-         SVG: { linebreaks: { automatic: true } }
-});
-</script>
 
 <script type="text/javascript" src="http://localhost:4000/assets/js/svg_mathjax.js"></script>
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+
+<script type="text/x-mathjax-config">
+
+var mq = window.matchMedia( "(max-width: 570px)" );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  "HTML-CSS": { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+</script>
 
 <script type="text/javascript">new Svg_MathJax().install();</script>
 
