@@ -479,8 +479,7 @@ $$
 </div><div class="tab-invisible">
 $$
 \begin{align*}
-\left. \nabla_{\theta'}D_\textrm{KL}(\theta||\theta') \right|_{\theta' = \theta} =&   - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta)\right]
-\end{align*} \\
+\left. \nabla_{\theta'}D_\textrm{KL}(\theta||\theta') \right|_{\theta' = \theta} =&   - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta)\right] \\
 =& \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta) dx \\
 =& \int \limits_{-\infty}^{\infty} \nabla_{\theta} p(x|\theta) dx \\
 =&  \nabla_{\theta}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
