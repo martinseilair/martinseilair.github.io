@@ -552,6 +552,18 @@ D_\textrm{KL}(\theta||\theta') =& -\frac{1}{2} (\theta' - \theta)^T\mathbb{E}_{p
 $$
 </div><div class="tab-bar" ><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
 
+## Cross entropy
+
+
+The cross entropy is defined as 
+
+$$ H(\theta,\theta') = -\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta') dx . $$
+
+The cross entropy and the Kullback-Leibler differ only by the constant entropy \\(H(\theta\\). Therefore, the linear and quadratic terms of those are the same.
+
+
+
+
 ## Fisher Information
 # The fisher definition can be defined as ...
 
@@ -577,7 +589,7 @@ $$
 $$ 
 \begin{align*}
 \mathcal{I(\theta)} &=  \text{Var}\left(\nabla_{\theta'} \log p(x|\theta')\right) \\
-&=  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
+&=  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
 \end{align*} 
  $$
 </div><div class="tab-bar" ><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
@@ -625,18 +637,18 @@ $$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x
 <div class="tab-container scalar-vector"><div class="tab-visible">
 $$
 \begin{align*}
- \left[\mathcal{I(\theta)}\right]_{ij} =&\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta)}{\partial \theta_i\partial \theta_j} \right|_{\theta = \theta}\\
+ \left[\mathcal{I(\theta)}\right]_{ij} =&\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta_i\partial \theta_j} \right|_{\theta' = \theta}\\
  =&  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right] \\
-=& - \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j}\right] \\
-=&- \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] +    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]\\
+=& - \mathbb{E}_{p(x|\theta)}\left[-\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j}\right] \\
+=& \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] -    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]\\
 \end{align*}$$
 </div><div class="tab-invisible">
 $$
 \begin{align*}
 \mathcal{I(\theta)} =&\left. \nabla^2_{\theta}D_\textrm{KL}(\theta||\theta) \right|_{\theta = \theta}\\
  =&  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
- =& - \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T +    \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right] \\
-=&- \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] +    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]\\
+ =& - \mathbb{E}_{p(x|\theta)}\left[-\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T +    \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right] \\
+=& \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] -    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]\\
 \end{align*}$$
 </div><div class="tab-bar" ><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
 
@@ -671,7 +683,26 @@ $$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{
 $$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
 </div><div class="tab-bar" ><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
 
+# ... curvature of the cross entropy
 
+Cross entropy and Kullback-Leibler divergence only differ by constant additive term. Therefore, curvature has to be identical.
+
+# ... expected negative curvature of log-likelihood
+
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+ \left[\mathcal{I(\theta)}\right]_{ij}  =&  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right] \\
+\end{align*}$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\mathcal{I(\theta)} =&  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
+\end{align*}$$
+</div><div class="tab-bar" ><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+See _curvature of the KL-divergence_.
 
 # ... expected value of the observed information
 

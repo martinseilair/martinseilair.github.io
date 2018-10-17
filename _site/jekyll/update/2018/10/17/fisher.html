@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"This article is a brief treatment of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just math.","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/17/fisher.html","headline":"The Score-Fisher-Information-KL connection","dateModified":"2018-10-17T18:04:07+09:00","datePublished":"2018-10-17T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/17/fisher.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1539768683403724385"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<link rel="stylesheet" href="/assets/main.css?1539781867582180596"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
@@ -533,6 +533,14 @@ D_\textrm{KL}(\theta||\theta') =&amp; -\frac{1}{2} (\theta' - \theta)^T\mathbb{E
 $$
 </div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
 
+<h2 id="cross-entropy">Cross entropy</h2>
+
+<p>The cross entropy is defined as</p>
+
+<script type="math/tex; mode=display">H(\theta,\theta') = -\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta') dx .</script>
+
+<p>The cross entropy and the Kullback-Leibler differ only by the constant entropy \(H(\theta\). Therefore, the linear and quadratic terms of those are the same.</p>
+
 <h2 id="fisher-information">Fisher Information</h2>
 <h1 id="the-fisher-definition-can-be-defined-as-">The fisher definition can be defined as …</h1>
 
@@ -557,7 +565,7 @@ $$
 $$ 
 \begin{align*}
 \mathcal{I(\theta)} &amp;=  \text{Var}\left(\nabla_{\theta'} \log p(x|\theta')\right) \\
-&amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
+&amp;=  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
 \end{align*} 
  $$
 </div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
@@ -597,18 +605,18 @@ $$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x
 <div class="tab-container scalar-vector"><div class="tab-visible">
 $$
 \begin{align*}
- \left[\mathcal{I(\theta)}\right]_{ij} =&amp;\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta)}{\partial \theta_i\partial \theta_j} \right|_{\theta = \theta}\\
+ \left[\mathcal{I(\theta)}\right]_{ij} =&amp;\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta_i\partial \theta_j} \right|_{\theta' = \theta}\\
  =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right] \\
-=&amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j}\right] \\
-=&amp;- \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] +    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]\\
+=&amp; - \mathbb{E}_{p(x|\theta)}\left[-\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j}\right] \\
+=&amp; \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] -    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]\\
 \end{align*}$$
 </div><div class="tab-invisible">
 $$
 \begin{align*}
 \mathcal{I(\theta)} =&amp;\left. \nabla^2_{\theta}D_\textrm{KL}(\theta||\theta) \right|_{\theta = \theta}\\
  =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
- =&amp; - \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T +    \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right] \\
-=&amp;- \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] +    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]\\
+ =&amp; - \mathbb{E}_{p(x|\theta)}\left[-\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T +    \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right] \\
+=&amp; \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] -    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]\\
 \end{align*}$$
 </div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
 
@@ -642,6 +650,26 @@ $$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{
 </div><div class="tab-invisible">
 $$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
 </div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h1 id="-curvature-of-the-cross-entropy">… curvature of the cross entropy</h1>
+
+<p>Cross entropy and Kullback-Leibler divergence only differ by constant additive term. Therefore, curvature has to be identical.</p>
+
+<h1 id="-expected-negative-curvature-of-log-likelihood">… expected negative curvature of log-likelihood</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+ \left[\mathcal{I(\theta)}\right]_{ij}  =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right] \\
+\end{align*}$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\mathcal{I(\theta)} =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>See <em>curvature of the KL-divergence</em>.</p>
 
 <h1 id="-expected-value-of-the-observed-information">… expected value of the observed information</h1>
 
