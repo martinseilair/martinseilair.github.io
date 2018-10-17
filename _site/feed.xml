@@ -1,0 +1,1188 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-17T18:21:11+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">The Score-Fisher-Information-KL confusion</title><link href="http://localhost:4000/jekyll/update/2018/10/17/fisher.html" rel="alternate" type="text/html" title="The Score-Fisher-Information-KL confusion" /><published>2018-10-17T18:04:07+09:00</published><updated>2018-10-17T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/17/fisher</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/17/fisher.html">&lt;p&gt;This article is a brief treatment of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just math.
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_SVG&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
+
+&lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+function getPosition(el) {
+  var xPos = 0;
+  var yPos = 0;
+ 
+  while (el) {
+    if (el.tagName == &quot;BODY&quot;) {
+      // deal with browser quirks with body/window/document and page scroll
+      var xScroll = el.scrollLeft || document.documentElement.scrollLeft;
+      var yScroll = el.scrollTop || document.documentElement.scrollTop;
+ 
+      xPos += (el.offsetLeft - xScroll + el.clientLeft);
+      yPos += (el.offsetTop - yScroll + el.clientTop);
+    } else {
+      // for all other non-BODY elements
+      xPos += (el.offsetLeft - el.scrollLeft + el.clientLeft);
+      yPos += (el.offsetTop - el.scrollTop + el.clientTop);
+    }
+ 
+    el = el.offsetParent;
+  }
+  return {
+    x: xPos,
+    y: yPos
+  };
+}
+
+function switch_tab(button){
+
+    var p1 = getPosition(button)
+
+	// get parent elements
+	var bar = button.parentElement;
+	var con = bar.parentElement;
+	var tab_id = con.getAttribute(&quot;class&quot;).split(&quot; &quot;)[1];
+
+
+	var c = bar.childNodes;
+	var ci = 0;
+
+	for (var i=0;i&lt;c.length;i++){
+
+		if(c[i].tagName==&quot;H3&quot;){	
+			if (c[i]===button){
+				break;
+			}
+			ci++;
+		}
+	}
+	// get tab id
+	cons = document.querySelectorAll('.tab-container.' + tab_id);;
+
+	for (var j=0;j&lt;cons.length;j++){
+
+		// change bar
+		var bar_j = cons[j].querySelector(&quot;.tab-bar&quot;);
+		var buttons = bar_j.childNodes;
+		var bi = 0;
+
+		for (var i=0;i&lt;buttons.length;i++){
+			if(buttons[i].tagName==&quot;H3&quot;){	
+				if (bi == ci){
+					buttons[i].className = &quot;tab-button-selected&quot;;
+				}else{
+					buttons[i].className = &quot;tab-button&quot;;
+				}
+				bi++;
+			}
+		}
+
+		var bi = 0;
+
+		for (var i=0;i&lt;cons[j].childNodes.length;i++){
+			if(cons[j].childNodes[i].tagName==&quot;DIV&quot; &amp;&amp; cons[j].childNodes[i].className!=&quot;tab-bar&quot;){	
+				if (bi == ci){
+					cons[j].childNodes[i].className = &quot;tab-visible&quot;;
+				}else{
+					cons[j].childNodes[i].className = &quot;tab-invisible&quot;;
+				}
+				bi++;
+			}
+		}
+
+	}
+
+	span_cons = document.querySelectorAll('.span-container.' + tab_id );
+	
+	for (var j=0;j&lt;span_cons.length;j++){
+		var bi = 0;
+		for (var i=0;i&lt;span_cons[j].childNodes.length;i++){
+			if(span_cons[j].childNodes[i].tagName==&quot;SPAN&quot;){	
+				if (bi == ci){
+					span_cons[j].childNodes[i].className = &quot;span-visible&quot;;
+				}else{
+					span_cons[j].childNodes[i].className = &quot;span-invisible&quot;;
+				}
+				bi++;
+			}
+		}
+	}
+
+	var p2 = getPosition(button)
+	window.scrollBy(0,-p1.y+p2.y+15);
+
+
+
+
+
+}
+
+&lt;/script&gt;
+
+&lt;style type=&quot;text/css&quot;&gt;
+
+
+div.tab-container {
+
+	width:100%;
+
+	margin-bottom:15px;
+
+}
+
+
+div.tab-bar {
+	display:inline-block;
+	height:30px;
+
+	border-bottom:solid 1px #ebebeb;
+	border-left:solid 1px #ebebeb;
+	border-right:solid 1px #ebebeb;
+	padding:0;
+	padding-bottom:2px;
+	vertical-align: middle;
+}
+
+
+h3.tab-button-selected {
+	height:100%;
+	display:inline-block;
+	max-width: 200px;
+	padding-left:15px;
+	padding-right:15px;
+	border-top: 2px solid  #c90606;
+	color:#c90606;
+	border-bottom: 2px transparent;
+	text-align:center;
+	padding: 0 25px;
+    line-height:30px;
+    font-size:90%;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+h3.tab-button {
+
+	height:20px;
+	display:inline-block;
+	max-width: 200px;
+	padding-left:15px;
+	padding-right:15px;
+	border-bottom: 2px transparent;
+	border-top: 2px transparent;
+	color:#757575;
+	text-align:center;
+	padding: 0 25px;
+	line-height:0px;
+	font-size:90%;
+	font-weight: 500;
+	font-family: 'Roboto', sans-serif;
+	text-transform: uppercase;
+}
+
+
+div.tab-visible {
+
+	width:100%;
+	display:block;
+	overflow: auto;
+	background-color: #f7f7f7;
+	border:solid 1px #ebebeb;
+
+}
+
+div.tab-invisible {
+
+	width:100%;
+	display:none;
+	overflow: auto;
+}
+
+span.span-visible {
+	display:inline-block;
+}
+
+span.span-invisible {
+	display:none;
+}
+
+&lt;/style&gt;
+
+&lt;h2 id=&quot;log-likelihood&quot;&gt;Log-likelihood&lt;/h2&gt;
+&lt;p&gt;The log-likelihood is defined the logarithm of the likelihood&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\ell(x;\theta')  =  \log p(x|\theta').&lt;/script&gt;
+
+&lt;p&gt;Let’s perform a &lt;strong&gt;Taylor approximation&lt;/strong&gt; of the log-likelihood \(\log p(x|\theta’)\) around the current estimate \(\theta\):&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+	$$\begin{align*}
+ \log p(x|\theta') =&amp;amp; \log p(x|\theta')|_{\theta' =  \theta} +  \sum_i \left. \frac{\partial \log p(x|\theta')}{\partial \theta'_i} \right| _{\theta' = \theta}   (\theta'_i - \theta_i) \\ &amp;amp;+ \frac{1}{2}\sum_i\sum_j \left. \frac{\partial^2 \log p(x|\theta')}{\partial \theta'_i\partial \theta'_j}\right| _{\theta' = \theta}   (\theta'_i - \theta_i)(\theta'_j - \theta_j) + ...
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+	$$\begin{align*}
+\log p(x|\theta') =&amp;amp; \log p(x|\theta')|_{\theta' = \theta} + \left. \nabla_{\theta'} \log p(x|\theta')^T\right| _{\theta' = \theta} (\theta' - \theta) \\ &amp;amp;+ \frac{1}{2}\left. (\theta' - \theta)^T\nabla^2_{\theta'} \log p(x|\theta')\right| _{\theta' = \theta}(\theta' - \theta) + ...
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;strong&gt;linear&lt;/strong&gt; term &lt;span class=&quot;span-container scalar-vector&quot;&gt;&lt;span class=&quot;span-visible&quot;&gt;\(\frac{\partial}{\partial \theta’_i} \log p(x|\theta’)\)&lt;/span&gt;&lt;span class=&quot;span-invisible&quot;&gt;\(\nabla_{\theta’} \log p(x|\theta’)\)&lt;/span&gt;&lt;/span&gt; in this decomposition can be written as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$  \frac{\partial}{\partial \theta'_i} \log p(x|\theta') = \frac{1}{p(x|\theta')} \frac{\partial}{\partial \theta'_i} p(x|\theta') $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \nabla_{\theta'} \log p(x|\theta') = \frac{1}{p(x|\theta')}\nabla_{\theta'} p(x|\theta')  $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;by using the &lt;em&gt;log derivative trick&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Evaluated at \(  \theta’ = \theta \) you receive&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ \left. \frac{\partial}{\partial \theta'_i} \log p(x|\theta') \right|_{\theta' = \theta} = \frac{1}{p(x|\theta)} \frac{\partial}{\partial \theta_i} p(x|\theta). $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \left. \nabla_{\theta'} \log p(x|\theta') \right|_{\theta' = \theta} = \frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta).  $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;strong&gt;quadratic&lt;/strong&gt; term of the decomposition  &lt;span class=&quot;span-container scalar-vector&quot;&gt;&lt;span class=&quot;span-visible&quot;&gt;
+\(\frac{\partial^2 \log p(x|\theta’)}{\partial \theta’_i\partial \theta’_j}\)
+&lt;/span&gt;&lt;span class=&quot;span-invisible&quot;&gt;
+\(\nabla^2_{\theta’} \log p(x|\theta’)\)
+&lt;/span&gt;&lt;/span&gt; 
+can be written as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+\frac{\partial^2 \log p(x|\theta')}{\partial \theta'_\partial \theta'_j} =&amp;amp; \frac{\partial }{\partial \theta'_j} \left( \frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right) \\
+=&amp;amp; \frac{\partial }{\partial \theta'_j} \left( \frac{1}{p(x|\theta')} \frac{\partial}{\partial \theta'_i} p(x|\theta')\right) \\
+=&amp;amp; \frac{\partial }{\partial \theta'_j} \left( \frac{1}{p(x|\theta')}\right) \frac{\partial}{\partial \theta'_i} p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial }{\partial \theta'_j} \left(\frac{\partial}{\partial \theta'_i} p(x|\theta')\right)\\
+=&amp;amp; \frac{\partial }{\partial \theta'_j} \left( \frac{1}{p(x|\theta')}\right) \frac{\partial}{\partial \theta'_i} p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial^2 p(x|\theta')}{\partial \theta'_\partial \theta'_j}  \\
+=&amp;amp; - \frac{1}{p(x|\theta')^2} \frac{\partial}{\partial \theta'_j} p(x|\theta') \frac{\partial}{\partial \theta'_i} p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial^2 p(x|\theta')}{\partial \theta'_\partial \theta'_j}  \\
+=&amp;amp; - \frac{\partial}{\partial \theta'_j} \log p(x|\theta') \frac{\partial}{\partial \theta'_i} \log p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial^2 p(x|\theta')}{\partial \theta'_\partial \theta'_j}  
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+\nabla^2_{\theta'} \log p(x|\theta') =&amp;amp; \nabla_{\theta'} \nabla_{\theta'}^T \log p(x|\theta') \\
+=&amp;amp; \nabla_{\theta'} \left(\frac{1}{p(x|\theta')}\nabla_{\theta'}^T p(x|\theta')\right) \\
+=&amp;amp; \nabla_{\theta'} p(x|\theta')  \nabla_{\theta'}^T \left(\frac{1}{p(x|\theta')}\right) +  \frac{1}{p(x|\theta')}\nabla_{\theta'}^T\nabla_{\theta'} p(x|\theta') \\
+=&amp;amp;- \frac{1}{p(x|\theta')^2} \nabla_{\theta'} p(x|\theta') \nabla_{\theta'} p(x|\theta') ^T  +  \frac{1}{p(x|\theta')}\nabla_{\theta'}^2 p(x|\theta') \\
+=&amp;amp;- \nabla_{\theta'} \log p(x|\theta') \nabla_{\theta'} \log p(x|\theta') ^T  +  \frac{1}{p(x|\theta')}\nabla_{\theta'}^2 p(x|\theta')
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Evaluated at \(  \theta’ = \theta \) you receive&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+\left. \frac{\partial^2 \log p(x|\theta')}{\partial \theta'_\partial \theta'_j}\right|_{\theta' = \theta} =&amp;amp; - \frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}  
+\end{align*}.
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+\left. \nabla^2_{\theta'} \log p(x|\theta')\right|_{\theta' = \theta} =&amp;amp;- \nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta) ^T  +  \frac{1}{p(x|\theta)}\nabla_{\theta}^2 p(x|\theta)
+\end{align*}.
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Finally, you can express the &lt;strong&gt;Taylor approximation&lt;/strong&gt; as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+	$$\begin{align*}
+ \log p(x|\theta') =&amp;amp; \log p(x|\theta) +  \sum_i \frac{1}{p(x|\theta)} \frac{\partial}{\partial \theta_i} p(x|\theta)   (\theta'_i - \theta_i) \\ &amp;amp;+ \frac{1}{2} \sum_i\sum_j \left(- \nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta) ^T  +  \frac{1}{p(x|\theta)}\nabla_{\theta}^2 p(x|\theta)\right) (\theta'_i - \theta_i)(\theta'_j - \theta_j) + ...
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+	$$\begin{align*}
+\log p(x|\theta') =&amp;amp; \log p(x|\theta) + \left. \nabla_{\theta'} \log p(x|\theta')^T\right| _{\theta' = \theta} (\theta' - \theta) \\ &amp;amp;+ \left. \frac{1}{2} (\theta' - \theta)^T\nabla^2_{\theta'} \log p(x|\theta')\right| _{\theta' = \theta}(\theta' - \theta) + ...
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;mean&quot;&gt;Mean&lt;/h1&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align*} 
+ \mathbb{E}_{p(x|\theta^*)}[\log p(x|\theta')] &amp;=  \int \limits_{-\infty}^{\infty} p(x|\theta^*) \log p(x|\theta')dx \\
+&amp;= -H(\theta^*,\theta') \\
+ \end{align*} %]]&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;variance&quot;&gt;Variance&lt;/h1&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align*} \text{Var}(\log p(x|\theta')) &amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}[\log p(x|\theta')])^2\right] \\
+&amp;=  \mathbb{E}_{p(x|\theta^*)}\left[(\log p(x|\theta'))^2\right]-\mathbb{E}_{p(x|\theta^*)}[\log p(x|\theta')]^2 \\
+&amp;=  \mathbb{E}_{p(x|\theta^*)}\left[(\log p(x|\theta'))^2\right]+H(\theta^*,\theta')^2 \\
+
+\end{align*} %]]&gt;&lt;/script&gt;
+
+&lt;h2 id=&quot;score&quot;&gt;Score&lt;/h2&gt;
+
+&lt;p&gt;The score is defined as the derivative of the log-likelihood&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ V_i(x;\theta')  =  \frac{\partial}{\partial \theta'_i} \log p(x|\theta') $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ V(x;\theta')  =  \nabla_{\theta'} \log p(x|\theta') $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;mean-1&quot;&gt;Mean&lt;/h1&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ \mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right] =  \int \limits_{-\infty}^{\infty} p(x|\theta^*) \frac{\partial}{\partial \theta'_i} \log p(x|\theta')dx$$
+
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right] =  \int \limits_{-\infty}^{\infty} p(x|\theta^*) \nabla_{\theta'} \log p(x|\theta')dx$$
+
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;variance-1&quot;&gt;Variance&lt;/h1&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+\begin{align*} \text{Var}\left(\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right) &amp;amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\left(\frac{\partial}{\partial \theta'_i} \log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right]\right)^2\right] \\
+&amp;amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right] +  \mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right]^2 \\
+\end{align*} 
+
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+\begin{align*} \text{Var}\left(\nabla_{\theta'} \log p(x|\theta')\right) &amp;amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\left(\nabla_{\theta'}\log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\right)\left(\nabla_{\theta'}\log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\right)^T\right] \\
+&amp;amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
+\end{align*} 
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;kullback-leibler-divergence&quot;&gt;Kullback-Leibler divergence&lt;/h2&gt;
+
+&lt;p&gt;The Kullback-Leibler divergence is defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;D_\textrm{KL}(\theta||\theta') = \int \limits_{-\infty}^{\infty} p(x|\theta) \log \frac{p(x|\theta)}{p(x|\theta')} dx .&lt;/script&gt;
+
+&lt;p&gt;Let’s perform a &lt;strong&gt;Taylor approximation&lt;/strong&gt; around the current estimate \(\theta\):&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp;amp; D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} +  \sum_i \left.\frac{\partial D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i}\right|_{\theta' = \theta}   (\theta'_i - \theta_i)  \\ &amp;amp;+  \frac{1}{2}\sum_i\sum_j \left.\frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i\partial \theta'_j}\right|_{\theta' = \theta}  (\theta'_i - \theta_i) (\theta'_j - \theta_j) + ...
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp;amp; D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} + \left. \nabla_{\theta'}D_\textrm{KL}(\theta||\theta')^T\right|_{\theta' = \theta}(\theta' - \theta) \\
+&amp;amp; +  \frac{1}{2}\left. (\theta' - \theta)^T\nabla^2_{\theta'}D_\textrm{KL}(\theta||\theta')\right|_{\theta' = \theta}(\theta' - \theta) + ...
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;strong&gt;constant&lt;/strong&gt; term can be written as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} =&amp;amp; 0.
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} =&amp;amp;  0.
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;strong&gt;linear&lt;/strong&gt; term &lt;span class=&quot;span-container scalar-vector&quot;&gt;&lt;span class=&quot;span-visible&quot;&gt;
+\(\frac{\partial D_\textrm{KL}(\theta||\theta’)}{\partial \theta’_i}\)
+&lt;/span&gt;&lt;span class=&quot;span-invisible&quot;&gt;
+\(\nabla_{\theta’}D_\textrm{KL}(\theta||\theta’)\)
+&lt;/span&gt;&lt;/span&gt; in this decomposition can be written as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+\frac{\partial D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i} =&amp;amp; \frac{\partial}{\partial \theta'_i}\left(\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta) dx -\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta') dx\right) \\
+=&amp;amp; -\int \limits_{-\infty}^{\infty} p(x|\theta) \frac{\partial}{\partial \theta'_i}\log p(x|\theta') dx\\
+=&amp;amp;  -\int \limits_{-\infty}^{\infty} p(x|\theta)\frac{1}{p(x|\theta')}\frac{\partial}{\partial \theta'_i} p(x|\theta') dx \\
+=&amp;amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right]\\
+=&amp;amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta')}\frac{\partial}{\partial \theta'_i} p(x|\theta')\right].
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+\nabla_{\theta'}D_\textrm{KL}(\theta||\theta') =&amp;amp;  \nabla_{\theta'}\left(\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta) dx -\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta') dx\right) \\
+=&amp;amp;  -\int \limits_{-\infty}^{\infty} p(x|\theta)\nabla_{\theta'} \log p(x|\theta') dx \\
+=&amp;amp;  -\int \limits_{-\infty}^{\infty} p(x|\theta)\frac{1}{p(x|\theta')}\nabla_{\theta'} p(x|\theta') dx \\
+=&amp;amp; - \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\\
+=&amp;amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta')}\nabla_{\theta'} p(x|\theta')\right].
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Evaluated at \(  \theta’ = \theta \) you receive&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+\left. \frac{\partial D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i} \right|_{\theta' = \theta} =&amp;amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i} p(x|\theta)\right] \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i}p(x|\theta) dx \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} \frac{\partial}{\partial \theta_i} p(x|\theta) dx \\
+=&amp;amp;  \frac{\partial}{\partial \theta_i}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;amp;  \frac{\partial}{\partial \theta_i} 1 \\
+=&amp;amp; 0 
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+\left. \nabla_{\theta'}D_\textrm{KL}(\theta||\theta') \right|_{\theta' = \theta} =&amp;amp;   - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta)\right]
+\end{align*} \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta) dx \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} \nabla_{\theta} p(x|\theta) dx \\
+=&amp;amp;  \nabla_{\theta}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;amp;  \nabla_{\theta} 1 \\
+=&amp;amp; 0 
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;strong&gt;quadratic&lt;/strong&gt; term &lt;span class=&quot;span-container scalar-vector&quot;&gt;&lt;span class=&quot;span-visible&quot;&gt;
+\(\frac{\partial^2 D_\textrm{KL}(\theta||\theta’)}{\partial \theta’_i\partial \theta’_j}\)
+&lt;/span&gt;&lt;span class=&quot;span-invisible&quot;&gt;
+\(\nabla^2_ {\theta’}D_\textrm{KL}(\theta’||\theta’)\)
+&lt;/span&gt;&lt;/span&gt; in this decomposition can be written as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+\frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i\partial \theta'_j} =&amp;amp; \frac{\partial }{\partial \theta'_j} \left( \frac{\partial}{\partial \theta'_i} D_\textrm{KL}(\theta||\theta')\right) \\
+=&amp;amp; -\frac{\partial }{\partial \theta'_j} \left( \int \limits_{-\infty}^{\infty} p(x|\theta)\frac{\partial}{\partial \theta'_i} \log p(x|\theta') dx \right) \\
+=&amp;amp; - \int \limits_{-\infty}^{\infty} p(x|\theta)\frac{\partial^2  \log p(x|\theta')}{\partial \theta'_i  \partial \theta'_j}   dx \\
+=&amp;amp; -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta')}{\partial \theta'_i  \partial \theta'_j}\right]
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+\nabla^2_{\theta'}D_\textrm{KL}(\theta||\theta') =&amp;amp; \nabla_{\theta'} \nabla_{\theta'}^T D_\textrm{KL}(\theta||\theta') \\
+=&amp;amp; -\nabla_{\theta'} \left( \int \limits_{-\infty}^{\infty} p(x|\theta)\nabla_{\theta'}^T \log p(x|\theta') dx \right) \\
+=&amp;amp; - \int \limits_{-\infty}^{\infty} p(x|\theta)\nabla_{\theta'}^2 \log p(x|\theta') dx \\
+=&amp;amp; -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'}^2 \log p(x|\theta')\right]\\
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Evaluated at \(  \theta’ = \theta \) you receive&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i\partial \theta'_j} \right|_{\theta' = \theta} =&amp;amp;  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right]
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+\left. \nabla^2_{\theta'}D_\textrm{KL}(\theta||\theta') \right|_{\theta' = \theta} =&amp;amp;  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Finally, you can express the &lt;strong&gt;Taylor approximation&lt;/strong&gt; as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp;amp; -\frac{1}{2}\sum_i\sum_j  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j} \right]  (\theta'_i - \theta_i) (\theta'_j - \theta_j) + ...
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp;amp; -\frac{1}{2} (\theta' - \theta)^T\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right](\theta' - \theta) + ...
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;fisher-information&quot;&gt;Fisher Information&lt;/h2&gt;
+&lt;h1 id=&quot;the-fisher-definition-can-be-defined-as-&quot;&gt;The fisher definition can be defined as …&lt;/h1&gt;
+
+&lt;h1 id=&quot;-expectation-of-the-squared-score&quot;&gt;… expectation of the squared score&lt;/h1&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;-variance-of-the-score&quot;&gt;… variance of the score&lt;/h1&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+ \left[\mathcal{I(\theta)}\right]_{ij} &amp;amp;=  \text{Var}\left(\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right) \\
+ &amp;amp;=  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_i} \log p(x|\theta)\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] +  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right]^2 \\
+\end{align*} 
+ $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ 
+\begin{align*}
+\mathcal{I(\theta)} &amp;amp;=  \text{Var}\left(\nabla_{\theta'} \log p(x|\theta')\right) \\
+&amp;amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
+\end{align*} 
+ $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;With&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*} \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] =&amp;amp; \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i} p(x|\theta)\right] \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i}p(x|\theta) dx \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} \frac{\partial}{\partial \theta_i} p(x|\theta) dx \\
+=&amp;amp;  \frac{\partial}{\partial \theta_i}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;amp;  \frac{\partial}{\partial \theta_i} 1 \\
+=&amp;amp; 0 
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*} \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta)\right] =&amp;amp; \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta)\right] \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta) dx \\
+=&amp;amp; \int \limits_{-\infty}^{\infty} \nabla_{\theta} p(x|\theta) dx \\
+=&amp;amp;  \nabla_{\theta}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;amp;  \nabla_{\theta} 1 \\
+=&amp;amp; 0 
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;follows&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;-curvature-of-the-kl-divergence&quot;&gt;… curvature of the KL-divergence&lt;/h1&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+ \left[\mathcal{I(\theta)}\right]_{ij} =&amp;amp;\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta)}{\partial \theta_i\partial \theta_j} \right|_{\theta = \theta}\\
+ =&amp;amp;  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right] \\
+=&amp;amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j}\right] \\
+=&amp;amp;- \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] +    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]\\
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*}
+\mathcal{I(\theta)} =&amp;amp;\left. \nabla^2_{\theta}D_\textrm{KL}(\theta||\theta) \right|_{\theta = \theta}\\
+ =&amp;amp;  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
+ =&amp;amp; - \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T +    \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right] \\
+=&amp;amp;- \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] +    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]\\
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;With&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$
+\begin{align*}
+\mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]=&amp;amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j} dx  \\
+=&amp;amp; \int \limits_{-\infty}^{\infty}  \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j} dx  \\
+=&amp;amp;  \frac{\partial^2 }{\partial \theta_i\partial \theta_j}\int \limits_{-\infty}^{\infty} p(x|\theta)  dx  \\
+=&amp;amp;  \frac{\partial^2 }{\partial \theta_i\partial \theta_j}1  \\
+=&amp;amp; 0 .
+\end{align*}
+$$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$
+\begin{align*} 
+\mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]=&amp;amp;  \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta) dx  \\
+=&amp;amp;  \int \limits_{-\infty}^{\infty}  \nabla^2_{\theta} \log p(x|\theta) dx  \\
+=&amp;amp;  \nabla^2_{\theta}\int \limits_{-\infty}^{\infty} p(x|\theta)  dx  \\
+=&amp;amp;  \nabla^2_{\theta}1   \\
+=&amp;amp;0
+\end{align*}$$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;follows&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h1 id=&quot;-expected-value-of-the-observed-information&quot;&gt;… expected value of the observed information&lt;/h1&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\left[\mathcal{J(\theta)}\right]_{ij}\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\mathcal{J(\theta)}\right] $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;where the observed information \(\mathcal{J(\theta)}\) is defined as&lt;/p&gt;
+
+&lt;div class=&quot;tab-container scalar-vector&quot;&gt;&lt;div class=&quot;tab-visible&quot;&gt;
+$$ \left[\mathcal{J(\theta)}\right]_{ij} =  -\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j} $$
+&lt;/div&gt;&lt;div class=&quot;tab-invisible&quot;&gt;
+$$ \mathcal{J(\theta)} =  -\nabla_{\theta}^2 \log p(x|\theta) $$
+&lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;We note that this case has the same form as the curvature of the KL-divergence.&lt;/p&gt;</content><author><name></name></author><summary type="html">This article is a brief treatment of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just math.</summary></entry><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+    function draw_ssm(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 50;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t&lt;T;t++){
+
+
+      	if (t&lt;T-1) input_ns.push({title: &quot;\\( u_&quot; + t + &quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y , fill:&quot;#e3e5feff&quot;});
+        state_ns.push({title: &quot;\\( x_&quot; + t +&quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y + dist_y, fill:&quot;#FFFFFF&quot;});
+        output_ns.push({title: &quot;\\( y_&quot; + t + &quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:&quot;#e3e5feff&quot;});
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:&quot;&quot;})
+        if (t&gt;0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        }
+      }
+
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+    function draw_ssm_ind(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 120;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 4;
+
+      for (var t = 0; t&lt;T;t++){
+
+
+      	ind = &quot;t&quot;
+
+      	if (t&lt;T-1) ind+=(t-T+1)
+
+
+      	if (t&lt;T-1) input_ns.push({title: &quot;\\( u_{&quot; + ind + &quot;}\\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y , fill:&quot;#e3e5feff&quot;});
+
+      	statefill = (t==T-1) ? &quot;#e3e5feff&quot; :statefill = &quot;#FFFFFF&quot;;
+        state_ns.push({title: &quot;\\( x_{&quot; + ind + &quot;} \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+        output_ns.push({title: &quot;\\( y_{&quot; + ind + &quot;} \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:&quot;#e3e5feff&quot;});
+
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:&quot;&quot;})
+        if (t&gt;0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        }
+      }
+
+
+    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+
+    edges.push({source: bstate_h, target: state_ns[0], dash:&quot;5,5&quot;})
+    edges.push({source: binput_h, target: state_ns[0], dash:&quot;5,5&quot;})
+
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+
+  	var svg_w = margin_x + dist_x*(T-1) + 50;
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+    function draw_ssm_indi(svg){
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t&lt;T;t++){
+
+
+      	ind = &quot;t&quot;
+
+      	if (t&lt;2) ind+=(t-2)
+      	if (t&gt;2) ind+=&quot;+&quot;+(t-2)
+
+
+      	input_ns.push({title: &quot;\\( u_{&quot; + ind + &quot;}\\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y , fill:&quot;#e3e5feff&quot;});
+
+      	statefill = (t==2) ? &quot;#e3e5feff&quot; :statefill = &quot;#FFFFFF&quot;;
+        state_ns.push({title: &quot;\\( x_{&quot; + ind + &quot;} \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+        output_ns.push({title: &quot;\\( y_{&quot; + ind + &quot;} \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:&quot;#e3e5feff&quot;});
+
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:&quot;&quot;})
+        if (t&gt;0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        }
+      }
+
+    estate_h = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    einput_h = {x: input_ns[T-1].x + 2*Math.sqrt(2)*radius, y: input_ns[T-1].y+ 2*Math.sqrt(2)*radius}
+    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+
+
+    edges.push({source: state_ns[T-1], target: estate_h, dash:&quot;5,5&quot;})
+    edges.push({source: bstate_h, target: state_ns[0], dash:&quot;5,5&quot;})
+    edges.push({source: input_ns[T-1], target: einput_h, dash:&quot;5,5&quot;})
+    edges.push({source: binput_h, target: state_ns[0], dash:&quot;5,5&quot;})
+
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+	function draw_ssm_obs(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 50;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t&lt;T;t++){
+
+
+      	if (t&lt;T-1) input_ns.push({title: &quot;\\( u_&quot; + t + &quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y , fill:&quot;#e3e5feff&quot;});
+        state_ns.push({title: &quot;\\( x_&quot; + t +&quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y + dist_y, fill:&quot;#FFFFFF&quot;});
+
+        if (t==0||t==4) output_ns.push({title: &quot;\\( y_&quot; + t + &quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:&quot;#e3e5feff&quot;});
+        if (t==2) {
+        	output_ns.push({title: &quot;\\( z_&quot; + t + &quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*(t+0.5) , y: margin_y+ 2*dist_y, fill:&quot;#e3e5feff&quot;});
+			output_ns.push({title: &quot;\\( y_&quot; + t + &quot; \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*(t-0.5) , y: margin_y+ 2*dist_y, fill:&quot;#e3e5feff&quot;});
+        }
+        
+
+
+
+        if (t&gt;0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        }
+      }
+
+      edges.push({source: state_ns[0], target: output_ns[0], dash:&quot;&quot;})
+      edges.push({source: state_ns[2], target: output_ns[1], dash:&quot;&quot;})
+      edges.push({source: state_ns[2], target: output_ns[2], dash:&quot;&quot;})
+      edges.push({source: state_ns[4], target: output_ns[3], dash:&quot;&quot;})
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+
+    }
+ &lt;/script&gt;
+
+&lt;script src=&quot;//d3js.org/d3.v3.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;First of all, let’s try to formulate the main idea of Kalman filtering in one sentence:&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;p&gt;The &lt;strong&gt;Kalman filter&lt;/strong&gt; is used to &lt;strong&gt;infer&lt;/strong&gt; the current state of a &lt;strong&gt;linear Gaussian state space model&lt;/strong&gt; given all observations and inputs up to the current timestep and a Gaussian prior distribution of the initial state.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Indeed, the process of Kalman filtering is simply Bayesian inference in the domain of linear Gaussian state space models. The information encoded in our formulation is sufficient to uniquely define what the Kalman filter should output. But it doesn’t tell us anything about how to compute it. In this article, we will find an efficient recursive method that will lead us to the familiar equations.&lt;/p&gt;
+
+&lt;p&gt;Let’s get started with the derivation by defining &lt;em&gt;linear Gaussian state space models&lt;/em&gt; and &lt;em&gt;Bayesian inference&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;linear-gaussian-state-space-models&quot;&gt;Linear Gaussian state space models&lt;/h2&gt;
+
+&lt;p&gt;A linear Gaussian state space model is defined by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}x_{t+1} &amp;= A_tx_t + B_t u_t + w_t \\ 
+y_t &amp;= C_tx_t + v_t \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;with state \(x_t\), output \(y_t\), input \(u_t\), system matrix \(A_t\), input matrix \(B_t\), output matrix \(C_t\), Gaussian process noise \( w_t \sim \mathcal{N}(w_t|0, Q_t) \) and Gaussian observation noise \( v_t \sim \mathcal{N}(v_t|0, R_t) \).&lt;/p&gt;
+
+&lt;p&gt;Alternatively, we can use the probability density functions&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}x_{t+1} &amp;\sim \mathcal{N}(x_{t+1}|A_tx_t + B_t u_t, Q_t)\\ 
+ y_t &amp;\sim \mathcal{N}(y_t|C_tx_t, R_t)\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;to describe the system in a more compact fashion.&lt;/p&gt;
+
+&lt;p&gt;Linear Gaussian state space models can also be described in the language of &lt;a href=&quot;https://en.wikipedia.org/wiki/Graphical_model&quot;&gt;probabilistic graphical models&lt;/a&gt; (or more precisely in the language of &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_network&quot;&gt;Bayesian networks&lt;/a&gt;). The figure below shows such a model up to time \(T = 4\).&lt;/p&gt;
+
+&lt;svg class=&quot;pgm_centered&quot; onload=&quot;draw_ssm(this);&quot;&gt;&lt;/svg&gt;
+
+&lt;p&gt;Every node represents a random variable and the edges are representing conditional dependencies between the respective nodes. Random variables, that are observed (or given) are shaded in light blue. In our case this is the output \(y_t\) and the input \(u_t\). The state \(x_t\) is not observed (or latent).&lt;/p&gt;
+
+&lt;h2 id=&quot;bayesian-inference&quot;&gt;Bayesian inference&lt;/h2&gt;
+
+&lt;p&gt;In simplest terms Bayesian inference tries to update a hypothesis/belief of something, that is not directly observable, in the face of new information by using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes’ rule&lt;/a&gt;. A bit more formal: The goal is to update the prior distribution \(p(x)\) given new data \(\mathcal{D}\) to obtain the posterior distribution \(p(x|\mathcal{D})\) with help of Bayes rule&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x|\mathcal{D}) = \frac{p(\mathcal{D}|x)p(x)}{p(\mathcal{D})}&lt;/script&gt;
+
+&lt;p&gt;with likelihood \(p(\mathcal{D}|x)\) and evidence \(p(\mathcal{D})\).&lt;/p&gt;
+
+&lt;p&gt;This idea is very general and can be applied to dynamical models quite easily. The most common inference tasks in dynamical models are filtering, smoothing and prediction. These methods differ only in the form of the posterior distribution.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Filtering&lt;/strong&gt;: What is my belief about the &lt;strong&gt;current state&lt;/strong&gt; \(x_t\) given all observations and inputs?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;big_eq&quot;&gt; 	$$ p(x_t|y_0,...,y_t,u_0,...,u_{t-1})  $$ &lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Smoothing&lt;/strong&gt;: What is my belief about &lt;strong&gt;all states&lt;/strong&gt; \(x_t, … ,x_0\) given all observations and inputs?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;big_eq&quot;&gt; $$ p(x_t,...,x_0|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Prediction&lt;/strong&gt;: What is my belief about the &lt;strong&gt;next state&lt;/strong&gt; \(x_{t+1}\) given all observations and inputs?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;big_eq&quot;&gt; $$ p(x_{t+1}|y_0,...,y_t,u_0,...,u_{t-1}) $$ &lt;/div&gt;
+
+&lt;p&gt;The name Kalman &lt;em&gt;filter&lt;/em&gt; reveals, that we will be interested in the filtering problem. Therefore, we want to infer the current state \(x_t\) based on all recent observations \(y_0,…,y_t\) and inputs \(u_0,…,u_{t-1}\).
+Now that we have defined what we are looking for, let’s try to find a way to efficiently calculate it. We will start by finding a recursive method for &lt;em&gt;general&lt;/em&gt; dynamical models defined by the probabilistic graphical model above.&lt;/p&gt;
+
+&lt;h2 id=&quot;bayes-filter-for-state-space-models&quot;&gt;Bayes filter for state space models&lt;/h2&gt;
+
+&lt;p&gt;We have the task to calculate \( p(x_{t}|y_0,…,y_t,u_0,…,u_{t-1}) \). For this purpose only the structure of the graphical model will matter: it governs the conditional dependencies.
+To unclutter the notation we will use \(\Box_{n:m}\) for \(\Box_n,…,\Box_m\).&lt;/p&gt;
+
+&lt;p&gt;With help of &lt;strong&gt;Bayes’ rule&lt;/strong&gt; we can rewrite the formula as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t,y_{0:t-1},u_{0:t-1})p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})}.&lt;/script&gt;
+
+&lt;div class=&quot;extra_box&quot;&gt;
+  &lt;p&gt;If you are not very familiar with Bayes’ rule this can be quite confusing. There are much more moving parts than in the very simple definition. Nonetheless, there is an intuitive explanation.
+It is Bayes’ rule applied in a world, where we already observed \(\mathcal{W}\) in the past (every term is conditioned on \(\mathcal{W}\)):&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x|\mathcal{D},\mathcal{W}) = \frac{p(\mathcal{D}|x,\mathcal{W})p(x|\mathcal{W})}{p(\mathcal{D}|\mathcal{W})}.&lt;/script&gt;
+
+  &lt;p&gt;In our case \(x:=x_t \), \(\mathcal{D}:=y_t \) and \(\mathcal{W}:=(y_{0:t-1},u_{0:t-1}) \).&lt;/p&gt;
+
+&lt;/div&gt;
+&lt;p&gt;We note that \(y_t\) is independent of \(y_{0:t-1}\) and  \(u_{0:t-1}\) given \(x_t\). It follows&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})}.&lt;/script&gt;
+
+&lt;div class=&quot;extra_box&quot;&gt;
+  &lt;p&gt;This conditional independence property is not obvious as well. When it comes to conditional dependencies, it is always a good idea to look at the graphical model.&lt;/p&gt;
+
+  &lt;svg class=&quot;pgm_centered&quot; onload=&quot;draw_ssm_ind(this);&quot;&gt;&lt;/svg&gt;
+  &lt;p&gt;In the figure above we notice that the node \(x_t\) is shaded (observed). This node blocks the way of \(y_{0:t-1}\) and  \(u_{0:t-1}\) to \(y_t\). We have proven the conditional independence &lt;em&gt;visually&lt;/em&gt;. You can learn more about conditional independence in probabilistic graphical models in &lt;a href=&quot;https://www.microsoft.com/en-us/research/people/cmbishop/#!prml-book&quot;&gt;Pattern Recognition and Machine Learning&lt;/a&gt; (Chapter 8.2).&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The denominator is simply the integral of the numerator&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y_t|y_{0:t-1},u_{0:t-1}) = \int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) dx_t .&lt;/script&gt;
+
+&lt;p&gt;Great! We successfully expressed our equation in simpler terms. In return, we obtained the new expression \(p(x_t|y_{0:t-1},u_{0:t-1})\), which we have to calculate as well. Using marginalization we can express it as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t-1},u_{0:t-1}) = \int_{x_{t-1}} p(x_t,x_{t-1}|y_{0:t-1},u_{0:t-1}) dx_{t-1}.&lt;/script&gt;
+
+&lt;p&gt;We can split the expression in the integral with product rule, which leads to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t-1},u_{0:t-1}) = \int_{x_{t-1}} p(x_t|x_{t-1},y_{0:t-1},u_{0:t-1})p(x_{t-1}|y_{0:t-1},u_{0:t-1}) dx_{t-1}.&lt;/script&gt;
+
+&lt;p&gt;Note that \(x_t\) is independent of \(y_{0:t-1}\) and \(u_{0:t-2}\) given \(x_{t-1}\). Furthermore, \(x_{t-1}\) is independent of \(u_{t-1}\). We obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t-1},u_{0:t-1}) = \int_{x_{t-1}} p(x_t|x_{t-1}, u_{t-1})p(x_{t-1}|y_{0:t-1},u_{0:t-2}) dx_{t-1}.&lt;/script&gt;
+
+&lt;p&gt;We note that \(p(x_{t-1}|y_{0:t-1},u_{0:t-2})\) has the same form as our expression we started from only shifted by one time step. Our recursive formula is complete!&lt;/p&gt;
+
+&lt;p&gt;Let’s summarize our results!&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Bayes filter for state space models&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the Bayes filter in state space models consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})} .&lt;/script&gt;
+
+  &lt;p&gt;The recursion is started with the prior distribution over the initial state \(p(x_0)\).&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;Up to this point, we assumed that we obtain exactly one observation at every timestep. This rather limiting assumption is violated in many real-life scenarios. Multiple or even no observations per timestep are possible. This behavior is exemplified in the probabilistic graphical model below.&lt;/p&gt;
+
+&lt;svg class=&quot;pgm_centered&quot; onload=&quot;draw_ssm_obs(this);&quot;&gt;&lt;/svg&gt;
+
+&lt;p&gt;Fortunately, handling these cases is very simple. For every observation we make, we calculate the update step with the newest estimate available. Furthermore, it is not necessary that the observations are coming from the same output function (illustrated by the outputs \(y_2\) and \(z_2\) at \(t=2\)). &lt;a href=&quot;https://en.wikipedia.org/wiki/Information_integration&quot;&gt;Information integration/fusion&lt;/a&gt; is very natural in Bayesian inference.&lt;/p&gt;
+
+&lt;p&gt;Nice! We just derived the equations of the Bayes filter for general state space models!
+Now let’s translate this into the linear state space scenario.&lt;/p&gt;
+
+&lt;h2 id=&quot;bayes-filter-in-linear-gaussian-state-space-models&quot;&gt;Bayes filter in linear Gaussian state space models&lt;/h2&gt;
+
+&lt;p&gt;Let’s start by identifying the probability distributions we already know:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+p(x_{t+1}|x_{t}, u_{t})  &amp;= \mathcal{N}(x_{t+1}|A_tx_t + B_t u_t, Q_t) \\
+p(y_t|x_t) &amp;=  \mathcal{N}(y_t|C_tx_t, R_t). 
+ \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Furthermore, we assume that the prior distribution of the initial state is Gaussian as well. All probability distributions in our model are Gaussian. Therefore, the distributions \(p(x_t|y_{0:t-1},u_{0:t-1})\) and \(p(x_t|y_{0:t},u_{0:t-1})\) will also be in form of Gaussian distributions, because our recursive formula is only using marginalization and Bayes’ rule, which are closed under Gaussian distributions. In the context of Kalman filtering, these are normally defined by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+p(x_t|y_{0:t},u_{0:t-1}) &amp;:= \mathcal{N}(x_{t}|\hat x_{t|t}, P_{t|t}) \\
+p(x_t|y_{0:t-1},u_{0:t-1}) &amp;:= \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) .
+ \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Please note, that these distributions are still implicitly dependent on the inputs and outputs. The mean and the covariance are a &lt;em&gt;sufficient statistic&lt;/em&gt; of the in- and outputs.&lt;/p&gt;
+
+&lt;p&gt;The index \(\Box_{n|m}\) of the parameters indicates that the state at time \(n\) is estimated, based on the outputs upto time \(m\).
+The expression \(\hat x_{t|t}\) is called the &lt;em&gt;updated&lt;/em&gt; state estimate and \( P_{t|t}\) the &lt;em&gt;updated&lt;/em&gt; error covariance. Moreover, \(\hat x_{t|t-1}\) is called the &lt;em&gt;predicted&lt;/em&gt; state estimate and \( P_{t|t-1}\) the &lt;em&gt;predicted&lt;/em&gt; error covariance.&lt;/p&gt;
+
+&lt;p&gt;In summary, these are the equations for the Bayes filter in linear Gaussian state space models:&lt;/p&gt;
+&lt;div class=&quot;important_box&quot;&gt;
+
+  &lt;p&gt;&lt;strong&gt;Prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}(x_{t+1}|A_tx_t + B_t u_t, Q_t)\mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.&lt;/script&gt;
+
+  &lt;p&gt;&lt;strong&gt;Update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}&lt;/script&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;Let’s try to simplify these equations!&lt;/p&gt;
+
+&lt;h3 id=&quot;prediction-step&quot;&gt;Prediction step&lt;/h3&gt;
+
+&lt;p&gt;We will start with the prediction step&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}(x_{t+1}|A_tx_t + B_t u_t, Q_t)\mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.&lt;/script&gt;
+
+&lt;p&gt;In order to find a closed form solution of this integral, we could simply plug in the corresponding expressions of the Gaussian distributions and solve the integral. Fortunately, Marc Toussaint already gathered the most important &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt;, which will lighten our workload a lot.  To find an expression for our prediction step we can simply use the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T ).&lt;/script&gt;
+
+&lt;p&gt;By comparison with our expression, we see that&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t+1|t} =  A_t \hat x_{t|t} + B_tu_t,&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1|t} = Q_t + A_t P_{t|t} A_t^T  .&lt;/script&gt;
+
+&lt;h3 id=&quot;update-step&quot;&gt;Update step&lt;/h3&gt;
+
+&lt;p&gt;We will start to simplify the update step&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}&lt;/script&gt;
+
+&lt;p&gt;by focussing on the numerator first. We notice that we can rewrite it as a joint distribution (Formula 39, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b + Fa \end{matrix},\begin{matrix}A &amp; A^TF^T\\FA &amp; B + FA^TF^T\end{matrix}\right) . %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Then again, this joint distribution can be rewritten as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}d\\e \end{matrix},\begin{matrix}D &amp; F\\E^T &amp; E\end{matrix}\right) = \mathcal{N}(y|e,E)\mathcal{N}(x|d + F^TE^{-1}(y-e),D - F^T E^{-1}F) . %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;We can combine the two previous equations to the following expression&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}(y|b + Fa,B + FA^TF^T) \mathcal{N}(x|a + A^TF^T(B + FA^TF^T)^{-1}(y-b -Fa),A - A^TF^T (B + FA^TF^T)^{-1}FA) .&lt;/script&gt;
+
+&lt;p&gt;By comparison with the numerator of our update step, we obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})\mathcal{N}(y_{t}|C_tx_{t}, R_t ) = \mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),  P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
+
+&lt;p&gt;At a first glance, this is not looking like a simplification at all. Conceptually, we only transformed&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{p(y|x)p(x)}{p(y)} \to \frac{p(y,x)}{p(y)} \to \frac{p(x|y)p(y)}{p(y)}.&lt;/script&gt;
+
+&lt;p&gt;If we look closely at the final expression, we see that \(p(y)\) is canceling out. Therefore, the result is simply the remaining part&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
+
+&lt;p&gt;If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), which was canceled out. The denominator can be simplified with the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, Toussaint)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{x_{t}}\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|C_t\hat x_{t|t-1}, R_t + C_tP_{t|t-1}C_t^T ).&lt;/script&gt;
+
+&lt;p&gt;Yay! We see, that the denominator is exactly the same as the canceled factor in the numerator.&lt;/p&gt;
+
+&lt;p&gt;Let’s summarize our results:&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Bayes filter in linear Gaussian state space models&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the Bayes filter in linear Gaussian state space models consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t+1|t} &amp;=  A_t \hat x_{t|t} + B_tu_t \\ 
+P_{t+1|t} &amp;= Q_t + A_t P_{t|t} A_t^T  \end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t|t} &amp;= \hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}) \\ 
+P_{t|t} &amp;= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}.  \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;/div&gt;
+&lt;p&gt;That’s it! We derived the equations of the Bayes filter in linear Gaussian state space models, which is nothing else but the good old Kalman filter.
+In the next section, we will split these equations up to finally obtain the formulation normally used for the Kalman filter.&lt;/p&gt;
+
+&lt;h2 id=&quot;kalman-filter&quot;&gt;Kalman filter&lt;/h2&gt;
+
+&lt;p&gt;In order to obtain the familiar equations of the Kalman filter we have to define&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Innovation&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;z_t = y_{t}-C_t\hat x_{t|t-1}&lt;/script&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Innovation covariance&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;S_t = R_t + C_tP_{t|t-1}C_t^T&lt;/script&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;Optimal Kalman gain&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;K_t = P_{t|t-1}C_t^TS_t^{-1}&lt;/script&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;extra_box&quot;&gt;
+
+  &lt;p&gt;&lt;strong&gt;What is the meaning of \(z_t\) and \(S_t\)?&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;The denominator of the update step is&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t}|C_t\hat x_{t|t-1},R_t + C_tP_{t|t-1}^TC_t^T)&lt;/script&gt;
+
+  &lt;p&gt;and can be transformed by (Formula 34, Toussaint)&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a,A) = \mathcal{N}(x+f|a+f,A)&lt;/script&gt;
+
+  &lt;p&gt;to obtain the expression&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).&lt;/script&gt;
+
+  &lt;p&gt;Therefore, the innovation \(z_t\) is the derivation of the expected output and the observed output.
+The random variable \(z_t\) has a Gaussian distribution with zero mean and variance \(S_t\).&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Let’s plug these definitions into the equations of our update step&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t|t} = \hat x_{t|t-1} + \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}(\underbrace{y_{t}-C_t\hat x_{t}}_{z_t})&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t|t} = P_{t|t-1} - \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}P_{t|t-1} .&lt;/script&gt;
+
+&lt;p&gt;This leads us to the final equations of the Kalman filter.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Equations of the Kalman filter&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the Kalman filter consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t+1|t} &amp;=  A_t \hat x_{t|t} + B_tu_t \\ 
+P_{t+1|t} &amp;= Q_t + A_t P_{t|t} A_t^T \end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+z_t &amp;= y_{t}-C_t\hat x_{t|t-1}\\
+S_t &amp;= R_t + C_tP_{t|t-1}C_t^T\\
+K_t &amp;= P_{t|t-1}C_t^TS_t^{-1} \\
+\hat x_{t|t} &amp;= \hat x_{t|t-1} + K_t z_t\\
+P_{t|t} &amp;= (I - K_tC_t)P_{t|t-1}.
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;/h2&gt;
+
+&lt;p&gt;This article presented the derivation of the Kalman filter from first principles using Bayesian inference. The goal was to derive the Kalman filter in a clear and straightforward fashion. The steps were designed to be as atomic as possible, in order to be comprehensible for readers, who are not so familiar with the tools we used. Summarized, the derivation was performed in the following four subsequent steps:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;We realized, that we have to calculate \( p(x_{t}|y_0,…,y_t,u_0,…,u_{t-1}) \).&lt;/li&gt;
+  &lt;li&gt;Derived the recursive equations of the Bayes filter to efficiently calculate this distribution.&lt;/li&gt;
+  &lt;li&gt;Inserted the corresponding distributions of the linear Gaussian state space model.&lt;/li&gt;
+  &lt;li&gt;Added some “sugar” to obtain the usual equations of the Kalman filter.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot; src=&quot;http://localhost:4000/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/x-mathjax-config&quot;&gt;
+
+var mq = window.matchMedia( &quot;(max-width: 570px)&quot; );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  &quot;HTML-CSS&quot;: { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;new Svg_MathJax().install();&lt;/script&gt;</content><author><name></name></author><summary type="html">The concept and the equations of the Kalman filter can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using Bayesian inference. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.</summary></entry></feed>
