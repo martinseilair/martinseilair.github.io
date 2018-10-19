@@ -7,441 +7,192 @@ excerpt_separator: <!--more-->
 ---
 Particle filter are an extremly helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding equations and look at an interactive example on the way. In order to follow the steps in this post you should bring some basic knowledge of math and probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let's dive into it!
 <!--more-->
-<script src="//d3js.org/d3.v3.js" charset="utf-8"></script>
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
 <script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
+<script src="{{ base.url | prepend: site.url }}/assets/js/particle_filter/particle_filter.js"></script>
+<script src="{{ base.url | prepend: site.url }}/assets/js/particle_filter/race_car.js"></script>
+<script src="{{ base.url | prepend: site.url }}/assets/js/particle_filter/race_track.js"></script>
 
+<script src="{{ base.url | prepend: site.url }}/assets/js/particle_filter/util.js"></script>
 
-
-
-
-<script type="text/javascript">
-
-class ParticleFilter {
-
-	constructor(){
-		this.points = [];
-		this.n = 100;
-
-
-
-
-	}
-
-	init_samples(){
-		this.points = [];
-		var rn = this.n + Math.floor(5.0*Math.random());
-		for (var i=0; i<rn; i++){
-			this.points.push({pos: Math.random(), w:Math.random()})	
-		}
-	}
-
-}
-
-
-
-class RadialRaceTrack {
-    constructor(w, h, base_x, base_y, base_radius, race_track_radius) {
-
-		this.base_radius = base_radius;
-
-		this.w = w;
-		this.h = h;
-		this.base_x = base_x;
-		this.base_y = base_y;
-		this.base_radius = base_radius;
-		this.race_track_radius = race_track_radius
-		this.map_rad = [];
-		this.map_pos = [];
-		this.svg = [];
-		this.car = [];
-
-		this.create_map();
-
-
-		this.track_length = this.map_pos[this.map_pos.length - 1];
-    }
-
-    index_lin_interp(arr, value){
-
-    	if(arr[0]>value){
-    		return [0, 0.0];
-    	}
-    	if(arr[arr.length - 1]<value){
-    		return [arr.length - 2, 1.0];
-    	}
-
-    	for (var i=0; i<arr.length; i++){
-    		if(arr[i]>value){
-    			return [i-1, (value - arr[i-1])/(arr[i-1] - arr[i])]
-
-    		}
-    	}
-    }
-
-	lin_interp(arr, par){
-    	return arr[par[0]] + par[1]*(arr[par[0]] - arr[par[0]+1])
-    }
-
-
-
-    get_pos(rad){
-    	return this.lin_interp(this.map_pos, this.index_lin_interp(this.map_rad, rad));
-    }
-
-    get_rad(pos){
-		return this.lin_interp(this.map_rad, this.index_lin_interp(this.map_pos, pos));
-    }
-
-
-    create_map(){
-	    var n = 1000;
-		var s = 0;
-
-		var r = 0.0;
-		var da = 2.0*Math.PI/n;
-		var rad = 0.0;
-
-		this.map_rad.push(rad);
-		this.map_pos.push(s);
-		var r_old = this.race_track_radius(rad);
-
-
-		for (var p=1;p<=n;p++){
-			rad = p*2*Math.PI/n;
-			r = this.race_track_radius(rad);
-			s+=Math.sqrt(r_old*r_old + r*r - 2.0*r_old*r*Math.cos(da));
-			this.map_rad.push(rad);
-			this.map_pos.push(s);
-			r_old = r;
-		}
-	}	
-
-	get_angle(rad){
-		var eps = 0.0001;
-
-		var c1 = this.race_track_pos_abs(rad);
-		var c2 = this.race_track_pos_abs(rad + eps);
-
-		return Math.atan2(c2[1]-c1[1],c2[0]-c1[0]);
-
-	}
-
-	init_car(pos){
-
-		this.g = this.svg.append("g")
-		this.g.append("image")
-			.attr("x",0)
-			.attr("y",-5)
-			.attr("width",100)
-			.attr("xlink:href","{{ base.url | prepend: site.url }}/assets/svg/car.svg")
-
-	 	this.update_car(pos)
-	}
-
-	update_car(pos){
-		pos = pos % this.track_length;
-		var rad = this.get_rad(pos);
-		var c = this.race_track_pos_abs(rad)
-		var s = -0.8;
-		var angle = this.get_angle(rad)/Math.PI*180.0;
-
-		this.g.transition().attr("transform","translate(" + c[0] + "," + c[1] + ") scale(" + s + ") rotate(" + angle + ") translate(-50.0, -40.0)").duration(dur);
-
-
-
-	}
-
-    draw_tree(svg, x, y, s){
-	    var trunk_w = 12.0;
-	    var trunk_h = 30.0;
-	    var d = 10.0;
-
-	    // define clipping path for leaves and trunk
-		var defs = svg.append("defs");
-
-		var leaves_clip = defs
-			.append("clipPath")
-			.attr("id", "leavesshape"); 
-
-		leaves_clip.append("path")
-			.attr("d","m 0.0,0.0 c 50.0,0.0 10.0,-100.0 0.0,-100.0 c -10.0,0.0 -50.0,100.0 0.0,100.0")
-
-		var trunk_clip = defs
-			.append("clipPath")
-			.attr("id", "trunkshape"); 
-
-		trunk_clip.append("rect")
-			.attr("x", -trunk_w/2.0)
-			.attr("y", -d)
-			.attr("width", trunk_w)
-			.attr("height", trunk_h);
-
-
-		// append layer for tree
-		var treeg = svg.append("g")
-			.attr("transform","translate(" + x  + "," + (y) + ") scale(" + s + ") translate(0.0, " + (- trunk_h + d) +")");
-
-		// shadow
-		treeg.append("ellipse")
-			.attr("cx",0.0)
-			.attr("cy", trunk_h - d)    
-			.attr("rx",15.0)
-			.attr("ry",5.0)
-			.style("fill","#000000")
-			.style("opacity",0.1);	
-
-		// trunk
-		var trunk = treeg.append("g")
-			.attr("clip-path","url(#trunkshape)");
-
-		trunk.append("rect")
-			.attr("x", -trunk_w/2.0)
-			.attr("y", -d)
-			.attr("width", trunk_w)
-			.attr("height", trunk_h+d)
-			.attr("fill","#795437");	
-
-		trunk.append("rect")
-			.attr("x", -trunk_w)
-			.attr("y", -d)
-			.attr("width", trunk_w)
-			.attr("height", trunk_h+d)
-			.attr("fill","#9f7b5b");
-
-		// leaves
-		var leaves = treeg.append("g")
-			.attr("clip-path","url(#leavesshape)");   
-
-		leaves.append("rect")	
-			.attr("x", -60.0)
-			.attr("y", -110.0)
-			.attr("width", 120.0)
-			.attr("height", 120.0)
-			.attr("fill","#6f9329");	
-
-		leaves.append("rect")	
-			.attr("x", 0.0)
-			.attr("y", -110.0)
-			.attr("width", 60.0)
-			.attr("height", 120.0)
-			.attr("fill","#557218");   
-	}
-
-	race_track_pos_abs(rad){
-		var r = this.race_track_radius(rad);
-		return [this.base_x + r*Math.cos(rad),this.base_y + r*Math.sin(rad)];
-	}
-
-
-	draw_point_rad(rad, color){
-		var c = race_track_pos_abs(rad);
-
-		this.svg.append("circle")
-			.attr("cx",c[0])
-			.attr("cy",c[1])
-			.attr("r",5.0)
-			.style("fill",color);
-
-	}
-
-	draw_point_pos(pos,color){
-
-		var rad = this.get_rad(pos);
-
-		this.draw_point_rad(rad, color);
-	}
-
-
-
-	draw_points(points){
-
-
-		var data = [];
-		var c;
-		for (var i=0; i<points.length;i++){
-			c = this.race_track_pos_abs(this.get_rad(this.track_length*points[i].pos));
-			data.push({ "cx": c[0], "cy": c[1], "r": 10.0*points[i].w+5.0})
-		}
-
-		var p = this.svg.selectAll("circle")
-			.data(data);
-		p
-		.attr("cx",function(d){return d.cx})
-		.attr("cy",function(d){return d.cy})
-		.attr("r",function(d){return d.r})
-
-
-		p.enter().append("circle")
-		.attr("cx",function(d){return d.cx})
-		.attr("cy",function(d){return d.cy})
-		.attr("r",function(d){return d.r})
-		.style("fill","red")
-		.style("opacity",0.3);
-
-		// EXIT
-		// Remove old elements as needed.
-		p.exit().remove();
-
-
-	}
-
-	draw_race_track(svg_dom){
-
-		// define race track
-		this.svg = d3.select(svg_dom);
-		this.svg.attr("viewBox","0 0 " + this.w + " " + this.h);
-
-
-		var n = 500;
-
-		var race_track_data = [];
-		var r,x,y;
-		var rad,c;
-
-		for (var i=0; i<n; i++){
-			rad = i/n*2.0*Math.PI;
-			c = this.race_track_pos_abs(rad)
-			race_track_data.push({ "x": c[0],   "y": c[1]});
-		}
-
-		//race_track_data.push(race_track_data[0])
-
-		//This is the accessor function we talked about above
-		var lineFunction = d3.svg.line()
-			.x(function(d) { return d.x; })
-			.y(function(d) { return d.y; })
-			.interpolate("linear");
-
-		//The line SVG Path we draw
-		var lineGraph = this.svg.append("path")
-			.attr("d", lineFunction(race_track_data)+"Z")
-			.attr("stroke", "#FFF")
-			.attr("stroke-width", 35)
-			.attr("fill", "none")
-			.attr("stroke-linejoin","round");
-
-		//The line SVG Path we draw
-		var lineGraph = this.svg.append("path")
-			.attr("d", lineFunction(race_track_data)+"Z")
-			.attr("stroke", "#888")
-			.attr("stroke-width", 30)
-			.attr("fill", "none")
-			.attr("stroke-linejoin","round");
-
-
-		//The line SVG Path we draw
-		var lineGraph = this.svg.append("path")
-			.attr("d", lineFunction(race_track_data)+"Z")
-			.attr("stroke", "#EEE")
-			.attr("stroke-width", 2)
-			.attr("fill", "none")
-			.attr("stroke-linejoin","round")
-			.style("stroke-dasharray", ("10, 12"));
-
-		this.draw_tree(this.svg, this.base_x, this.base_y, 0.8);
-		this.init_car(aa);
-
-
-	}
-}
-
-
-</script>
+<script src="{{ base.url | prepend: site.url }}/assets/js/particle_filter/plot.js"></script>
 
 
 <script type="text/javascript">
 
 
-	function gaussian(x, mu, sigma){
-		return 1/(2*Math.PI*sigma*sigma)*Math.exp(-(x-mu)*(x-mu)/(sigma*sigma));
-	}
+	// SITE NOT LOADED!!!
+
+	// add loaded listener
+	window.addEventListener("load", function(event) {
+		finished_loading();
+	});
 
 	function race_track_radius(rad){
-
-		function derivation(x){
-			return 30.0*Math.cos(8*x) + 300*gaussian(x,Math.PI-0.4,0.5) + 330*gaussian(x,Math.PI+0.3,0.4);
+		function deviation(x){
+			return 10.0*Math.cos(8*x) + 290*gaussian(x,Math.PI-0.4,0.5) - 30*gaussian(x,Math.PI-0.0,0.2) + 330*gaussian(x,Math.PI+0.3,0.4);
 		}
-
-		return r = this.base_radius + derivation(rad);
-
-
+		return r = this.base_radius + deviation(rad);
 	}
 
 
+	// define race track
 	var w = 800;
 	var h = 500;
-	var base_radius = 150;
+	var base_radius = 180;
 	var base_x = w - base_radius - 80;
 	var base_y = 250;
 
 	race_track = new RadialRaceTrack(w, h, base_x, base_y, base_radius, race_track_radius);
+	race_track.add_tree(base_x, base_y);
 
-	pf = new ParticleFilter();
+	// define race car
+	rc = new RaceCar(race_track,"{{ base.url | prepend: site.url }}");
+
+	// define particle filter 
+
+	var N = 100; //no. of particles
+
+	function observe_dist(distance, state){
+		return rc.output_dist_single(distance, state, 0);
+	}
+	pf = new ParticleFilter(N, rc.system_dist_single.bind(rc), rc.system_dist_sample.bind(rc), [observe_dist], rc.initial_dist_sample.bind(rc), race_track.draw_points.bind(race_track));
+
 
 	var aa = 0;
-
-	var dur = 50;
-
+	var dur = 500;
 
 
-</script>
+	// initialize prob_strip
+	var prob_strip_n = 1000;
 
+	var prob_strip_pos = [...Array(prob_strip_n)].map((e,i)=>{return race_track.track_length*i/(prob_strip_n-1)});
+	var prob_strip_data;
+	var prob_strip_color = d3.interpolateOranges;
 
+function finished_loading(){
 
-<script type="text/javascript">
+	// SITE LOADED!
 
-function plot_rad_to_s(div){
-	
-	var trace1 = {
-	  x: race_track.map_rad, 
-	  y: race_track.map_pos, 
-	  type: 'scatter'
-	};
+	// init track and car
+	var svg = document.getElementById("race_track");
 
-	var trace2 = {
-	  x: race_track.map_pos, 
-	  y: race_track.map_rad, 
-	  type: 'scatter'
-	};
-
-
-	var data = [trace1];
-
-	var layout1 = {
-	  yaxis: {rangemode: 'tozero',
-	          showline: true,
-	          zeroline: true}
-	};
-
-
-	Plotly.newPlot('div1', [trace1], layout1);
-
-	// plot points on track
-// Grab a random sample of letters from the alphabet, in alphabetical order.
-
-
-
-
-
-
-}
-
-
-function sampler(){
-
+	race_track.draw_race_track(svg);
 	pf.init_samples();
-	race_track.draw_points(pf.points);
+	rc.reset();
+
+
+	// initialize prob_strip
+	//var path = d3.select("#probability_strip").remove();
+	var sam = prob_strip_pos.map((e,i)=>{return race_track.race_track_pos_abs(race_track.get_rad(e),0.0)});
+	//var sam = prob_strip_pos.map((e,i)=>{console.log(race_track.get_rad(e));return race_track.get_rad(e)});
+
+	sam.push(sam[1])
+
+
+
+	prob_strip_data = quads(sam)
+	var dist = rc.system_dist_array(prob_strip_pos, rc.state, 1.0);
+
+	dist = dist.map((e)=>{return Math.pow(e,0.1);})
+
+	dist = normalize_vector(dist);
+
+
+d3.select("#prob_strip_group").selectAll("path")
+    .data(prob_strip_data)
+  .enter().append("path")
+	.style("fill", function(d, i) { return prob_strip_color(dist[i])})
+	.style("stroke", function(d, i) { 	return prob_strip_color(dist[i]) })
+    .attr("d", function(d) { return lineJoin(d[0], d[1], d[2], d[3], 50); });
+    
+
+
+	var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(rc.state), 0.0);
+	distance = rc.distance(L, this.race_track.trees[0]);
+	
+	//var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist(distance, e, 0);})
+	var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist_single(distance, e, 0);})
+
+	out_dist = normalize_vector(out_dist);
+
+
+d3.select("#ob_strip_group").selectAll("path")
+    .data(prob_strip_data)
+  .enter().append("path")
+	.style("fill", function(d, i) { return prob_strip_color(out_dist[i])})
+	.style("stroke", function(d, i) { 	return prob_strip_color(out_dist[i]) })
+    .attr("d", function(d) { return lineJoin(d[0], d[1], d[2], d[3], 50); });
+    
+
+    //plot_curvature(this);
+	//plot_pdf("system_dist_approx", transpose(rc.system_dist_approx(1000, 1.0)));
+	//plot_pdf("output_dist_approx", transpose(rc.output_dist_approx(1000,1000, 0)));
+
+
+
+
+
+
+
+
+	
 }
+
+// animation
 
 function ani(){
-	console.log("foo")
+
 	var inter = setInterval(function() {
-                aa=aa+10.0;
-                console.log("foo")
-                race_track.update_car(aa);
+
+	if (aa % 3 == 0){
+		output = rc.output_dist_sample(0);
+	    pf.update(output, 0);
+	}else if (aa % 3 == 1){
+	    pf.ancestor_sampling();
+	}else{
+		input=1.0;
+
+		var dist = rc.system_dist_array(prob_strip_pos, rc.state, input);
+
+		dist = dist.map((e)=>{return Math.pow(e,0.1);})
+
+		dist = normalize_vector(dist);
+		d3.select("#prob_strip_group").selectAll("path")
+		    .data(prob_strip_data)
+		    .style("fill", function(d, i) { return prob_strip_color(dist[i]); })
+		    .style("stroke", function(d, i) { return prob_strip_color(dist[i]); })
+
+	    rc.step(input);
+	    pf.predict(input);
+
+	    // update prob_strip
+	
+
+
+	var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(rc.state), 0.0);
+	distance = rc.distance(L, this.race_track.trees[0]);
+	
+	//var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist(distance, e, 0);})
+	var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist_single(distance, e, 0);})
+	out_dist = normalize_vector(out_dist);
+
+
+d3.select("#ob_strip_group").selectAll("path")
+    .data(prob_strip_data)
+	.style("fill", function(d, i) { return prob_strip_color(out_dist[i])})
+	.style("stroke", function(d, i) { 	return prob_strip_color(out_dist[i]) })
+    
+
+
+
+	}
+
+	aa++;
         }, dur);
+
 }
 	
 
@@ -450,31 +201,101 @@ function ani(){
 
 
 <div id="rad_to_s" style="width:100px"></div>
-## Rad to x,y
 <div id="div1"></div>
 <div id="div2"></div>
 
 
 
-<svg id="race_track" style="background-color:#f7f3ef;width:100%" onload="race_track.draw_race_track(this);plot_rad_to_s(this)" onclick="sampler();ani()"></svg>
+From the statistical and probabilistic point of view, particle filters can be interpreted as mean field particle interpretations of Feynman-Kac probability measures.
+
+To design a particle filter we simply need to assume that we can sample the transitions \\(X_{k-1}\to X_{k} \\) of the Markov chain \\(X_{k}\\) , and to compute the likelihood function \\(x_{k}\mapsto p(y_{k}\|x_{k})\\) 
+
+
+1. Sample \\(N\\) samples from \\(p(x_0)\\)
+
+2. Selection-updating transition
+
+$$ \sum _{i=1}^{N}{\frac {p(y_{k}|\xi _{k}^{i})}{\sum _{j=1}^{N}p(y_{k}|\xi _{k}^{j})}}\delta _{\xi _{k}^{i}}(dx_{k}) $$
+
+3. mutation-prediction transition
+
+$$ {\widehat {\xi }} _ {k}^{i}\longrightarrow \xi _ {k+1}^{i}\sim p(x _ {k+1}\|{\widehat {\xi }} _ {k}^{i}) ,\qquad i=1,\cdots ,N. $$
+
+
+1. Initialize the distribution. The initial distribution can be anything. In this demo, a uniform distribution over a predefined range is used.
+2. Observe the system and find a (proportional) probability for each particle that the particle is an accurate representation of the system based on that observation. We refer to this value as a particle's importance weight. In this demo, the selected function calculates the particle weight directly from
+3. Normalize the particle weights.
+4. Resample the distribution to get a new distribution. A particle is selected at a frequency proportional to its importance weight.
+5. Add noise to the filter. Because a particle may be resampled multiple times, we need to move some of the particles slightly make the distribution cover the space better. Add small random values to each parameter of each filter.
+6. If you have a prediction on how the system changes between time steps, you can update each particle in the filter according to the prediction.
+7. Repeat from step 2.
 
 
 
 
 
-
-In this first post I want to take a closer look at the Bernoulli distribution.
-
-<h1> Definition </h1>
-
-The Bernoulli distribution is most of the time defined as
-
-$$ \mathrm{Bernoulli}(x|\mu) = \mu^x(1-\mu)^{1-x}, $$
-
-where \\(x \in \\{0,1\\}\\) and \\(\mu \in \[0,1]\\\).
-
-At a first glance this looks very random and in some sense it also is. 
+Fall 1 ich kann von \\(X_{k-1}\to X_{k} \\) samplen
+Fall 2 ich kann es nicht
 
 
+# Bayes filter
 
-<a href='https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm'>Designed by Freepik</a>
+# Monte Carlo
+
+# Genetic Algorithms
+
+# Particle filter SMC
+
+# Example
+
+The current state \\(x_t)\\) is defined as the current distance from the starting point. To obtain the position of the car in \\((x,y)\\) coordinates you have the mapping 
+
+$$     L(x_t) =  \begin{pmatrix}
+    L_x(x_t) \\
+    L_y(x_t) \\
+    \end{pmatrix} $$
+
+To infer the position of the car, we will measure the distance to tree. The position of the tree is defined as \\(T = (T_x, T_y)\\)
+
+
+$$ p(y_t|x_t) = \mathcal{N}(y_t| \mu_o(x_t), \sigma_o^2(x_t)) $$
+
+with 
+
+
+$$ \mu_o(x_t) = d(L(x_t),T) = \sqrt{(L_x(x_t)-T_x)^2 + (L_y(x_t)-T_y)^2} $$
+
+$$  \sigma_o(x_t) = ad(L(x_t),T) $$
+
+
+
+$$ p(x_{t+1}|x_t,u_t) = \mathcal{N}(x_{t+1}|\mu_s(x_t, u_t) ,\sigma_s^2(x_t) ) $$
+
+$$ \kappa(x_t) ={\frac {|L_x'(x_t)L_y''(x_t)-L_y'(x_t)L_x''(x_t)|}{\left(L_x'^2(x_t)+L_y'^2(x_t)\right)^{\frac {3}{2}}}} $$
+
+
+$$ \mu_s(x_t, u_t) = x_t + b(\kappa)u_t $$
+
+$$ b(\kappa) = \max\{l, 1 - c\kappa\} $$
+
+$$  \sigma_s(x_t, u_t) = db(\kappa)u_t $$ 
+
+
+
+<div id="system_dist_approx"  style="width: 600px; height: 600px;"></div>
+<div id="output_dist_approx"  style="width: 600px; height: 600px;"></div>
+
+<svg id="race_track" style="background-color:#fff5eb;width:100%"  onclick="ani()"></svg>
+
+
+
+
+<a href='https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm'></a>
+
+<script type="text/javascript">
+
+
+
+
+        
+    </script>
