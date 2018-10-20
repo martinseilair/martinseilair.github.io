@@ -10,7 +10,7 @@ class RaceCar {
 		this.a = 0.1; //output
 		this.kth = 0.15;
 		this.c = 50.0;
-		this.d = 0.05; //system
+		this.d = 0.1; //system
 
 		this.u_abs = 100.0; //system
 
@@ -42,12 +42,12 @@ class RaceCar {
 	}
 
 	mu_s(state, input){
-		return state + this.b_cache*this.u_abs*input;
+		return state + this.b_cache*this.u_abs*(input-1.0);
 
 	}
 
 	sigma_s(input){
-		return this.d*this.b_cache*this.u_abs*input;
+		return this.d*this.b_cache*this.u_abs;
 	}
 
 	system_dist(state_p, state, input){
@@ -98,9 +98,7 @@ class RaceCar {
 		this.race_track.update_car(this.state,dur, this.overflow);
 	}
 
-	distance(a,b){
-		return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y))
-	}
+
 
 	mu_o(){
 		return this.dist_cache;
@@ -119,7 +117,7 @@ class RaceCar {
 		// get output distribution
 		var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(state), 0.0);
 
-		this.dist_cache = this.distance(L, this.race_track.trees[tree_id]);
+		this.dist_cache = distance_xy(L, this.race_track.trees[tree_id]);
 		return this.output_dist(distance, state, tree_id);
 	}
 
@@ -127,8 +125,7 @@ class RaceCar {
 		// get output distribution
 		var p = [];
 		var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(state), 0.0);
-
-		this.dist_cache = this.distance(L, this.race_track.trees[tree_id]);
+		this.dist_cache = distance_xy(L, this.race_track.trees[tree_id]);
 		for (var i=0;i<distance.length;i++){
 			p.push(this.output_dist(distance[i], state, tree_id));
 		}
@@ -147,7 +144,7 @@ class RaceCar {
 	output_dist_sample(tree_id){
 		// sample a measurement
 		var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(this.state), 0.0);
-		this.dist_cache = this.distance(L, this.race_track.trees[tree_id]);
+		this.dist_cache = distance_xy(L, this.race_track.trees[tree_id]);
 		return this.mu_o() + randn_bm()*this.sigma_o(); 
 	}
 

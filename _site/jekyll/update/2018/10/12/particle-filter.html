@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"Particle filter are an extremly helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding equations and look at an interactive example on the way. In order to follow the steps in this post you should bring some basic knowledge of math and probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let’s dive into it!","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/12/particle-filter.html","headline":"Particle filter","dateModified":"2018-10-12T18:04:07+09:00","datePublished":"2018-10-12T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/12/particle-filter.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1539960440086688549"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<link rel="stylesheet" href="/assets/main.css?1540023882892335037"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
@@ -50,8 +50,31 @@
 
 <script src="http://localhost:4000/assets/js/particle_filter/plot.js"></script>
 
+<script src="http://localhost:4000/assets/js/particle_filter/discrete_bayes_filter.js"></script>
+
 <script type="text/javascript">
 
+// mit keys oder button steuerbar
+// strips ein und ausblendbar
+// weights ein und ausblendbar
+// update resample predict manuell oder langsam automatisch (weiter button)
+// update resample predict button (hier macht input keinen sinn, außer man hat 3 button für predict)
+// mit maus car position festlegen (geringster abstand)
+
+
+// herangehensweise
+
+// 1. auto fährt 
+// 2. Vorstellung der system und beobachtungsfunktion (plot)
+// 3. mit maus car position festlegen, entsprechende verteilung innen und außen anzeigen
+// 3a. Bayes filter approximierung außen posterior innen beobachtung (update prediction weiter)
+// 4. standbild: particle anzeigen
+// 5. standbild: update step (5 sek vorher 5 sek nachher) (prob strip innen anzeigen)
+// 6. standbild: resampling (5 sek vorher 5 sek nachher)
+// 7. standbild: predict (5 sek vorher 5 sek nachher)
+// 8. update resample predict manuell (weiter button)
+// 9. update resample predict automatisch (geschwindigkeit einstellbar) (steuerung über pfeiltasten)
+// 10. zwei trees
 
 	// SITE NOT LOADED!!!
 
@@ -66,6 +89,8 @@
 		}
 		return r = this.base_radius + deviation(rad);
 	}
+
+	var strip_n = 1000;
 
 
 	// define race track
@@ -85,139 +110,211 @@
 
 	var N = 100; //no. of particles
 
-	function observe_dist(distance, state){
-		return rc.output_dist_single(distance, state, 0);
+
+
+		var use_particle_filter = false;
+		var ani_step;
+
+	race_track.set_strip_domain(strip_n);
+	strip_pos = race_track.strip_pos;
+
+
+
+
+
+	if(use_particle_filter){
+		function observe_dist(distance, state){
+			return rc.output_dist_single(distance, state, 0);
+		}
+		pf = new ParticleFilter(N, rc.system_dist_single.bind(rc), rc.system_dist_sample.bind(rc), [observe_dist], rc.initial_dist_sample.bind(rc), race_track.draw_points.bind(race_track));
+		ani_step = 3;
+	}else{
+
+
+
+		state_n = strip_n;
+		output_n = strip_n;
+
+		console.log(strip_n)
+
+		// define domains
+
+		bf_x_map = strip_pos;
+
+		bf_u_map = [0, 1, 2];
+
+		max_dist = race_track.w;
+		bf_y_map = [...Array(output_n)].map((e,i)=>{return max_dist*i/output_n;});
+
+
+		// discretize pdf
+
+		//bf_initial_dist = norm_vector([...Array(state_n)].map((e,i)=>{return (i>500 && i<550)?1.0:0.0;}));
+
+		bf_initial_dist = norm_vector([...Array(state_n)].map((e,i)=>{return 1.0;}));
+
+		
+
+		bf_system_dist = bf_u_map.map((u)=>{
+			return bf_x_map.map((x)=>{
+				return norm_vector(rc.system_dist_array(bf_x_map,x,u));
+			});
+		});
+
+		bf_output_dist = bf_x_map.map((x)=>{
+				return norm_vector(rc.output_dist_array(bf_y_map,x,0));
+		});
+
+		function cont_2_disc_output(output){
+			output = Math.abs(output);
+
+			return Math.floor(output_n*output/max_dist);
+		}
+
+		
+		bf = new DiscreteBayesFilter(bf_system_dist, bf_output_dist, bf_initial_dist);
+		ani_step = 3;
 	}
-	pf = new ParticleFilter(N, rc.system_dist_single.bind(rc), rc.system_dist_sample.bind(rc), [observe_dist], rc.initial_dist_sample.bind(rc), race_track.draw_points.bind(race_track));
 
 
 	var aa = 0;
-	var dur = 500;
+
+	var dur = 1000;
 
 
-	// initialize prob_strip
-	var prob_strip_n = 1000;
 
-	var prob_strip_pos = [...Array(prob_strip_n)].map((e,i)=>{return race_track.track_length*i/(prob_strip_n-1)});
-	var prob_strip_data;
-	var prob_strip_color = d3.interpolateOranges;
+
+
+function get_system_dist_normalized(pos, input) {
+	var dist = rc.system_dist_array(strip_pos, pos, input);
+	dist = dist.map((e)=>{return Math.pow(e,0.1);})
+	return normalize_vector(dist);
+}
+
+function get_output_dist_normalized(pos){
+	var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(pos), 0.0);
+	distance = distance_xy(L, this.race_track.trees[0]);
+	var out_dist = strip_pos.map((e)=>{return rc.output_dist_single(distance, e, 0);})
+	return normalize_vector(out_dist);
+}
+
+function mouse_move(){
+
+	var coords = d3.mouse(this);
+
+
+	var min_dist = 50.0;
+	var nearest = race_track.get_nearest_pos(coords);
+	if(nearest.distance < min_dist){
+		race_track.show_strip("inner");
+		race_track.show_strip("outer");
+		race_track.update_car(nearest.pos,dur, 0);
+		race_track.update_strip("outer", get_system_dist_normalized(nearest.pos, 2));
+		race_track.update_strip("inner", get_output_dist_normalized(nearest.pos));
+	}else{
+		race_track.hide_strip("inner");
+		race_track.hide_strip("outer");
+	}
+
+}
+
 
 function finished_loading(){
 
 	// SITE LOADED!
 
+
+		//plot_pdf("output_dist_approx", bf_output_dist);
+		//plot_pdf("system_dist_approx", bf_system_dist[2]);
+
+	race_track.set_mouse_move(mouse_move)
 	// init track and car
 	var svg = document.getElementById("race_track");
+	svg_bg = "#fff5eb";
+	svg.style.backgroundColor = svg_bg;
 
 	race_track.draw_race_track(svg);
-	pf.init_samples();
+
 	rc.reset();
 
 
-	// initialize prob_strip
-	//var path = d3.select("#probability_strip").remove();
-	var sam = prob_strip_pos.map((e,i)=>{return race_track.race_track_pos_abs(race_track.get_rad(e),0.0)});
-	//var sam = prob_strip_pos.map((e,i)=>{console.log(race_track.get_rad(e));return race_track.get_rad(e)});
-
-	sam.push(sam[1])
-
-
-
-	prob_strip_data = quads(sam)
-	var dist = rc.system_dist_array(prob_strip_pos, rc.state, 1.0);
-
-	dist = dist.map((e)=>{return Math.pow(e,0.1);})
-
-	dist = normalize_vector(dist);
-
-
-d3.select("#prob_strip_group").selectAll("path")
-    .data(prob_strip_data)
-  .enter().append("path")
-	.style("fill", function(d, i) { return prob_strip_color(dist[i])})
-	.style("stroke", function(d, i) { 	return prob_strip_color(dist[i]) })
-    .attr("d", function(d) { return lineJoin(d[0], d[1], d[2], d[3], 50); });
-    
-
-
-	var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(rc.state), 0.0);
-	distance = rc.distance(L, this.race_track.trees[0]);
-	
-	//var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist(distance, e, 0);})
-	var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist_single(distance, e, 0);})
-
-	out_dist = normalize_vector(out_dist);
-
-
-d3.select("#ob_strip_group").selectAll("path")
-    .data(prob_strip_data)
-  .enter().append("path")
-	.style("fill", function(d, i) { return prob_strip_color(out_dist[i])})
-	.style("stroke", function(d, i) { 	return prob_strip_color(out_dist[i]) })
-    .attr("d", function(d) { return lineJoin(d[0], d[1], d[2], d[3], 50); });
-    
-
-    //plot_curvature(this);
-	//plot_pdf("system_dist_approx", transpose(rc.system_dist_approx(1000, 1.0)));
-	//plot_pdf("output_dist_approx", transpose(rc.output_dist_approx(1000,1000, 0)));
-
-
-
-
-
-
+	// initialize strips
 
 
 	
+
+	outer_color = d3.interpolateRgb(d3.rgb(svg_bg), d3.rgb('#00028e'))
+	inner_color = d3.interpolateOranges;
+
+	if(use_particle_filter){
+		// particle
+		pf.init_samples();	
+		race_track.init_strip("outer", get_system_dist_normalized(rc.state), outer_color, 60);
+		race_track.init_strip("inner", get_output_dist_normalized(rc.state), inner_color, 60);
+	}else{
+		// bayes
+
+
+		race_track.init_strip("outer", normalize_vector(bf.posterior), outer_color, 60);
+		race_track.init_strip("inner", get_output_dist_normalized(rc.state), inner_color, 60);
+
+
+
+
+		
+	}
+
+
+
+
 }
-
 // animation
 
 function ani(){
 
 	var inter = setInterval(function() {
 
-	if (aa % 3 == 0){
-		output = rc.output_dist_sample(0);
-	    pf.update(output, 0);
-	}else if (aa % 3 == 1){
-	    pf.ancestor_sampling();
-	}else{
-		input=1.0;
-
-		var dist = rc.system_dist_array(prob_strip_pos, rc.state, input);
-
-		dist = dist.map((e)=>{return Math.pow(e,0.1);})
-
-		dist = normalize_vector(dist);
-		d3.select("#prob_strip_group").selectAll("path")
-		    .data(prob_strip_data)
-		    .style("fill", function(d, i) { return prob_strip_color(dist[i]); })
-		    .style("stroke", function(d, i) { return prob_strip_color(dist[i]); })
+	if (aa % ani_step == 0){
+		input=2;
 
 	    rc.step(input);
-	    pf.predict(input);
 
-	    // update prob_strip
-	
+	    if(use_particle_filter){
+	    	pf.predict(input);
+			race_track.update_strip("outer", get_system_dist_normalized(rc.state));
+			race_track.update_strip("inner", get_output_dist_normalized(rc.state));
+		}else{
+			//bayes
 
+			bf.predict(input);
+			race_track.hide_strip("inner");
+			race_track.update_strip("outer", normalize_vector(bf.posterior));
+			
 
-	var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(rc.state), 0.0);
-	distance = rc.distance(L, this.race_track.trees[0]);
-	
-	//var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist(distance, e, 0);})
-	var out_dist = prob_strip_pos.map((e)=>{return rc.output_dist_single(distance, e, 0);})
-	out_dist = normalize_vector(out_dist);
-
-
-d3.select("#ob_strip_group").selectAll("path")
-    .data(prob_strip_data)
-	.style("fill", function(d, i) { return prob_strip_color(out_dist[i])})
-	.style("stroke", function(d, i) { 	return prob_strip_color(out_dist[i]) })
-    
+		}
 
 
 
+	}else if (aa % ani_step == 1){
+		output = rc.output_dist_sample(0);
+		if(use_particle_filter){
+	    	pf.update(output, 0);
+		}else{
+			//bayes
+			race_track.show_strip("inner");
+			race_track.update_strip("inner", get_output_dist_normalized(rc.state));
+
+		}
+	}else{
+		if(use_particle_filter){
+	    	pf.ancestor_sampling();
+	    }else{
+			//bayes
+	    	y = cont_2_disc_output(output);
+			bf.update(y);
+
+			race_track.update_strip("outer", normalize_vector(bf.posterior));
+	    }
 	}
 
 	aa++;

@@ -13,6 +13,7 @@ class RadialRaceTrack {
 		this.race_track_radius = race_track_radius
 		this.map_rad = [];
 		this.map_pos = [];
+		this.map_xy = [];
 		this.svg = [];
 		this.car = [];
 
@@ -20,10 +21,44 @@ class RadialRaceTrack {
 
 		this.trees = [];
 
+		this.mouse_move_extern = [];
+
+
 
 
 
 		this.track_length = this.map_pos[this.map_pos.length - 1];
+    }
+
+    get_nearest_pos(xy){
+
+    	var p = {x: xy[0], y: xy[1]};
+
+
+    	var min = distance_xy(p, this.map_xy[0]);
+    	var min_id = 0;
+    	var d;
+
+    	for(var i=0; i< this.map_xy.length; i++){
+
+    		d = distance_xy(p, this.map_xy[i])
+    		if(d<min){
+    			min_id = i;
+    			min = d
+    		}
+    	}
+
+    	return {pos: this.map_pos[min_id], distance: min};
+    }
+
+
+    set_mouse_move(mouse_move_extern){
+    	this.mouse_move_extern = mouse_move_extern;
+    }
+
+    mouse_move(){
+    	var coords = d3.mouse(this);
+    	this.mouse_move_extern(coords);
     }
 
     add_tree(p_x,p_y){
@@ -116,6 +151,7 @@ class RadialRaceTrack {
 
 		this.map_rad.push(rad);
 		this.map_pos.push(s);
+		this.map_xy.push(this.race_track_pos_abs(rad, 0.0));
 		var r_old = this.race_track_radius(rad);
 
 
@@ -125,6 +161,7 @@ class RadialRaceTrack {
 			s+=Math.sqrt(r_old*r_old + r*r - 2.0*r_old*r*Math.cos(da));
 			this.map_rad.push(rad);
 			this.map_pos.push(s);
+			this.map_xy.push(this.race_track_pos_abs(rad, 0.0));
 			r_old = r;
 		}
 	}	
@@ -191,16 +228,8 @@ class RadialRaceTrack {
 
 		pos = pos + overflow*this.track_length;
 
-
-		console.log(old_pos)
-		console.log(pos% this.track_length)
-
-		console.log(overflow)
 		var foo = function() {
  			return function(t) {
- 			if (overflow==-1.0)	{
- 				console.log((old_pos + t*(pos-old_pos) ) % this.track_length)
- 			}
  			var rad = this.get_rad((old_pos + t*(pos-old_pos) ) % this.track_length);
 			var c = this.race_track_pos_abs(rad, 0.0)
 			var s = -0.6;
@@ -209,8 +238,14 @@ class RadialRaceTrack {
 			}.bind(this);
 		}
 
-		this.g.transition().duration(3*dur)
- 			.attrTween('transform', foo.bind(this))
+		//this.g.transition().duration(3*dur)
+ 		//	.attrTween('transform', foo.bind(this))
+		var rad = this.get_rad(pos % this.track_length);
+		var c = this.race_track_pos_abs(rad, 0.0)
+		var s = -0.6;
+		var angle = this.get_angle(rad)/Math.PI*180.0;
+ 		this.g
+ 			.attr('transform', "translate(" + c.x + "," + c.y + ") scale(" + s + ") rotate(" + angle + ") translate(-50.0, -40.0)")
 
  		this.old_pos = pos- overflow*this.track_length;
  	}
@@ -359,10 +394,13 @@ class RadialRaceTrack {
 
 	draw_race_track(svg_dom){
 
+
+
 		// define race track
 		this.svg = d3.select(svg_dom);
 		this.svg.attr("viewBox","0 0 " + this.w + " " + this.h);
 
+		this.svg.on("mousemove", this.mouse_move_extern);
 
 		var n = 500;
 
@@ -403,7 +441,8 @@ class RadialRaceTrack {
 
 		var probstrip_clip = defs
 			.append("mask")
-			.attr("id", "inner_track");  
+			.attr("id", "outer_strip_mask")
+			.attr("maskUnits","userSpaceOnUse");
 
 		probstrip_clip.append("rect")
 			.attr("width",this.w)
@@ -413,13 +452,15 @@ class RadialRaceTrack {
 			.attr("fill","#FFF");
 		probstrip_clip.append("path")
 			.attr("d", lineFunction(this.race_track_data)+"Z")
-			.attr("stroke-width", 50)
+			.attr("stroke-width", 35)
+			.attr("stroke","#000")
 			.attr("stroke-linejoin","round")
 			.attr("fill","#000");
 
 		var obstrip_clip = defs
 			.append("mask")
-			.attr("id", "outer_track");  
+			.attr("id", "inner_strip_mask") 
+			.attr("maskUnits","userSpaceOnUse"); 
 		obstrip_clip.append("rect")
 			.attr("width",this.w)
 			.attr("height",this.h)
@@ -428,29 +469,36 @@ class RadialRaceTrack {
 			.attr("fill","#000");
 		obstrip_clip.append("path")
 			.attr("d", lineFunction(this.race_track_data)+"Z")
-			.attr("stroke-width", 50)
+			.attr("stroke-width", 0)
+			.attr("stroke", "#FFF")
 			.attr("stroke-linejoin","round")
 			.attr("fill","#FFF");
-
-
-		this.svg.append("g")
-			.attr("mask", "url(#inner_track)")
-			.attr("id", "prob_strip_group");
-
-		this.svg.append("g")
-			.attr("mask", "url(#outer_track)")
-			.attr("id", "ob_strip_group");
-
-
-		//The line SVG Path we draw
-		var lineGraph = this.svg.append("path")
+		obstrip_clip.append("path")
 			.attr("d", lineFunction(this.race_track_data)+"Z")
-			.attr("stroke", "#FFF")
-			.attr("stroke-width", 25)
-			.attr("fill", "none")
-			.attr("stroke-linejoin","round");
+			.attr("stroke-width", 35)
+			.attr("stroke", "#000")
+			.attr("stroke-linejoin","round")
+			.attr("fill","none");
 
-		//The line SVG Path we draw
+
+		this.svg.append("g")
+			.attr("mask", "url(#outer_strip_mask)")
+			.attr("id", "outer_strip_group");
+
+		this.svg.append("g")
+			.attr("mask", "url(#inner_strip_mask)")
+			.attr("id", "inner_strip_group");
+
+
+		// space till strip
+		//var lineGraph = this.svg.append("path")
+		//	.attr("d", lineFunction(this.race_track_data)+"Z")
+		//	.attr("stroke", "#fff5eb")
+		//	.attr("stroke-width", 30)
+		//	.attr("fill", "none")
+		//	.attr("stroke-linejoin","round");
+
+		// road
 		var lineGraph = this.svg.append("path")
 			.attr("d", lineFunction(this.race_track_data)+"Z")
 			.attr("stroke", "#888")
@@ -459,7 +507,7 @@ class RadialRaceTrack {
 			.attr("stroke-linejoin","round");
 
 
-		//The line SVG Path we draw
+		// middle line
 		var lineGraph = this.svg.append("path")
 			.attr("d", lineFunction(this.race_track_data)+"Z")
 			.attr("stroke", "#EEE")
@@ -476,4 +524,75 @@ class RadialRaceTrack {
 
 
 	}
+
+
+
+
+	// probability strip
+
+
+	set_strip_domain(n){
+
+		// initialize prob_strip
+		this.strip_n = n;
+
+		this.strip_pos = [...Array(this.strip_n)].map((e,i)=>{return this.track_length*i/(this.strip_n-1)});
+		this.strip_domain = [];
+
+		this.strip_color = [];
+		this.strip_color["inner"] = [];
+		this.strip_color["outer"] = [];
+
+		this.strip_width = [];
+		this.strip_width["inner"] = 60;
+		this.strip_width["outer"] = 60;
+
+		this.strip_id = [];
+		this.strip_id["inner"] = "#inner_strip_group";
+		this.strip_id["outer"] = "#outer_strip_group";
+
+		//var path = d3.select("#probability_strip").remove();
+		var sam = this.strip_pos.map((e,i)=>{return this.race_track_pos_abs(this.get_rad(e),0.0)});
+		//var sam = prob_strip_pos.map((e,i)=>{console.log(race_track.get_rad(e));return race_track.get_rad(e)});
+
+		sam.push(sam[1])
+
+		this.strip_domain = quads(sam)
+	}
+
+
+	init_strip(io, values, color, width){
+		this.strip_color[io] = color
+		this.strip_width[io] = width;
+
+		d3.select(this.strip_id[io]).selectAll("path")
+    		.data(this.strip_domain)
+  			.enter().append("path")
+			.style("fill", function(d, i) { return color(values[i])})
+			.style("stroke", function(d, i) { 	return color(values[i]) })
+    		.attr("d", function(d) { return lineJoin(d[0], d[1], d[2], d[3], width); });
+	}
+
+
+	update_strip(io, values){
+		var color = this.strip_color[io];
+		var width = this.strip_width[io];
+
+		d3.select(this.strip_id[io]).selectAll("path")
+		    .data(this.strip_domain)
+			.style("fill", function(d, i) { return color(values[i])})
+			.style("stroke", function(d, i) { 	return color(values[i]) })
+	}
+
+	show_strip(io){
+		d3.select(this.strip_id[io])
+			.style("visibility","visible");
+	}
+
+	hide_strip(io){
+		d3.select(this.strip_id[io])
+			.style("visibility","hidden");
+	}
+
+
 }
