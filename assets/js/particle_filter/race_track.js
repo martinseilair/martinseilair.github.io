@@ -56,6 +56,11 @@ class RadialRaceTrack {
     	this.mouse_move_extern = mouse_move_extern;
     }
 
+
+    set_key_down(key_down_extern){
+    	this.key_down_extern = key_down_extern;
+    }
+
     mouse_move(){
     	var coords = d3.mouse(this);
     	this.mouse_move_extern(coords);
@@ -398,9 +403,11 @@ class RadialRaceTrack {
 
 		// define race track
 		this.svg = d3.select(svg_dom);
-		this.svg.attr("viewBox","0 0 " + this.w + " " + this.h);
+		this.svg.attr("viewBox","0 0 " + this.w + " " + this.h)
+				.style("background-color","#fff5eb");
 
 		this.svg.on("mousemove", this.mouse_move_extern);
+		d3.select("body").on("keydown", this.key_down_extern);
 
 		var n = 500;
 
@@ -441,7 +448,7 @@ class RadialRaceTrack {
 
 		var probstrip_clip = defs
 			.append("mask")
-			.attr("id", "outer_strip_mask")
+			.attr("id", this.id + "outer_strip_mask")
 			.attr("maskUnits","userSpaceOnUse");
 
 		probstrip_clip.append("rect")
@@ -459,7 +466,7 @@ class RadialRaceTrack {
 
 		var obstrip_clip = defs
 			.append("mask")
-			.attr("id", "inner_strip_mask") 
+			.attr("id", this.id + "inner_strip_mask") 
 			.attr("maskUnits","userSpaceOnUse"); 
 		obstrip_clip.append("rect")
 			.attr("width",this.w)
@@ -482,12 +489,12 @@ class RadialRaceTrack {
 
 
 		this.svg.append("g")
-			.attr("mask", "url(#outer_strip_mask)")
-			.attr("id", "outer_strip_group");
+			.attr("mask", "url(#" + this.id + "outer_strip_mask)")
+			.attr("id", this.id + "outer_strip_group");
 
 		this.svg.append("g")
-			.attr("mask", "url(#inner_strip_mask)")
-			.attr("id", "inner_strip_group");
+			.attr("mask", "url(#" + this.id + "inner_strip_mask)")
+			.attr("id", this.id + "inner_strip_group");
 
 
 		// space till strip
@@ -548,8 +555,8 @@ class RadialRaceTrack {
 		this.strip_width["outer"] = 60;
 
 		this.strip_id = [];
-		this.strip_id["inner"] = "#inner_strip_group";
-		this.strip_id["outer"] = "#outer_strip_group";
+		this.strip_id["inner"] = "#" + this.id + "inner_strip_group";
+		this.strip_id["outer"] = "#" + this.id + "outer_strip_group";
 
 		//var path = d3.select("#probability_strip").remove();
 		var sam = this.strip_pos.map((e,i)=>{return this.race_track_pos_abs(this.get_rad(e),0.0)});

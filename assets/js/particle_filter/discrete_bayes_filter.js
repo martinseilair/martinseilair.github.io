@@ -1,10 +1,11 @@
 class DiscreteBayesFilter {
 
-	constructor(system_dist, output_dist, initial_dist){
+	constructor(system_dist, output_dist, initial_dist, cont_2_disc_output){
 		this.system_dist = system_dist;		// u_t x_t x_t+1
 		this.output_dist = output_dist;		// x_t, y_t
 		this.initial_dist = initial_dist;	// x_t
 		this.posterior = initial_dist;		// x_t
+		this.cont_2_disc_output = cont_2_disc_output;
 	}
 
 	update(y){
