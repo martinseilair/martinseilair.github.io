@@ -43,3 +43,15 @@ function distance_xy(a,b){
         return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y))
     }
 
+
+function isDescendantOrSelf(parent, child) {
+    var node = child;
+    while (node != null) {
+        if (node == parent) {
+            return true;
+        }
+        node = node.parentNode;
+    }
+    return false;
+}
+

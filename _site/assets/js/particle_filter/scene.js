@@ -1,3 +1,92 @@
+	// add loaded listener
+	window.addEventListener("load", function(event) {
+		loaded=true;
+		finished_loading();
+	});
+
+	window.addEventListener("scroll", function(event) {
+		var svg;
+
+		//var window_center = window.scrollY + window.innerHeight/2.0;
+		var window_center = window.innerHeight/2.0;
+		var min_dist;
+		var min_id;
+		var old_scene = scene;
+
+		if(scenes.length>0){
+			for (var i=0;i<scenes.length;i++){
+				svg = document.getElementById(scenes[i].rt.id);
+				var rect = svg.getBoundingClientRect();
+				var svg_center = rect.top + rect.height/2.0;
+
+				dist = Math.abs(svg_center - window_center);
+				if (i==0 || min_dist>dist){
+					min_dist = dist;
+					min_id = i;
+				}
+			}
+			scene = scenes[min_id];
+			if(loaded){
+				if (scene!=old_scene){
+					if(interval){
+						clearInterval(interval);
+						interval = null;
+					}
+					if(scene.auto_start){
+						ani();
+					}
+				}
+			}
+
+
+
+		}
+
+
+	});
+
+
+
+	window.addEventListener('touchstart', function(e)
+	{
+		var id = get_parent_scene(e.target);
+		if(id>=0){
+			if(scenes[id].mode==3){
+				touch_id = id;	
+			}
+		}
+	});
+
+	window.addEventListener('touchend', function()
+	{
+	    touch_id = null;
+	});
+
+	window.addEventListener('touchmove', function(e)
+	{
+
+	    if (touch_id!=null)
+	    {
+	    	var el = document.getElementById(scenes[touch_id].rt.id);
+	    	var svg_viewbox = el.viewBox.baseVal;
+	    	var svg_rect = el.getBoundingClientRect();
+			var x = (event.touches[0].clientX - svg_rect.left)*svg_viewbox.width/svg_rect.width;
+			var y = (event.touches[0].clientY - svg_rect.top)*svg_viewbox.height/svg_rect.height;
+	    	mouse_touch(touch_id, [x, y]);
+	    }
+	});
+
+
+
+
+
+
+
+
+
+
+
+
 function load_race_track(id, url){
 	function race_track_radius(rad){
 		function deviation(x){
@@ -135,19 +224,19 @@ function mouse_move(){
 function key_down(){
 	var key = d3.event.keyCode;
 
-	current_input = -1;
-	if(key==65) current_input = 0;
-	if(key==83) current_input = 1;
-	if(key==68) current_input = 2;
+	var input = -1;
+	if(key==65) input = 0;
+	if(key==83) input = 1;
+	if(key==68) input = 2;
 
-	if (current_input<0) return;
-
+	if (input<0) return;
+	scene.rc.current_input = input;
 	if(scene.mode==1){
 		for (var i=0;i<ani_step;i++){
-			step();
+			scene.step();
 		}
 	}else if(scene.mode==2){
-		step();
+		scene.step();
 	}
 
 }
@@ -158,14 +247,26 @@ function finished_loading(){
 
 	// SITE LOADED!
 
-
-		//plot_pdf("output_dist_approx", bf_output_dist);
-		//plot_pdf("system_dist_approx", bf_system_dist[2]);
-		d3.select("body").on("keydown", key_down);
-		
+	scene = scenes[0];
+	//plot_pdf("output_dist_approx", bf_output_dist);
+	//plot_pdf("system_dist_approx", bf_system_dist[2]);
+	d3.select("body").on("keydown", key_down);
+	
 
 
 	for (var i=0;i<scenes.length;i++){
+
+		scenes[i].rc.current_input = 2;
+
+		if(scenes[i].loaded){
+			scenes[i].loaded();
+		}
+
+		if(scenes[i].filter=="particle"){
+			scenes[i].pf = init_particle_filter(scenes[i].rc, scenes[i].rt)
+		}else if(scenes[i].filter=="bayes"){
+			scenes[i].bf = init_bayes_filter(scenes[i].rc, scenes[i].rt);
+		}
 
 
 
@@ -193,9 +294,11 @@ function finished_loading(){
 		}
 		// initialize strips
 
-		var outer_color = d3.interpolateRgb(d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#00028e'))
-		var inner_color = d3.interpolateOranges;
-
+		//var outer_color = d3.interpolateRgb(d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#00028e'))
+		var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#006eff'), d3.rgb('#00028e')]);
+		//var inner_color = d3.interpolateOranges;
+		//var inner_color = d3.interpolateCubehelix(d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#8e3323'))
+		var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
 
 
 		if(scenes[i].filter=="particle"){
@@ -206,8 +309,8 @@ function finished_loading(){
 			scenes[i].rt.init_strip("inner", get_output_dist_normalized(scenes[i].rc, scenes[i].rt, scenes[i].rc.state), inner_color, 60);
 		}
 
-		if(scenes[i].me_show_system||scenes[i].filter=="particle"){
-			scenes[i].rt.init_strip("outer", get_system_dist_normalized(scenes[i].rc, scenes[i].rt, scenes[i].rc.state, current_input), outer_color, 60);
+		if(scenes[i].me_show_system){
+			scenes[i].rt.init_strip("outer", get_system_dist_normalized(scenes[i].rc, scenes[i].rt, scenes[i].rc.state, scenes[i].rc.current_input), outer_color, 60);
 		}
 
 
@@ -217,6 +320,13 @@ function finished_loading(){
 			// bayes
 			scenes[i].rt.init_strip("outer", normalize_vector(scenes[i].bf.posterior), outer_color, 60);
 		}
+
+
+
+	}
+
+	if(scene.auto_start){
+		ani();
 	}
 
 
@@ -226,7 +336,7 @@ function finished_loading(){
 
 // animation
 
-
+/*
 function step(){
 
 	
@@ -234,19 +344,24 @@ function step(){
 if (aa % ani_step == 0){
 		//input=2;
 
-	    scene.rc.step(current_input);
+	    scene.rc.step(scene.rc.current_input);
 
 	    if(scene.filter=="particle"){
-	    	scene.pf.predict(current_input);
-			scene.rt.update_strip("outer", get_system_dist_normalized(scene.rc, scene.rt, scene.rc.state, current_input));
+	    	scene.pf.predict(scene.rc.current_input);
+			scene.rt.update_strip("outer", get_system_dist_normalized(scene.rc, scene.rt, scene.rc.state, scene.rc.current_input));
 			scene.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
 		}else if(scene.filter=="bayes"){
 			//bayes
-			scene.bf.predict(current_input);
+			scene.bf.predict(scene.rc.current_input);
 			scene.rt.hide_strip("inner");
 			scene.rt.update_strip("outer", normalize_vector(scene.bf.posterior));
 
 		}
+
+		if(scene.step){
+			scene.step(0);
+		}
+
 
 
 
@@ -261,6 +376,9 @@ if (aa % ani_step == 0){
 			scene.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
 
 		}
+		if(scene.step){
+			scene.step(1);
+		}
 	}else{
 		if(scene.filter=="particle"){
 	    	scene.pf.ancestor_sampling();
@@ -273,12 +391,16 @@ if (aa % ani_step == 0){
 
 			scene.rt.update_strip("outer", normalize_vector(scene.bf.posterior));
 	    }
+	    if(scene.step){
+			scene.step(2);
+		}
 	}
 
 	aa++;
 
 
 }
+*/
 
 
 function ani(){
@@ -288,9 +410,35 @@ function ani(){
 		interval = null;
 		return;
 	}
-
 	if(interval==null&&scene.mode==0){
-		interval = setInterval(step, scene.dur);
+
+		interval = setInterval(scene.step, scene.dur);
 	}
 
+}
+
+
+
+
+function svg_in_scenes(id){
+
+	if(scenes.length>0){
+		for (var i=0;i<scenes.length;i++){
+			if(id == scenes[i].rt.id) return i;
+		}
+	}
+
+	return -1;
+}
+
+
+function get_parent_scene(element){
+	if(scenes.length>0){
+		for (var i=0;i<scenes.length;i++){
+			if(isDescendantOrSelf(document.getElementById(scenes[i].rt.id), element)){
+				return i;
+			}
+		}
+	}
+	return -1;
 }

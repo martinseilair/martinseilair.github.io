@@ -405,7 +405,8 @@ class RadialRaceTrack {
 		// define race track
 		this.svg = d3.select(svg_dom);
 		this.svg.attr("viewBox","0 0 " + this.w + " " + this.h)
-				.style("background-color","#fff5eb");
+				.style("background-color","#fff5eb")
+				.style("background-color","#ffffff");
 
 		this.svg.on("mousemove", this.mouse_move_extern);
 

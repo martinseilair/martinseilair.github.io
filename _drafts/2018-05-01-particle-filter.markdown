@@ -24,7 +24,88 @@ A particle filter is a very helpful tool for tracking dynamic systems. This arti
 <script src="{{ base.url | prepend: site.url }}/assets/js/particle_filter/discrete_bayes_filter.js"></script>
 
 
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" />
+
+
+<style type="text/css">
+
+
+.bt{
+  background: #f0f0f0;
+  color: #666666;
+  min-height: 35px;
+  margin: 0;
+  border-radius: 6px;
+  border: 0;
+  line-height: 35px;
+  text-align: center;
+  display:inline-block;
+  width:100%;
+  padding: 0;
+  cursor: default;
+  height:45px;
+  line-height:45px;
+  font-size:120%;
+  text-transform: uppercase;
+  font-weight:500;
+  font-family: 'Roboto', sans-serif;
+  transition: 1.0s;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+
+.bt:hover{
+	  background: #e9e9e9;
+  color: #444444;
+} 
+
+.bt3{
+  width:32%;
+}
+
+.bt1{
+  width:100%;
+}
+
+
+
+.button_set {
+  /*border: 2px dashed #444;*/
+  text-align: justify;
+  -ms-text-justify: distribute-all-lines;
+  text-justify: distribute-all-lines;
+  /* just for demo */
+  width: 100%;
+  margin-bottom:-10px;
+  margin-top:10px;
+  cursor: default;
+  display:none;
+}
+
+
+
+.stretch {
+  width: 100%;
+  display: inline-block;
+  font-size: 0;
+  line-height: 0
+  height:0px;
+
+}
+</style>
+
+
+
+
+
 <script type="text/javascript">
+
 
 // mit keys oder button steuerbar
 // strips ein und ausblendbar
@@ -59,197 +140,21 @@ A particle filter is a very helpful tool for tracking dynamic systems. This arti
 
 	// scene_flags
 
-	
+	scene = [];
 	scenes = [];
+	scenes_name = [];
 	interval = null;
-	var current_input = 2;
+	loaded = false;
 	var aa = 1;
-	var fast_dur = 100;
+	var fast_dur = 300;
 	var slow_dur = 1000;
 	var ani_step = 3;
-	// add loaded listener
-	window.addEventListener("load", function(event) {
-		finished_loading();
-	});
 
-	window.addEventListener("scroll", function(event) {
-		var svg;
-
-		//var window_center = window.scrollY + window.innerHeight/2.0;
-		var window_center = window.innerHeight/2.0;
-		var min_dist;
-		var min_id;
-
-
-		if(scenes.length>0){
-			for (var i=0;i<scenes.length;i++){
-				svg = document.getElementById(scenes[i].rt.id);
-				var rect = svg.getBoundingClientRect();
-				var svg_center = rect.top + rect.height/2.0;
-
-				dist = Math.abs(svg_center - window_center);
-				if (i==0 || min_dist>dist){
-					min_dist = dist;
-					min_id = i;
-				}
-			}
-			scene = scenes[min_id];
-
-		}
-
-
-	});
-
-
-	function svg_in_scenes(id){
-
-		if(scenes.length>0){
-			for (var i=0;i<scenes.length;i++){
-				if(id == scenes[i].rt.id) return i;
-			}
-		}
-
-		return -1;
-	}
-
-
-	function get_parent_scene(element){
-		if(scenes.length>0){
-			for (var i=0;i<scenes.length;i++){
-				if(isDescendantOrSelf(document.getElementById(scenes[i].rt.id), element)){
-					return i;
-				}
-			}
-		}
-		return -1;
-	}
-
-	function isDescendantOrSelf(parent, child) {
-		var node = child;
-		while (node != null) {
-			if (node == parent) {
-				return true;
-			}
-			node = node.parentNode;
-		}
-		return false;
-	}
 
 	touch_id = null;
 
-	window.addEventListener('touchstart', function(e)
-	{
-		var id = get_parent_scene(e.target);
-		if(id>=0){
-			if(scenes[id].mode==3){
-				touch_id = id;	
-			}
-		}
-	});
-
-	window.addEventListener('touchend', function()
-	{
-	    touch_id = null;
-	});
-
-	window.addEventListener('touchmove', function(e)
-	{
-
-	    if (touch_id!=null)
-	    {
-	    	var el = document.getElementById(scenes[touch_id].rt.id);
-	    	var svg_viewbox = el.viewBox.baseVal;
-	    	var svg_rect = el.getBoundingClientRect();
-			var x = (event.touches[0].clientX - svg_rect.left)*svg_viewbox.width/svg_rect.width;
-			var y = (event.touches[0].clientY - svg_rect.top)*svg_viewbox.height/svg_rect.height;
-	    	mouse_touch(touch_id, [x, y]);
-	    }
-	});
 
 
-
-
-	// defines scenes
-	n_scene = load_race_track("race_track_intro","{{ base.url | prepend: site.url }}");
-	n_scene.mode = 0;
-	n_scene.filter = null;
-	n_scene.dur=fast_dur;
-	n_scene.auto_start = true;
-	scenes.push(n_scene);
-n_scene = null;
-	// defines scenes
-	n_scene = load_race_track("race_track_sys_dist", "{{ base.url | prepend: site.url }}");
-	n_scene.mode = 3;
-	n_scene.me_show_system = true;
-	n_scene.me_show_observation_transposed = false;
-	n_scene.me_show_observation = false;
-	n_scene.filter = null;
-	n_scene.dur=slow_dur;
-	n_scene.auto_start = false;
-	// define particle filter 
-	if(n_scene.filter=="particle"){
-		n_scene.pf = init_particle_filter(n_scene.rc, n_scene.rt)
-	}else if(n_scene.filter=="bayes"){
-		n_scene.bf = init_bayes_filter(n_scene.rc, n_scene.rt);
-	}
-
-	scenes.push(n_scene);
-n_scene = null;
-
-	// defines scenes
-	n_scene = load_race_track("race_track_obs_dist", "{{ base.url | prepend: site.url }}");
-	n_scene.mode = 3;
-	n_scene.me_show_system = false;
-	n_scene.me_show_observation_transposed = true;
-	n_scene.me_show_observation = true;
-	n_scene.filter = null;
-	n_scene.dur=slow_dur;
-	n_scene.auto_start = false;
-	// define particle filter 
-	if(n_scene.filter=="particle"){
-		n_scene.pf = init_particle_filter(n_scene.rc, n_scene.rt)
-	}else if(n_scene.filter=="bayes"){
-		n_scene.bf = init_bayes_filter(n_scene.rc, n_scene.rt);
-	}
-
-	scenes.push(n_scene);
-n_scene = null;
-
-
-
-	n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}");
-	n_scene.mode = 2;
-	n_scene.filter = "bayes";
-	n_scene.dur=slow_dur;
-	// define particle filter 
-	if(n_scene.filter=="particle"){
-		n_scene.pf = init_particle_filter(n_scene.rc, n_scene.rt)
-	}else if(n_scene.filter=="bayes"){
-		n_scene.bf = init_bayes_filter(n_scene.rc, n_scene.rt);
-	}
-	n_scene.auto_start = false;
-	scenes.push(n_scene);
-n_scene = null;
-
-
-		// defines scenes
-	n_scene = load_race_track("race_track_particle", "{{ base.url | prepend: site.url }}");
-	n_scene.mode = 2;
-	n_scene.filter = "particle";
-	n_scene.dur=slow_dur;
-	n_scene.auto_start = false;
-	// define particle filter 
-	if(n_scene.filter=="particle"){
-		n_scene.pf = init_particle_filter(n_scene.rc, n_scene.rt)
-	}else if(n_scene.filter=="bayes"){
-		n_scene.bf = init_bayes_filter(n_scene.rc, n_scene.rt);
-	}
-	scenes.push(n_scene);
-
-	n_scene = null;
-
-
-	scene = scenes[3];
 
 
 </script>
@@ -266,7 +171,20 @@ In this section we will introduce our running example. The dynamic model is a ca
 
 <svg id="race_track_intro" style="width:100%"  onclick="ani()"></svg>
 
+<script>
+	// defines scenes
+	n_scene = load_race_track("race_track_intro","{{ base.url | prepend: site.url }}");
+	n_scene.mode = 0;
+	n_scene.filter = null;
+	n_scene.dur=fast_dur;
+	n_scene.auto_start = true;
 
+	n_scene.step= function(){
+		this.rc.step(this.rc.current_input);
+	}.bind(n_scene);
+
+	scenes.push(n_scene);
+</script>
 
 
 ## Bayes filter
@@ -325,6 +243,29 @@ depends similarly on the input \\(u_t\\) and weighting factor \\(b(\kappa)\\) wi
 
 <svg id="race_track_sys_dist" style="width:100%"  onclick="ani()"></svg>
 
+<script>
+
+
+	// defines scenes
+	n_scene = load_race_track("race_track_sys_dist", "{{ base.url | prepend: site.url }}");
+	n_scene.mode = 3;
+	n_scene.me_show_system = true;
+	n_scene.me_show_observation_transposed = false;
+	n_scene.me_show_observation = false;
+	n_scene.filter = null;
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+	
+	scenes.push(n_scene);
+</script>
+
+
+
+
+
+
+
+
 
 # Observation model
 
@@ -356,13 +297,119 @@ Now that we know our model a bit better, let's look at the Bayes filter again.
 
 
 
+<script>
+
+	// defines scenes
+	n_scene = load_race_track("race_track_obs_dist", "{{ base.url | prepend: site.url }}");
+	n_scene.mode = 3;
+	n_scene.me_show_system = false;
+	n_scene.me_show_observation_transposed = true;
+	n_scene.me_show_observation = true;
+	n_scene.filter = null;
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+	// define particle filter 
 
 
+	scenes.push(n_scene);
+</script>
 
 
 
 <svg id="race_track_mar_loc" style="width:100%"  onclick="ani()"></svg>
 
+<script>
+
+
+	n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}");
+	n_scene.mode = 2;
+	n_scene.filter = "bayes";
+	n_scene.dur=slow_dur;
+	// define particle filter 
+
+	n_scene.auto_start = false;
+
+	n_scene.t = 2;
+
+
+	n_scene.loaded = function(){
+		//var ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
+		//for (var i=0; i<ids.length;i++){
+
+		//	document.getElementById(ids[i]).style.display="none";
+		//}
+		document.getElementById("race_track_mar_loc_update").style.display="block";
+	}.bind(n_scene)
+
+
+	n_scene.step = function(){
+		this.t++;
+	var ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
+		for (var i=0; i<ids.length;i++){
+
+			document.getElementById(ids[i]).style.display="none";
+		}
+		//document.getElementById(ids[this.t%3]).style.display="block";
+
+
+		if(this.t % 4 == 0){
+			this.rc.step(this.rc.current_input);
+			document.getElementById("race_track_mar_loc_predict").style.display="block";
+		}else if(this.t % 4 == 1){
+			this.bf.predict(this.rc.current_input);
+			this.rt.hide_strip("inner");
+			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+		}else if(this.t % 4 == 2){
+			this.rt.show_strip("inner");
+			this.rt.update_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			document.getElementById("race_track_mar_loc_update").style.display="block";
+		}else if(this.t % 4 == 3){
+			var output = scene.rc.output_dist_sample(0);
+	    	var y = scene.bf.cont_2_disc_output(output);
+			this.bf.update(y);
+			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			document.getElementById("race_track_mar_loc_timestep").style.display="block";
+		}
+
+
+
+	}.bind(n_scene);
+
+
+
+
+
+	scenes_name["race_track_mar_loc"] = n_scene;
+	scenes.push(n_scene);
+
+</script>
+
+
+
+<div id="race_track_mar_loc_timestep" class="button_set">
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=0;scenes_name['race_track_mar_loc'].step();">Backward</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=1;scenes_name['race_track_mar_loc'].step();">No action</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=2;scenes_name['race_track_mar_loc'].step();">Forward</div>
+ <span class="stretch"></span>
+</div>
+
+<div id="race_track_mar_loc_predict" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_mar_loc'].step();">Predict step</div>
+  <span class="stretch"></span>
+</div>
+
+
+
+<div id="race_track_mar_loc_likelihood" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_mar_loc'].step();">Show likelihood</div>
+  <span class="stretch"></span>
+</div>
+
+<div id="race_track_mar_loc_update" class="button_set" onclick="scenes_name['race_track_mar_loc'].step();">
+<div class="bt1  bt">Update step</div>
+  <span class="stretch"></span>
+</div>
 
 
 
@@ -423,6 +470,85 @@ Fall 2 ich kann es nicht
 <svg id="race_track_particle" style="width:100%"  onclick="ani()"></svg>
 
 
+<script>
+
+		// defines scenes
+	n_scene = load_race_track("race_track_particle", "{{ base.url | prepend: site.url }}");
+	n_scene.mode = 2;
+	n_scene.filter = "particle";
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+
+
+
+
+	n_scene.t = 1;
+
+
+	n_scene.loaded = function(){
+		document.getElementById("race_track_particle_update").style.display="block";
+	}.bind(n_scene)
+
+
+	n_scene.step = function(){
+		this.t++;
+
+		var ids = ["race_track_particle_timestep", "race_track_particle_update","race_track_particle_predict","race_track_particle_resampling" ];
+		for (var i=0; i<ids.length;i++){
+
+			document.getElementById(ids[i]).style.display="none";
+		}
+		
+
+
+		if(this.t % 4 == 0){
+			this.rc.step(scene.rc.current_input);
+			document.getElementById("race_track_particle_predict").style.display="block";
+		}if(this.t % 4 == 1){
+	    	
+			//this.rt.update_strip("outer", get_system_dist_normalized(scene.rc, scene.rt, scene.rc.state, scene.rc.current_input));
+			this.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
+			this.pf.predict(scene.rc.current_input);
+			document.getElementById("race_track_particle_update").style.display="block";
+		}else if(this.t % 4 == 2){
+			var output = this.rc.output_dist_sample(0);
+	    	this.pf.update(output, 0);
+	    	document.getElementById("race_track_particle_resampling").style.display="block";
+		}else if(this.t % 4 == 3){
+			this.pf.ancestor_sampling();
+			document.getElementById("race_track_particle_timestep").style.display="block";
+		}
+	}.bind(n_scene);
+
+	scenes_name["race_track_particle"] = n_scene;
+	scenes.push(n_scene);
+</script>
+
+
+
+<div id="race_track_particle_timestep" class="button_set">
+<div class="bt3 bt" onclick="scenes_name['race_track_particle'].rc.current_input=0;scenes_name['race_track_particle'].step();">Backward</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_particle'].rc.current_input=1;scenes_name['race_track_particle'].step();">No action</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_particle'].rc.current_input=2;scenes_name['race_track_particle'].step();">Forward</div>
+ <span class="stretch"></span>
+</div>
+
+<div id="race_track_particle_predict" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_particle'].step();">Predict step</div>
+  <span class="stretch"></span>
+</div>
+
+<div id="race_track_particle_update" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_particle'].step();">Update step</div>
+  <span class="stretch"></span>
+</div>
+
+<div id="race_track_particle_resampling" class="button_set" onclick="scenes_name['race_track_particle'].step();">
+<div class="bt1  bt">Resampling</div>
+  <span class="stretch"></span>
+</div>
+
+
 
 
 <a href='https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm'></a>
@@ -433,3 +559,6 @@ Fall 2 ich kann es nicht
 <div id="div2"></div>
 <!-- <div id="system_dist_approx"  style="width: 600px; height: 600px;"></div> -->
 <!--<div id="output_dist_approx"  style="width: 600px; height: 600px;"></div>-->
+
+
+
