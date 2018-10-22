@@ -7,6 +7,7 @@ function load_race_track(id, url){
 	}
 
 	var strip_n = 1000;
+	var strip_dist_n = 1000;
 
 	
 
@@ -17,13 +18,14 @@ function load_race_track(id, url){
 	var base_x = w - base_radius - 80;
 	var base_y = 250;
 
-	rt = new RadialRaceTrack(w, h, base_x, base_y, base_radius, race_track_radius);
+	var rt = new RadialRaceTrack(w, h, base_x, base_y, base_radius, race_track_radius);
 	rt.id = id;
 	rt.add_tree(base_x, base_y);
 	rt.set_strip_domain(strip_n);
+	rt.set_dist_strip_domain(strip_dist_n);
 
 	// define race car
-	rc = new RaceCar(rt,url);
+	var rc = new RaceCar(rt,url);
 	return {rc:rc, rt:rt};
 }
 
@@ -42,28 +44,28 @@ function init_particle_filter(race_car, race_track){
 
 function init_bayes_filter(race_car, race_track){
 	// define domains
-	bf_x_map = race_track.strip_pos;
-	state_n = race_track.strip_pos.length;
-	output_n = race_track.strip_pos.length;
-	bf_u_map = [0, 1, 2];
-	max_dist = race_track.w;
-	bf_y_map = [...Array(output_n)].map((e,i)=>{return max_dist*i/output_n;});
+	var bf_x_map = race_track.strip_pos;
+	var state_n = race_track.strip_pos.length;
+	var output_n = race_track.strip_pos.length;
+	var bf_u_map = [0, 1, 2];
+	var max_dist = race_track.w;
+	var bf_y_map = [...Array(output_n)].map((e,i)=>{return max_dist*i/output_n;});
 
 
 	// discretize pdf
-	bf_initial_dist = norm_vector([...Array(state_n)].map((e,i)=>{return 1.0;}));
-	bf_system_dist = bf_u_map.map((u)=>{
+	var bf_initial_dist = norm_vector([...Array(state_n)].map((e,i)=>{return 1.0;}));
+	var bf_system_dist = bf_u_map.map((u)=>{
 		return bf_x_map.map((x)=>{
 			return norm_vector(race_car.system_dist_array(bf_x_map,x,u));
 		});
 	});
 
-	bf_output_dist = bf_x_map.map((x)=>{
+	var bf_output_dist = bf_x_map.map((x)=>{
 			return norm_vector(race_car.output_dist_array(bf_y_map,x,0));
 	});
 
 	function cont_2_disc_output(output){
-		output = Math.abs(output);
+		var output = Math.abs(output);
 		return Math.floor(output_n*output/max_dist);
 	}
 	return new DiscreteBayesFilter(bf_system_dist, bf_output_dist, bf_initial_dist, cont_2_disc_output);
@@ -85,24 +87,46 @@ function get_output_dist_normalized(race_car, race_track, pos){
 	return normalize_vector(out_dist);
 }
 
+function mouse_touch(id, coords){
 
+			var min_dist = 100.0;
+			var nearest = scenes[id].rt.get_nearest_pos(coords);
+			if(nearest.distance < min_dist){
+				
+				
+				scenes[id].rt.update_car(nearest.pos,scenes[id].dur, 0);
+				if(scenes[id].me_show_system){
+					scenes[id].rt.update_strip("outer", get_system_dist_normalized(scenes[id].rc, scenes[id].rt, nearest.pos, 2));
+					scenes[id].rt.show_strip("outer");
+				}
+				if(scenes[id].me_show_observation_transposed){
+					scenes[id].rt.update_strip("inner", get_output_dist_normalized(scenes[id].rc, scenes[id].rt, nearest.pos));
+					scenes[id].rt.show_strip("inner");
+				}
+
+				if(scenes[id].me_show_observation){
+					scenes[id].rt.update_dist_strip(normalize_vector(scenes[id].rc.output_dist_array(scenes[id].rt.dist_strip_domain, nearest.pos, 0)), nearest.pos, 0);
+					scenes[id].rt.show_dist_strip();
+				}
+			}else{
+				scenes[id].rt.hide_strip("inner");
+				scenes[id].rt.hide_strip("outer");
+				scenes[id].rt.hide_dist_strip();
+			}
+
+}
 
 function mouse_move(){
+	//if(this.id==scene.rt.id){
 
-	if(scene.mode==3){
-		var coords = d3.mouse(this);
-		var min_dist = 50.0;
-		var nearest = scene.rt.get_nearest_pos(coords);
-		if(nearest.distance < min_dist){
-			scene.rt.show_strip("inner");
-			scene.rt.show_strip("outer");
-			scene.rt.update_car(nearest.pos,dur, 0);
-			scene.rt.update_strip("outer", get_system_dist_normalized(scene.rc, scene.rt, nearest.pos, 2));
-			scene.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, nearest.pos));
-		}else{
-			scene.rt.hide_strip("inner");
-			scene.rt.hide_strip("outer");
+	var id = svg_in_scenes(this.id);
+
+	if(id>=0){
+		if(scenes[id].mode==3){
+			var coords = d3.mouse(this);
+			mouse_touch(id, coords);
 		}
+
 	}
 
 
@@ -137,37 +161,64 @@ function finished_loading(){
 
 		//plot_pdf("output_dist_approx", bf_output_dist);
 		//plot_pdf("system_dist_approx", bf_system_dist[2]);
+		d3.select("body").on("keydown", key_down);
+		
+
 
 	for (var i=0;i<scenes.length;i++){
 
+
+
+
+
 		scenes[i].rt.set_mouse_move(mouse_move)
-		scenes[i].rt.set_key_down(key_down)
+
 		// init track and car
 		var svg = document.getElementById(scenes[i].rt.id);
 
 
 		scenes[i].rt.draw_race_track(svg);
 
+
+		if (scenes[i].mode == 3){
+			scenes[i].rt.svg.style("touch-action","none")	
+		}
+
 		scenes[i].rc.reset();
 
 
+		if(scenes[i].me_show_observation){
+			var dist_strip_color =  d3.interpolateRgb(d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#006d12'))
+			scenes[i].rt.init_dist_strip(scenes[i].rc.state, normalize_vector(scenes[i].rc.output_dist_array(scenes[i].rt.dist_strip_domain, scenes[i].rc.state, 0)), dist_strip_color, 20, 0)
+		}
 		// initialize strips
 
-		outer_color = d3.interpolateRgb(d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#00028e'))
-		inner_color = d3.interpolateOranges;
+		var outer_color = d3.interpolateRgb(d3.rgb(scenes[i].rt.svg.style("background-color")), d3.rgb('#00028e'))
+		var inner_color = d3.interpolateOranges;
 
-		if(scenes[i].use_particle_filter){
-			// particle
-			scenes[i].pf.init_samples();	
-			scenes[i].rt.init_strip("outer", get_system_dist_normalized(scenes[i].rc, scenes[i].rt, scenes[i].rc.state, current_input), outer_color, 60);
+
+
+		if(scenes[i].filter=="particle"){
+			scenes[i].pf.init_samples();
+		}
+
+		if(scenes[i].me_show_observation_transposed||scenes[i].filter=="particle"||scenes[i].filter=="bayes"){
 			scenes[i].rt.init_strip("inner", get_output_dist_normalized(scenes[i].rc, scenes[i].rt, scenes[i].rc.state), inner_color, 60);
-		}else{
-			// bayes
+		}
 
+		if(scenes[i].me_show_system||scenes[i].filter=="particle"){
+			scenes[i].rt.init_strip("outer", get_system_dist_normalized(scenes[i].rc, scenes[i].rt, scenes[i].rc.state, current_input), outer_color, 60);
+		}
+
+
+	
+
+		if(scenes[i].filter=="bayes"){
+			// bayes
 			scenes[i].rt.init_strip("outer", normalize_vector(scenes[i].bf.posterior), outer_color, 60);
-			scenes[i].rt.init_strip("inner", get_output_dist_normalized(scenes[i].rc, scenes[i].rt, scenes[i].rc.state), inner_color, 60);	
 		}
 	}
+
 
 }
 
@@ -178,41 +229,47 @@ function finished_loading(){
 
 function step(){
 
+	
+
 if (aa % ani_step == 0){
 		//input=2;
 
 	    scene.rc.step(current_input);
 
-	    if(scene.use_particle_filter){
+	    if(scene.filter=="particle"){
 	    	scene.pf.predict(current_input);
 			scene.rt.update_strip("outer", get_system_dist_normalized(scene.rc, scene.rt, scene.rc.state, current_input));
 			scene.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
-		}else{
+		}else if(scene.filter=="bayes"){
 			//bayes
 			scene.bf.predict(current_input);
 			scene.rt.hide_strip("inner");
 			scene.rt.update_strip("outer", normalize_vector(scene.bf.posterior));
+
 		}
 
 
 
 	}else if (aa % ani_step == 1){
-		output = rc.output_dist_sample(0);
-		if(scene.use_particle_filter){
+
+		if(scene.filter=="particle"){
+			var output = scene.rc.output_dist_sample(0);
 	    	scene.pf.update(output, 0);
-		}else{
+		}else if(scene.filter=="bayes"){
 			//bayes
 			scene.rt.show_strip("inner");
-			scene.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, rc.state));
+			scene.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
 
 		}
 	}else{
-		if(scene.use_particle_filter){
+		if(scene.filter=="particle"){
 	    	scene.pf.ancestor_sampling();
-	    }else{
+	    }else if(scene.filter=="bayes"){
 			//bayes
+			var output = scene.rc.output_dist_sample(0);
 	    	y = scene.bf.cont_2_disc_output(output);
 			scene.bf.update(y);
+
 
 			scene.rt.update_strip("outer", normalize_vector(scene.bf.posterior));
 	    }
@@ -220,20 +277,20 @@ if (aa % ani_step == 0){
 
 	aa++;
 
+
 }
 
 
 function ani(){
 
 	if(interval){
-
+		clearInterval(interval);
 		interval = null;
 		return;
 	}
 
 	if(interval==null&&scene.mode==0){
-
-		interval = setInterval(step, dur);
+		interval = setInterval(step, scene.dur);
 	}
 
 }

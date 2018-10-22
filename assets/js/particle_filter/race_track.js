@@ -152,6 +152,7 @@ class RadialRaceTrack {
 
 		var r = 0.0;
 		var da = 2.0*Math.PI/n;
+
 		var rad = 0.0;
 
 		this.map_rad.push(rad);
@@ -407,7 +408,7 @@ class RadialRaceTrack {
 				.style("background-color","#fff5eb");
 
 		this.svg.on("mousemove", this.mouse_move_extern);
-		d3.select("body").on("keydown", this.key_down_extern);
+
 
 		var n = 500;
 
@@ -441,6 +442,19 @@ class RadialRaceTrack {
 		//	.attr("fill", "none")
 		//	.attr("id", "probability_strip")
 		//	.attr("stroke-linejoin","round");
+
+
+
+
+
+		// draw distance strip
+
+
+
+		this.svg.append("g")
+			.attr("id",this.id + "dist_strip");
+
+
 
 
 
@@ -560,7 +574,6 @@ class RadialRaceTrack {
 
 		//var path = d3.select("#probability_strip").remove();
 		var sam = this.strip_pos.map((e,i)=>{return this.race_track_pos_abs(this.get_rad(e),0.0)});
-		//var sam = prob_strip_pos.map((e,i)=>{console.log(race_track.get_rad(e));return race_track.get_rad(e)});
 
 		sam.push(sam[1])
 
@@ -568,10 +581,12 @@ class RadialRaceTrack {
 	}
 
 
+
+
+
 	init_strip(io, values, color, width){
 		this.strip_color[io] = color
 		this.strip_width[io] = width;
-
 		d3.select(this.strip_id[io]).selectAll("path")
     		.data(this.strip_domain)
   			.enter().append("path")
@@ -591,6 +606,80 @@ class RadialRaceTrack {
 			.style("stroke", function(d, i) { 	return color(values[i]) })
 	}
 
+
+
+
+
+
+
+	set_dist_strip_domain(n){
+
+		// initialize prob_strip
+		this.dist_strip_n = n;
+
+		this.dist_strip_max = this.w;
+		this.dist_strip_domain = [...Array(this.dist_strip_n)].map((e,i)=>{return this.dist_strip_max*i/this.dist_strip_n;});
+		
+		this.strip_dist_data = this.dist_strip_domain.map((e,i)=>{return {p1: this.dist_strip_max*i/this.dist_strip_n, p2:this.dist_strip_max*(i+1.1)/this.dist_strip_n }})
+
+
+
+		}
+
+	init_dist_strip(pos, values, color, width, tree_id){
+		this.dist_strip_color = color
+		this.dist_strip_width = width;
+
+
+
+		var rad = this.get_rad(pos);
+		var L = this.race_track_pos_abs(rad, 0.0);
+		var dist  = distance_xy(L, this.trees[tree_id]);
+
+		var angle = rad/Math.PI*180.0 + 180.0;
+
+		var strip_g = d3.select("#" + this.id + "dist_strip")
+			.attr('transform', "translate("+ (this.trees[tree_id].x) + "," + this.trees[tree_id].y + ") rotate(" + angle + ") translate(" + -dist + ", 0.0 )")
+
+
+
+		strip_g.selectAll("path")
+    		.data(this.strip_dist_data)
+  			.enter().append("path")
+			.style("fill", function(d, i) { return color(values[i])})
+			.style("stroke", function(d, i) { 	return color(values[i]) })
+			.style("stroke-width", width)
+    		.attr("d", function(d,i) { return "M " + d.p1 + " 0.0 L " + d.p2 + " 0.0 "});
+
+   	}
+
+
+
+	update_dist_strip(values, pos, tree_id){
+
+		var color = this.dist_strip_color;
+		var rad = this.get_rad(pos);
+		var L = this.race_track_pos_abs(rad, 0.0);
+		var dist  = distance_xy(L, this.trees[tree_id]);
+
+		var angle = rad/Math.PI*180.0 + 180.0;
+
+
+		var strip_g = d3.select("#" + this.id + "dist_strip")
+			.attr('transform', "translate("+ (this.trees[tree_id].x) + "," + this.trees[tree_id].y + ") rotate(" + angle + ") translate(" + -dist + ", 0.0 )")
+
+
+		strip_g.selectAll("path")
+		    .data(this.strip_dist_data)
+			.style("fill", function(d, i) { return color(values[i])})
+			.style("stroke", function(d, i) { 	return color(values[i]) })
+	}
+
+
+
+
+
+
 	show_strip(io){
 		d3.select(this.strip_id[io])
 			.style("visibility","visible");
@@ -598,6 +687,17 @@ class RadialRaceTrack {
 
 	hide_strip(io){
 		d3.select(this.strip_id[io])
+			.style("visibility","hidden");
+	}
+
+
+	show_dist_strip(io){
+		d3.select("#" + this.id + "dist_strip")
+			.style("visibility","visible");
+	}
+
+	hide_dist_strip(io){
+		d3.select("#" + this.id + "dist_strip")
 			.style("visibility","hidden");
 	}
 

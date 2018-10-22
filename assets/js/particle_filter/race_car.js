@@ -6,9 +6,9 @@ class RaceCar {
 		this.race_track = radial_race_track;
 
 		// parameters of dynamics
-		this.min_b = 0.3;
-		this.a = 0.1; //output
-		this.kth = 0.15;
+		this.min_b = 0.0;
+		this.a = 0.15; //output
+		this.kth = 0.00;
 		this.c = 50.0;
 		this.d = 0.1; //system
 
@@ -95,7 +95,7 @@ class RaceCar {
 	step(input){
 		// perform step corresponding to system dynamics
 		this.state = this.system_dist_sample(this.state, input);
-		this.race_track.update_car(this.state,dur, this.overflow);
+		this.race_track.update_car(this.state,scene.dur, this.overflow);
 	}
 
 
