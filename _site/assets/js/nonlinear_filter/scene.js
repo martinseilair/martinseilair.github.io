@@ -258,9 +258,7 @@ function finished_loading(){
 
 		scenes[i].rc.current_input = 2;
 
-		if(scenes[i].loaded){
-			scenes[i].loaded();
-		}
+
 
 		if(scenes[i].filter=="particle"){
 			scenes[i].pf = init_particle_filter(scenes[i].rc, scenes[i].rt)
@@ -319,6 +317,10 @@ function finished_loading(){
 		if(scenes[i].filter=="bayes"){
 			// bayes
 			scenes[i].rt.init_strip("outer", normalize_vector(scenes[i].bf.posterior), outer_color, 60);
+		}
+
+		if(scenes[i].loaded){
+			scenes[i].loaded();
 		}
 
 

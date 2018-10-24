@@ -55,3 +55,56 @@ function isDescendantOrSelf(parent, child) {
     return false;
 }
 
+
+function categorial(p,n) {
+    var samples = [];
+    var rans = [];
+    for (var i=0; i<n; i++){
+        rans.push(Math.random());
+    }
+    rans.sort();
+
+    var s = 0;
+
+    for (var i = 0; i < n; i++) {
+        s += p[i];
+
+        while(rans[0] < s){
+            samples.push(i)
+            rans.shift();
+        }
+    }
+    return samples;
+}
+
+
+function sample_gmm(mix, gs, n, dom){
+
+    var latent = categorial(mix,n);
+    var samples = []
+
+    var x = 0;
+    for (var i = 0; i < n; i++) {
+
+        do{
+            x = gs[latent[i]][0] + gs[latent[i]][1]*randn_bm();
+
+        }while(x<dom[0]||x>dom[1])
+
+        samples.push(x);
+    }  
+    return samples; 
+}
+
+function mean(v){
+    return v.reduce((total,e)=>total+e)/v.length;
+}
+
+
+function gmm(x,mix, gs){
+    var y = 0;
+    for (var j = 0; j < mix.length; j++) {
+        y+=mix[j]*gaussian(x,gs[j][0],gs[j][1]);
+    }   
+    return y;
+}
