@@ -428,7 +428,7 @@ $$ \mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}\left(\begin{matrix}x 
 
 Then again, this joint distribution can be rewritten as 
 
-$$ \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}d\\e \end{matrix},\begin{matrix}D & F\\E^T & E\end{matrix}\right) = \mathcal{N}(y|e,E)\mathcal{N}(x|d + F^TE^{-1}(y-e),D - F^T E^{-1}F) .$$
+$$ \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}d\\e \end{matrix},\begin{matrix}D & F\\F^T & E\end{matrix}\right) = \mathcal{N}(y|e,E)\mathcal{N}(x|d + F^TE^{-1}(y-e),D - F^T E^{-1}F) .$$
 
 We can combine the two previous equations to the following expression
 

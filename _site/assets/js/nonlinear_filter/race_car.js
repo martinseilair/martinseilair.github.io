@@ -12,7 +12,7 @@ class RaceCar {
 		this.c = 50.0;
 		this.d = 0.1; //system
 
-		this.u_abs = 100.0; //system
+		this.u_abs = 80.0; //system
 
 		this.base_url = base_url;
 

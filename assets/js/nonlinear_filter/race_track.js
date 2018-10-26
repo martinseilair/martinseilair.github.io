@@ -691,6 +691,12 @@ class RadialRaceTrack {
 			.style("visibility","hidden");
 	}
 
+	is_strip_visible(io){
+		return d3.select(this.strip_id[io]).style("visibility")=="visible";
+	}
+
+
+
 
 	show_dist_strip(io){
 		d3.select("#" + this.id + "dist_strip")

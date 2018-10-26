@@ -33,7 +33,7 @@
 						interval = null;
 					}
 					if(scene.auto_start){
-						ani();
+						ani(scene);
 					}
 				}
 			}
@@ -90,7 +90,7 @@
 function load_race_track(id, url){
 	function race_track_radius(rad){
 		function deviation(x){
-			return 10.0*Math.cos(8*x) + 290*gaussian(x,Math.PI-0.4,0.5) - 30*gaussian(x,Math.PI-0.0,0.2) + 330*gaussian(x,Math.PI+0.3,0.4);
+			return 10.0*Math.cos(8*x) + 290*gaussian(x,Math.PI-0.4,0.5) - 22*gaussian(x,Math.PI-0.0,0.2) + 330*gaussian(x,Math.PI+0.3,0.4);
 		}
 		return r = this.base_radius + deviation(rad);
 	}
@@ -178,6 +178,17 @@ function get_output_dist_normalized(race_car, race_track, pos){
 
 function mouse_touch(id, coords){
 
+
+
+			if(scenes[id].mouse_touch){
+				scenes[id].mouse_touch(coords);
+				return
+			}
+
+
+
+
+
 			var min_dist = 100.0;
 			var nearest = scenes[id].rt.get_nearest_pos(coords);
 			if(nearest.distance < min_dist){
@@ -185,7 +196,7 @@ function mouse_touch(id, coords){
 				
 				scenes[id].rt.update_car(nearest.pos,scenes[id].dur, 0);
 				if(scenes[id].me_show_system){
-					scenes[id].rt.update_strip("outer", get_system_dist_normalized(scenes[id].rc, scenes[id].rt, nearest.pos, 2));
+					scenes[id].rt.update_strip("outer", get_system_dist_normalized(scenes[id].rc, scenes[id].rt, nearest.pos, scenes[id].rc.current_input));
 					scenes[id].rt.show_strip("outer");
 				}
 				if(scenes[id].me_show_observation_transposed){
@@ -214,10 +225,22 @@ function mouse_move(){
 		if(scenes[id].mode==3){
 			var coords = d3.mouse(this);
 			mouse_touch(id, coords);
+			//mouse_touch(id, coords);
 		}
 
 	}
 
+
+}
+
+
+function key_to_input(key){
+	var input = -1;
+	if(key==65) input = 0;
+	if(key==83) input = 1;
+	if(key==68) input = 2;
+
+	return input;
 
 }
 
@@ -230,6 +253,14 @@ function key_down(){
 	if(key==68) input = 2;
 
 	if (input<0) return;
+
+	if(scene.key_down){
+		scene.key_down(key);
+		return;
+	}
+
+
+
 	scene.rc.current_input = input;
 	if(scene.mode==1){
 		for (var i=0;i<ani_step;i++){
@@ -327,9 +358,12 @@ function finished_loading(){
 
 	}
 
-	if(scene.auto_start){
-		ani();
+	if(scene){
+		if(scene.auto_start){
+			ani(scene);
+		}
 	}
+
 
 
 }
@@ -405,16 +439,28 @@ if (aa % ani_step == 0){
 */
 
 
-function ani(){
+function on_click(){
+
+	if(scene.on_click){
+		scene.on_click();
+		return;
+	}
+
+	ani(scene);
+
+}
+
+
+function ani(sc){
 
 	if(interval){
 		clearInterval(interval);
 		interval = null;
 		return;
 	}
-	if(interval==null&&scene.mode==0){
+	if(interval==null&&sc.mode==0){
 
-		interval = setInterval(scene.step, scene.dur);
+		interval = setInterval(sc.step, sc.dur);
 	}
 
 }
