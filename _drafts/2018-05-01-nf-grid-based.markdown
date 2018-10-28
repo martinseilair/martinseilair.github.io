@@ -113,9 +113,13 @@ $$ \int_x f(x)\delta_y(x)\,dx = f(y) $$
 
 will play an important rule.
 
-The multivariate Dirac delta function, which is _infinite_ at \\(x=0\\) in the multivariate case and _zero_ at \\(x \neq 0\\) is defined as the product of Dirac delta functions:
+The multivariate Dirac delta function, which is _infinite_ at \\((x_1,\ldots,x_n)=(0,\ldots,0)\\) in the multivariate case and _zero_ at \\((x_1,\ldots,x_n) \neq (0,\ldots,0)\\) is defined as the product of Dirac delta functions:
 
 $$ \delta(x_1,\ldots,x_n) = \delta(x_1)* \ldots *\delta(x_n). $$
+
+Several Dirac delta functions can be combined to form a comb or grid.
+
+$$ \sum_{i=1}^N\delta_{x_i}(x) $$
 
 
 </div>
