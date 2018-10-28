@@ -67,3 +67,23 @@
   height:0px;
 
 }
+
+.restart-button {
+  pointer-events: visibleFill;
+}
+
+.restart-button circle{
+  fill:#f0f0f0;
+  transition: 1.0s;
+}
+
+
+
+.restart-button circle:hover{
+  fill:#e9e9e9;
+
+}
+
+.restart-button path{
+  pointer-events: none;
+}

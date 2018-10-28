@@ -314,7 +314,7 @@ function finished_loading(){
 			scenes[i].rt.svg.style("touch-action","none")	
 		}
 
-		scenes[i].rc.reset();
+		scenes[i].rc.init();
 
 
 		if(scenes[i].me_show_observation){

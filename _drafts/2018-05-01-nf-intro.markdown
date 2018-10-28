@@ -32,6 +32,8 @@ This post will start a series of articles that will treat common nonlinear filte
 
 
 
+
+
 <script type="text/javascript">
 
 
@@ -94,36 +96,6 @@ function draw_ssm(svg){
     }
 
 
-// mit keys oder button steuerbar
-// strips ein und ausblendbar
-// weights ein und ausblendbar
-// update resample predict manuell oder langsam automatisch (weiter button)
-// update resample predict button (hier macht input keinen sinn, außer man hat 3 button für predict)
-// mit maus car position festlegen (geringster abstand)
-
-
-// herangehensweise
-
-// 1. auto fährt 
-// 2. Vorstellung der system und beobachtungsfunktion (plot)
-// 3. mit maus car position festlegen, entsprechende verteilung innen und außen anzeigen
-// 3a. Bayes filter approximierung außen posterior innen beobachtung (update prediction weiter)
-// 4. standbild: particle anzeigen
-// 5. standbild: update step (5 sek vorher 5 sek nachher) (prob strip innen anzeigen)
-// 6. standbild: resampling (5 sek vorher 5 sek nachher)
-// 7. standbild: predict (5 sek vorher 5 sek nachher)
-// 8. update resample predict manuell (weiter button)
-// 9. update resample predict automatisch (geschwindigkeit einstellbar) (steuerung über pfeiltasten)
-// 10. zwei trees
-
-	// SITE NOT LOADED!!!
-
-	// input modes
-	// 0: Automatisch langsam; sequential
-	// 1: Set input per  A = backward, S = no movement, D = forward; one step
-	// 2: Set input per  A = backward, S = no movement, D = forward; sequential
-	// 3: Mouse exploring
-	// 4: No input
 
 	// scene_flags
 
@@ -153,7 +125,7 @@ function draw_ssm(svg){
 Recently, I wrote an article about the [derivation of the Kalman filter]({% post_url 2018-10-10-kalman_filter %}). When we are using the Kalman filter we assume that our models are linear Gaussian state space models. In this scenario we are lucky, because we can compute everything analytically in closed form. But at some point in time we have to face the cruel truth that normally the real world is anything but linear. With nonlinear models it is not possible to compute the equation of the Bayes filter in closed form, anymore. Nonetheless, we are still lucky, because there are many methods that provide approximations of the Bayes filter. Unfortunately, learning about those methods can be quite frustating, many resources simply state the corresponding equations and are not providing any further explanations and intuitions. This series of blog posts is an attempt to do better and provide derivations of these methods diretly from the equations of the Bayes filter. Furthermore, presenting merely concatenations of equations can be very frustrating and tiring as well. Thus, the derivations are enriched with figures and examples to obtain better understanding of what we are doing.
 The current plan is to write articles about the following methods:
 
-* Discrete Bayes filter
+* Grid-based filter
 * Extended Kalman filter
 * Unscented Kalman filter
 * Particle filter
@@ -197,7 +169,7 @@ $$ p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0
 
 and the **update step**
 
-$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})} .$$
+$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .$$
 
 The recursion is started with the prior distribution over the initial state \\(p(x_0)\\).
 
@@ -259,7 +231,7 @@ The example that will accompany us for the rest of this series, consists of a ra
 </div>
 
 
-Now that we have a good idea how the model will behave, you have the choice of either going directly to the first post about the discrete Bayes filter or to learn more about the model of the dynamic \\(p(x_{t+1}\|x_{t}, u_{t})\\) and observation \\(p(y_t\|x_t)\\) of the example in the following section. 
+Now that we have a good idea how the model will behave, you have the choice of either going directly to the first post about the grid-based filter or to learn more about the model of the dynamic \\(p(x_{t+1}\|x_{t}, u_{t})\\) and observation \\(p(y_t\|x_t)\\) of the example in the following section. 
 
 ## Simulation model
 
@@ -398,9 +370,10 @@ The variance of our measuring device
 
 $$  \sigma_o^2(x_t) = \left[ad(L(x_t),T)\right]^2 $$
 
-depends on the distance as well. The farer we are away from the tree, the more noise will be present in the signal.
+depends on the distance as well. The farer we are away from the tree, the more noise will be present in the signal. The parameter \\(a\\) is again hand-tweaked and constant.
 
-By moving with your mouse or finger over the race track you will notice two things. Again there appears a strip, this time inside the race track and in a brownish color. Furthermore, you will notice another light green strip at the trunk of the tree. Both strips are showing parts of our observation model \\(p(y_t\|x_t)\\). The light green strip shows the probability of which distance measurement is observed at the current state. We notice, that the maximum probability density is at the true distance. The variance is varying depending on the distance to the tree. If the we have the distance \\(d\\) to our currenThe other strip shows the function \\(p(y_t=d\|x_t)\\). Please be aware, that this is not a probability density, because it is not normalized.
+By moving with your mouse or finger over the race track below you will notice two things. Again, there appears a strip, this time inside the race track and in a brownish color. Furthermore, you will notice another light green strip at the trunk of the tree. Both strips are showing parts of our observation model \\(p(y_t\|x_t)\\). The light green strip shows the probability of observing a distance measurement at our current position. t surprisingly we find the maximum probability density at the true distance of tree. Like states above, the variance is varying depending on the distance to the tree. 
+The brownish strip answers another question: Given the true distance \\(d\\) at our current position, what is the probability of obtaining this measurement \\(d\\) from another position on the race track. It represents  \\(p(y_t=d\|x_t)\\) and is therefore a function of the race track \\(x\\). Please be aware, that this is not a proper probability density, because it is not integrating to 1.
 
 
 <svg id="race_track_obs_dist" style="width:100%"  onclick="on_click()"></svg>
@@ -445,7 +418,7 @@ By moving with your mouse or finger over the race track you will notice two thin
 </script>
 
 
-Now that we know everything about our model we are well prepared to start the series with the discrete bayes filter.
+Now that we know the inner workings of our model, we are well prepared to start the series with the grid-based filter.
 
 
 

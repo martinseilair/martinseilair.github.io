@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation of this series is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/12/nf-intro.html","headline":"Nonlinear filtering: Introduction","dateModified":"2018-10-12T18:04:07+09:00","datePublished":"2018-10-12T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/12/nf-intro.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1540544743953891724"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<link rel="stylesheet" href="/assets/main.css?1540740284326477433"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
@@ -123,36 +123,6 @@ function draw_ssm(svg){
     }
 
 
-// mit keys oder button steuerbar
-// strips ein und ausblendbar
-// weights ein und ausblendbar
-// update resample predict manuell oder langsam automatisch (weiter button)
-// update resample predict button (hier macht input keinen sinn, außer man hat 3 button für predict)
-// mit maus car position festlegen (geringster abstand)
-
-
-// herangehensweise
-
-// 1. auto fährt 
-// 2. Vorstellung der system und beobachtungsfunktion (plot)
-// 3. mit maus car position festlegen, entsprechende verteilung innen und außen anzeigen
-// 3a. Bayes filter approximierung außen posterior innen beobachtung (update prediction weiter)
-// 4. standbild: particle anzeigen
-// 5. standbild: update step (5 sek vorher 5 sek nachher) (prob strip innen anzeigen)
-// 6. standbild: resampling (5 sek vorher 5 sek nachher)
-// 7. standbild: predict (5 sek vorher 5 sek nachher)
-// 8. update resample predict manuell (weiter button)
-// 9. update resample predict automatisch (geschwindigkeit einstellbar) (steuerung über pfeiltasten)
-// 10. zwei trees
-
-	// SITE NOT LOADED!!!
-
-	// input modes
-	// 0: Automatisch langsam; sequential
-	// 1: Set input per  A = backward, S = no movement, D = forward; one step
-	// 2: Set input per  A = backward, S = no movement, D = forward; sequential
-	// 3: Mouse exploring
-	// 4: No input
 
 	// scene_flags
 
@@ -181,7 +151,7 @@ function draw_ssm(svg){
 The current plan is to write articles about the following methods:</p>
 
 <ul>
-  <li>Discrete Bayes filter</li>
+  <li>Grid-based filter</li>
   <li>Extended Kalman filter</li>
   <li>Unscented Kalman filter</li>
   <li>Particle filter</li>
@@ -224,7 +194,7 @@ y_t &\sim p(y_t|x_t)
 
   <p>and the <strong>update step</strong></p>
 
-  <script type="math/tex; mode=display">p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})} .</script>
+  <script type="math/tex; mode=display">p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .</script>
 
   <p>The recursion is started with the prior distribution over the initial state \(p(x_0)\).</p>
 
@@ -276,7 +246,7 @@ y_t &\sim p(y_t|x_t)
  <span class="stretch"></span>
 </div>
 
-<p>Now that we have a good idea how the model will behave, you have the choice of either going directly to the first post about the discrete Bayes filter or to learn more about the model of the dynamic \(p(x_{t+1}|x_{t}, u_{t})\) and observation \(p(y_t|x_t)\) of the example in the following section.</p>
+<p>Now that we have a good idea how the model will behave, you have the choice of either going directly to the first post about the grid-based filter or to learn more about the model of the dynamic \(p(x_{t+1}|x_{t}, u_{t})\) and observation \(p(y_t|x_t)\) of the example in the following section.</p>
 
 <h2 id="simulation-model">Simulation model</h2>
 
@@ -398,9 +368,10 @@ y_t &\sim p(y_t|x_t)
 
 <script type="math/tex; mode=display">\sigma_o^2(x_t) = \left[ad(L(x_t),T)\right]^2</script>
 
-<p>depends on the distance as well. The farer we are away from the tree, the more noise will be present in the signal.</p>
+<p>depends on the distance as well. The farer we are away from the tree, the more noise will be present in the signal. The parameter \(a\) is again hand-tweaked and constant.</p>
 
-<p>By moving with your mouse or finger over the race track you will notice two things. Again there appears a strip, this time inside the race track and in a brownish color. Furthermore, you will notice another light green strip at the trunk of the tree. Both strips are showing parts of our observation model \(p(y_t|x_t)\). The light green strip shows the probability of which distance measurement is observed at the current state. We notice, that the maximum probability density is at the true distance. The variance is varying depending on the distance to the tree. If the we have the distance \(d\) to our currenThe other strip shows the function \(p(y_t=d|x_t)\). Please be aware, that this is not a probability density, because it is not normalized.</p>
+<p>By moving with your mouse or finger over the race track below you will notice two things. Again, there appears a strip, this time inside the race track and in a brownish color. Furthermore, you will notice another light green strip at the trunk of the tree. Both strips are showing parts of our observation model \(p(y_t|x_t)\). The light green strip shows the probability of observing a distance measurement at our current position. t surprisingly we find the maximum probability density at the true distance of tree. Like states above, the variance is varying depending on the distance to the tree. 
+The brownish strip answers another question: Given the true distance \(d\) at our current position, what is the probability of obtaining this measurement \(d\) from another position on the race track. It represents  \(p(y_t=d|x_t)\) and is therefore a function of the race track \(x\). Please be aware, that this is not a proper probability density, because it is not integrating to 1.</p>
 
 <svg id="race_track_obs_dist" style="width:100%" onclick="on_click()"></svg>
 
@@ -439,7 +410,7 @@ y_t &\sim p(y_t|x_t)
 	scenes.push(n_scene);
 </script>
 
-<p>Now that we know everything about our model we are well prepared to start the series with the discrete bayes filter.</p>
+<p>Now that we know the inner workings of our model, we are well prepared to start the series with the grid-based filter.</p>
 
 <p><a href="https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm"></a></p>
 

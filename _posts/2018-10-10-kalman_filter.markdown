@@ -508,7 +508,7 @@ to obtain the expression
 
 $$ \mathcal{N}(y_{t} - C_t\hat x_{t|t-1}|0,R_t + C_tP_{t|t-1}^TC_t^T) = \mathcal{N}(z_t|0,S_t).  $$
 
-Therefore, the innovation \\(z_t\\) is the derivation of the expected output and the observed output.
+Therefore, the innovation \\(z_t\\) is the deviation of the expected output and the observed output.
 The random variable \\(z_t\\) has a Gaussian distribution with zero mean and variance \\(S_t\\).
 </div>
 

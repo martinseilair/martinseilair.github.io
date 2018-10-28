@@ -25,5 +25,9 @@ class DiscreteBayesFilter {
 		this.posterior = Array.from(np)
 	}
 
+	reset(){
+		this.posterior = this.initial_dist;
+	}
+
 
 }

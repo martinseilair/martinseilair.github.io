@@ -542,25 +542,6 @@ class RadialRaceTrack {
 			this.draw_tree(this.svg, this.trees[i].x, this.trees[i].y, 0.8);
 		}
 		
-
-
-
-	}
-
-
-
-
-	// probability strip
-
-
-	set_strip_domain(n){
-
-		// initialize prob_strip
-		this.strip_n = n;
-
-		this.strip_pos = [...Array(this.strip_n)].map((e,i)=>{return this.track_length*i/(this.strip_n-1)});
-		this.strip_domain = [];
-
 		this.strip_color = [];
 		this.strip_color["inner"] = [];
 		this.strip_color["outer"] = [];
@@ -572,6 +553,67 @@ class RadialRaceTrack {
 		this.strip_id = [];
 		this.strip_id["inner"] = "#" + this.id + "inner_strip_group";
 		this.strip_id["outer"] = "#" + this.id + "outer_strip_group";
+
+
+
+	}
+
+
+
+	set_restart_button(restart_func){
+
+		var r = 50;
+		var ir = 0.5*r;
+		var margin = 20;
+		var grad = 270;
+		var rad = grad/180*Math.PI;
+		var restart_button = this.svg.append("g")
+					.attr("class","restart-button")
+					.attr("id","restart_button")
+					.attr("transform","translate(" + (margin+r) + "," + (this.h-r-margin) + ")")
+					.on("click",restart_func)
+		restart_button.append("circle")
+						.attr("r",r)
+						.attr("cx",0)
+						.attr("cy",0)
+
+						
+		var end_y = Math.cos(rad)*ir;
+		var end_x = Math.sin(rad)*ir;
+
+
+
+		var s_width = 8;
+		var width = 20;
+		var symbol = restart_button.append("g")
+					.attr("transform","rotate("+ ((360-grad)/2) +")")
+
+
+		symbol.append("path")
+					.attr("d","M0 " + -ir + " A " + ir + " " + ir + " 0 1 1 " + end_x + " " + end_y)
+					.attr("fill","none")
+					.attr("stroke-width",s_width)
+					.attr("stroke","#666666")
+
+		symbol.append("path")
+					.attr("d","M 1 " + -ir + " l 0 " + (width/2) + " l " + (-width/2) + " " + (-width/2) + " l " + (width/2) + " " + (-width/2) )
+					.attr("fill","#666666")
+					.attr("stroke","none")
+
+	}
+
+
+
+	// probability strip
+
+
+	set_strip_domain(n){
+		// initialize prob_strip
+		this.strip_n = n;
+
+		this.strip_pos = [...Array(this.strip_n)].map((e,i)=>{return this.track_length*i/(this.strip_n-1)});
+		this.strip_domain = [];
+
 
 		//var path = d3.select("#probability_strip").remove();
 		var sam = this.strip_pos.map((e,i)=>{return this.race_track_pos_abs(this.get_rad(e),0.0)});
@@ -605,6 +647,10 @@ class RadialRaceTrack {
 		    .data(this.strip_domain)
 			.style("fill", function(d, i) { return color(values[i])})
 			.style("stroke", function(d, i) { 	return color(values[i]) })
+	}
+
+	delete_strip(io){
+		d3.select(this.strip_id[io]).selectAll("path").remove();
 	}
 
 

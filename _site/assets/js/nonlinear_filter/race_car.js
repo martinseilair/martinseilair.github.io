@@ -21,9 +21,14 @@ class RaceCar {
 
 
 
-	reset(){
+	init(){
 		this.state = this.initial_dist_sample();
 		this.race_track.init_car(this.state, this.base_url);
+	}
+
+	reset(){
+		this.state = this.initial_dist_sample();
+		this.race_track.update_car(this.state,0, 0);
 	}
 
 	initial_dist_sample(){
