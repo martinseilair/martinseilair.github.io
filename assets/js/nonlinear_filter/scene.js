@@ -87,7 +87,7 @@
 
 
 
-function load_race_track(id, url){
+function load_race_track(id, url,strip_n_e){
 	function race_track_radius(rad){
 		function deviation(x){
 			return 10.0*Math.cos(8*x) + 290*gaussian(x,Math.PI-0.4,0.5) - 22*gaussian(x,Math.PI-0.0,0.2) + 330*gaussian(x,Math.PI+0.3,0.4);
@@ -95,7 +95,15 @@ function load_race_track(id, url){
 		return r = this.base_radius + deviation(rad);
 	}
 
-	var strip_n = 1000;
+	var strip_n;
+
+
+	if(strip_n_e){
+		strip_n = strip_n_e;
+	}else{
+		strip_n = 1000;
+	}
+
 	var strip_dist_n = 1000;
 
 	

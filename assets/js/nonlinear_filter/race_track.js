@@ -216,7 +216,9 @@ class RadialRaceTrack {
 			.attr("x",0)
 			.attr("y",-5)
 			.attr("width",100)
+			.attr("height",43)
 			.attr("xlink:href",base_url + "/assets/svg/car.svg")
+			//.attr("viewBox","0 0 100 200")
 		this.old_pos = pos;
 	 	this.update_car(pos,0,0)
 	}

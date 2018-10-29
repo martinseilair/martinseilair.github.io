@@ -1,4 +1,1002 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-29T01:00:24+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">The score-Fisher-information-KL connection</title><link href="http://localhost:4000/jekyll/update/2018/10/17/fisher.html" rel="alternate" type="text/html" title="The score-Fisher-information-KL connection" /><published>2018-10-17T18:04:07+09:00</published><updated>2018-10-17T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/17/fisher</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/17/fisher.html">&lt;p&gt;This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-29T19:02:16+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
+
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
+
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://localhost:4000/assets/css/nonlinear_filter/style.css&quot; /&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+	// scene_flags
+
+	scene = [];
+	scenes = [];
+	scenes_name = [];
+	interval = null;
+	loaded = false;
+	var aa = 1;
+	var fast_dur = 300;
+	var slow_dur = 1000;
+	var ani_step = 3;
+
+
+	touch_id = null;
+
+
+
+
+
+&lt;/script&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;p&gt;The &lt;strong&gt;grid-based filter&lt;/strong&gt; approximates the Bayes filter by &lt;strong&gt;restricting&lt;/strong&gt; and &lt;strong&gt;discretizing&lt;/strong&gt; the state, input and observation space, to obtain &lt;strong&gt;finite&lt;/strong&gt; domains.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;derivation&quot;&gt;Derivation&lt;/h2&gt;
+
+&lt;p&gt;We will start the derivation directly from the recursive equations of the Bayes filter with the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .&lt;/script&gt;
+
+&lt;p&gt;The first and most important step in order to arrive at the equations of the grid-based filter is to discretize our system and observation model. Given a set of discretization points \((x^1,\ldots,x^X)\), \((y^1,\ldots,y^Y)\) and \((u^1,\ldots,u^U)\) the result of the discretization can be written as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t+1}|x_{t}, u_{t}) = \frac{1}{Z}p(x_{t+1}|x_{t}, u_{t})\sum_{k=1}^X\sum_{l=1}^X \sum_{m=1}^U  \delta_{x^k}(x_{t+1})\delta_{x^l}(x_t)\delta_{u^m}(u_t)&lt;/script&gt;
+
+&lt;p&gt;for the system model and&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(y_t|x_t) = \frac{1}{Z}p(y_{t}|x_{t})\sum_{k=1}^Y\sum_{l=1}^X  \delta_{y^k}(y_{t})\delta_{x^l}(x_t)&lt;/script&gt;
+
+&lt;p&gt;for our observation model, where \(Z\) is a normalization factor.&lt;/p&gt;
+
+&lt;div class=&quot;extra_box&quot;&gt;
+  &lt;p&gt;These equations can look confusing and random. Especially if you are not familiar with the &lt;a href=&quot;https://en.wikipedia.org/wiki/Dirac_delta_function&quot;&gt;Dirac delta function&lt;/a&gt;. This box will give a short introduction to the Dirac delta function and provide the tools you will need. &lt;strong&gt;Warning:&lt;/strong&gt; The Dirac delta function is actually not a function, but a distribution or a measure!&lt;/p&gt;
+
+  &lt;p&gt;The Dirac delta function \(\delta(x)\) can be &lt;em&gt;imagined&lt;/em&gt; as a function, that is &lt;em&gt;infinite&lt;/em&gt; at \(x=0\) and &lt;em&gt;zero&lt;/em&gt; at \(x \neq 0\) with the property&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_x \delta(x)\,dx = 1.&lt;/script&gt;
+
+  &lt;p&gt;It is not possible to plot the Dirac delta function, but we can visualize it schematically by using an arrow pointing upwards, as shown in the figure below.&lt;/p&gt;
+  &lt;div style=&quot;text-align:center; width:100%;display:inline-block;&quot;&gt;&lt;div id=&quot;dirac&quot; style=&quot;width:85%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+
+  &lt;p&gt;The length of the line represents the area under the function. The expression \(\delta(x-y)\) is a shifted version of the Dirac delta function with its peak at \(y\).&lt;/p&gt;
+
+  &lt;div style=&quot;text-align:center; width:100%;display:inline-block;&quot;&gt;&lt;div id=&quot;dirac_shift&quot; style=&quot;width:85%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+
+  &lt;p&gt;To unclutter the notation, we will use the shorthand \(\delta_y(x)\) for \(\delta(x-y)\).&lt;/p&gt;
+
+  &lt;p&gt;The &lt;em&gt;sifting property&lt;/em&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_x f(x)\delta_y(x)\,dx = f(y)&lt;/script&gt;
+
+  &lt;p&gt;will play an important role in our derivation. Intuitively, it is sifting out the function value of \(f(x)\) at \(y\).&lt;/p&gt;
+
+  &lt;p&gt;The multivariate Dirac delta function, which can be &lt;em&gt;loosely&lt;/em&gt; thought of as &lt;em&gt;infinite&lt;/em&gt; at \((x_1,\ldots,x_n)=(0,\ldots,0)\) and &lt;em&gt;zero&lt;/em&gt; at \((x_1,\ldots,x_n) \neq (0,\ldots,0)\) is defined as the product of several Dirac delta functions:&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\delta(x_1,\ldots,x_n) = \delta(x_1)* \ldots *\delta(x_n).&lt;/script&gt;
+
+  &lt;p&gt;Several Dirac delta functions can also be combined to form a comb or grid, which is shown in the following figure.&lt;/p&gt;
+
+  &lt;div style=&quot;text-align:center; width:100%;display:inline-block;&quot;&gt;&lt;div id=&quot;dirac_comb&quot; style=&quot;width:85%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+
+  &lt;p&gt;To obtain such a grid, the Dirac delta functions are simply added together&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\sum_{i=1}^N\delta_{x_i}(x).&lt;/script&gt;
+
+  &lt;p&gt;Finally, we can multiply the grid with a function \(f(x)\) :&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\sum_{i=1}^Nf(x)\delta_{x_i}(x).&lt;/script&gt;
+
+  &lt;p&gt;The particular Dirac delta functions are weighted by the functional value at the corresponding point. This can be visualized as following.&lt;/p&gt;
+
+  &lt;div style=&quot;text-align:center; width:100%;display:inline-block;&quot;&gt;&lt;div id=&quot;dirac_wcomb&quot; style=&quot;width:85%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+
+  &lt;p&gt;Now that we have a better understanding of the Dirac delta function, let’s look again at our system and observation model. In our system model, we find a multivariate Dirac delta function&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\delta_{x^k}(x_{t+1})\delta_{x^l}(x_t)\delta_{u^m}(u_t),&lt;/script&gt;
+
+  &lt;p&gt;where the particular Dirac delta functions could be multivariate as well. We also note, that the multivariate Dirac delta function is embedded in a triple sum over the corresponding discrete spaces. It describes, therefore, a grid of Dirac delta functions.
+Finally, we multiply this grid with our system model. To obtain a proper probability distribution, we normalize our distribution with \(Z\).
+The observation model can be treated likewise.&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;If we start the recursion with a discretized prior distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_0) = \sum_{k=1}^X w^k \delta_{x^k}(x_0)&lt;/script&gt;
+
+&lt;p&gt;all of our belief distributions will be discretized as well.
+Therefore, the posterior will have the form&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t}|\cdot) = \sum_{k=1}^X w^k \delta_{x^k}(x_t).&lt;/script&gt;
+
+&lt;h1 id=&quot;prediction-step&quot;&gt;Prediction step&lt;/h1&gt;
+
+&lt;p&gt;Let’s see what happens, if we plug the discretized version of our system model into the equations of the prediction step:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} \frac{1}{Z}p(x_{t+1}|x_{t}, u_{t})\sum_{k=1}^X\sum_{l=1}^X\sum_{m=1}^U \delta_{x^k}(x_{t+1})\delta_{x^l}(x_t)\delta_{u^m}(u_t)\sum_{n=1}^X w^n \delta_{x^n}(x_t) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;First of all, we know our current input is \(u^i\). To evaluate \(\hat{p}(x_{t+1}|y_{0:t},u_{0:t}) \) at \(u^i\), we simply have to compute \(\int_{u_t}\hat{p}(x_{t+1}|y_{0:t},u_{0:t})\delta_{u^i}(u_t)\,d_t \). As a result, we will obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{Z}\int_{x_{t}}p(x_{t+1}|x_{t}, u_t=u^m) \sum_{k=1}^X\sum_{l=1}^X  \delta_{x^k}(x_{t+1})\delta_{x^l}(x_t)\sum_{n=1}^X w^n \delta_{x^n}(x_t) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;The following expression&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\sum_{l=1}^X \delta_{x^l}(x_t)\sum_{n=1}^X w^n \delta_{x^n}(x_t)&lt;/script&gt;
+
+&lt;p&gt;is not zero only if \(l = n\). Therefore, we can replace this expression with&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\sum_{n=1}^X w^n \delta_{x^n}(x_t)&lt;/script&gt;
+
+&lt;p&gt;and obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{Z}\int_{x_{t}}p(x_{t+1}|x_{t}, u_t=u^m) \sum_{k=1}^X\sum_{n=1}^X  \delta_{x^k}(x_{t+1}) w^n \delta_{x^n}(x_t) dx_{t} .&lt;/script&gt;
+
+&lt;p&gt;By rearranging the integral and sums we  obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{Z}\sum_{k=1}^X\delta_{x^k}(x_{t+1})\int_{x_{t}}p(x_{t+1}|x_{t}, u_t=u^m) \sum_{n=1}^X   w^n \delta_{x^n}(x_t) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;Using the sifting property we will arrive at&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{Z}\sum_{k=1}^X\delta_{x^k}(x_{t+1})\sum_{n=1}^Xp(x_{t+1}|x_{t} = x^n, u_t=u^m)    w^n&lt;/script&gt;
+
+&lt;h1 id=&quot;update-step&quot;&gt;Update step&lt;/h1&gt;
+
+&lt;p&gt;Let’s start our treatment of the update step and by looking at the numerator. Again, we plug in our discretized distributions to obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(y_t|x_t)\hat{p}(x_t|y_{0:t-1},u_{0:t-1}) = \frac{1}{Z}p(y_{t}|x_{t})\sum_{k=1}^Y\sum_{l=1}^X  \delta_{y^k}(y_{t})\delta_{x^l}(x_t)\sum_{m=1}^X w^m \delta_{x^m}(x_t).&lt;/script&gt;
+
+&lt;p&gt;We know, that we have an observation \(y^k\), which we can plug in in the same way as the input above:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(y_t|x_t)\hat{p}(x_t|y_{0:t-1},u_{0:t-1}) = \frac{1}{Z}p(y_{t}=y^k|x_{t})\sum_{m=1}^Xw^m\delta_{x^m}(x_t)&lt;/script&gt;
+
+&lt;p&gt;The denominator is simply the integral over \(x_t\) of the expression above:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{x_t}\hat{p}(y_t|x_t)\hat{p}(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t = \frac{1}{Z}\int_{x_t}p(y_{t}=y^k|x_{t})\sum_{m=1}^Xw^m\delta_{x^m}(x_t) \,dx_t.&lt;/script&gt;
+
+&lt;p&gt;With help of the sifting property, we obtain the final expression&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{x_t}\hat{p}(y_t|x_t)\hat{p}(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t = \frac{1}{Z}\sum_{m=1}^Xw^mp(y_{t}=y^k|x_{t}=x^k)&lt;/script&gt;
+
+&lt;p&gt;for the denominator.&lt;/p&gt;
+
+&lt;p&gt;The full update step is then defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_{t}=y^k|x_{t})\sum_{m=1}^Xw^m\delta_{x^m}(x_t)}{\sum_{l=1}^Xw^mp(y_{t}=y^k|x_{t}=x^k)} .&lt;/script&gt;
+
+&lt;p&gt;Let’s summarize our results!&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Grid-based filter&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the grid-based filter in state space models consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{Z}\sum_{k=1}^X\delta_{x^k}(x_{t+1})\sum_{n=1}^Xp(x_{t+1}|x_{t} = x^n, u_t=u^m)    w^n&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_{t}=y^k|x_{t})\sum_{m=1}^Xw^m\delta_{x^m}(x_t)}{\sum_{l=1}^Xw^mp(y_{t}=y^k|x_{t}=x^k)} .&lt;/script&gt;
+
+  &lt;p&gt;The recursion is started with a discrete prior distribution over the initial state \(\hat{p}(x_0)\).&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;h1 id=&quot;discrete-probability-distribution&quot;&gt;Discrete probability distribution&lt;/h1&gt;
+
+&lt;p&gt;Our discretized system and observation model is non-zero only at the points on the grid. Nonetheless, the model itself is still continuous: we can evaluate the function at points, which are not part of the grid. Then again, the posterior will always remain on the grid during the filtering process. Thus, we can represent our system as a discrete probability distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P(x_{t+1}=k|x_t=l,u=m) = \frac{1}{Z(l,m)} p(x_{t+1}=x^k|x_{t}=x^l, u_t=u^m)&lt;/script&gt;
+
+&lt;p&gt;with the normalization factor \(Z(l,m) = \sum_{k=1}^X p(x_{t+1}=x^k|x_{t}=x^l, u_t=u^m) \).&lt;/p&gt;
+
+&lt;p&gt;Similarly, the observation model can be represented by the discrete probability distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P(y_{t}=k|x_t=l) = \frac{1}{Z(l)} p(y_{t}=y^k|x_{t}=x^l)&lt;/script&gt;
+
+&lt;p&gt;with the normalization factor \(Z(l) = \sum_{k=1}^X p(y_{t}=y^k|x_{t}=x^l) \). With this representation, we arrive at the Bayes filter for discrete probability distributions.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Discrete Bayes filter&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the discrete Bayes filter in state space models consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;P(x_{t+1}|y_{0:t},u_{0:t}) = \sum_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1})&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;P(x_t|y_{0:t},u_{0:t-1}) = \frac{P(y_t|x_t)P(x_t|y_{0:t-1},u_{0:t-1})}{\sum_{x_t} P(y_t|x_t)P(x_t|y_{0:t-1},u_{0:t-1})} .&lt;/script&gt;
+
+  &lt;p&gt;The recursion is started with a discrete prior distribution over the initial state \(P(x_0)\).&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&quot;example&quot;&gt;Example&lt;/h2&gt;
+
+&lt;p&gt;Enough of the dry theory! Let’s play around with the grid-based filter in our race track example.&lt;/p&gt;
+
+&lt;svg id=&quot;race_track_mar_loc&quot; style=&quot;width:100%&quot; onclick=&quot;on_click()&quot;&gt;&lt;/svg&gt;
+&lt;script&gt;
+
+
+	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;http://localhost:4000&quot;,400);
+	n_scene.mode = 2;
+	n_scene.filter = &quot;bayes&quot;;
+	n_scene.dur=slow_dur;
+	// define particle filter 
+
+	n_scene.auto_start = false;
+
+	n_scene.t = 1;
+
+	n_scene.ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
+
+	n_scene.loaded = function(){
+		//var ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
+		//for (var i=0; i&lt;ids.length;i++){
+
+		//	document.getElementById(ids[i]).style.display=&quot;none&quot;;
+		//}
+		document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+		this.rt.hide_strip(&quot;inner&quot;);
+
+
+		this.restart = function(){
+			for (var i=0; i&lt;this.ids.length;i++){
+
+				document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+			}
+			document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+			this.rc.reset();
+			this.t = 1;
+			this.bf.reset();
+			this.rt.hide_strip(&quot;inner&quot;);
+			this.rt.show_strip(&quot;outer&quot;);
+			this.rt.update_strip(&quot;outer&quot;, normalize_vector(this.bf.posterior));
+		}
+
+
+		this.rt.set_restart_button(this.restart.bind(this))
+
+
+
+	}.bind(n_scene)
+
+
+	n_scene.step = function(){
+		this.t++;
+		for (var i=0; i&lt;this.ids.length;i++){
+
+			document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+		}
+		//document.getElementById(ids[this.t%3]).style.display=&quot;block&quot;;
+
+
+		if(this.t % 4 == 0){
+			this.rc.step(this.rc.current_input);
+			this.last_input = this.rc.current_input;
+			document.getElementById(&quot;race_track_mar_loc_predict&quot;).style.display=&quot;block&quot;;
+			this.rt.hide_strip(&quot;inner&quot;);
+		}else if(this.t % 4 == 1){
+			this.bf.predict(this.last_input);
+			
+			this.rt.update_strip(&quot;outer&quot;, normalize_vector(this.bf.posterior));
+			document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+		}else if(this.t % 4 == 2){
+			this.rt.show_strip(&quot;inner&quot;);
+			this.rt.update_strip(&quot;inner&quot;, get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			document.getElementById(&quot;race_track_mar_loc_update&quot;).style.display=&quot;block&quot;;
+		}else if(this.t % 4 == 3){
+			var output = scene.rc.output_dist_sample(0);
+	    	var y = scene.bf.cont_2_disc_output(output);
+			this.bf.update(y);
+			this.rt.update_strip(&quot;outer&quot;, normalize_vector(this.bf.posterior));
+			document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+		}
+
+
+
+	}.bind(n_scene);
+
+	scenes_name[&quot;race_track_mar_loc&quot;] = n_scene;
+	scenes.push(n_scene);
+
+&lt;/script&gt;
+
+&lt;div style=&quot;float:right&quot; class=&quot;slidecontainer&quot;&gt;
+  &lt;input type=&quot;range&quot; min=&quot;100&quot; max=&quot;700&quot; value=&quot;400&quot; class=&quot;slider&quot; id=&quot;myRange&quot; /&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_timestep&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=0;scenes_name['race_track_mar_loc'].step();&quot;&gt;Backward&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=1;scenes_name['race_track_mar_loc'].step();&quot;&gt;No action&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=2;scenes_name['race_track_mar_loc'].step();&quot;&gt;Forward&lt;/div&gt;
+ &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_predict&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;Predict step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_likelihood&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;Observe&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_update&quot; class=&quot;button_set&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot;&gt;Update step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;p&gt;On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
+
+&lt;p&gt;With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
+As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
+
+&lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
+
+&lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
+
+&lt;script&gt;
+
+function dirac_plot(div_id, x, show_y, path){
+	var dp = d3.select(div_id);
+
+	var margin = {top: 20, right: 30, bottom: 30, left: 30},
+	width = dp.node().getBoundingClientRect().width - margin.right- margin.left,
+	height = width/4;
+
+
+	var svg = dp.append(&quot;svg&quot;)
+	  .attr(&quot;viewBox&quot;,&quot;0 0 &quot; + (width + margin.left + margin.right) + &quot; &quot; + (height + margin.top + margin.bottom))
+	  .append(&quot;g&quot;)
+	    .attr(&quot;transform&quot;, &quot;translate(&quot; + margin.left + &quot;,&quot; + margin.top + &quot;)&quot;);
+
+	  var markersize=10;
+	  var defs = svg.append('svg:defs');
+	  defs.append('svg:marker')
+	    .attr('id', 'end-arrow-axis')
+	    .attr('viewBox', '0 -5 10 10')
+	    .attr('refX', &quot;0&quot;)
+	    .attr('refY', &quot;0&quot;)
+	    .attr('markerWidth', markersize)
+	    .attr('markerHeight', markersize)
+	    .attr('orient', 'auto')
+	    .attr('markerUnits','userSpaceOnUse')
+	    .append('svg:path')
+	    .attr('d', 'M0,-5L10,0L0,5');
+
+
+	  markersize=5;
+	  defs.append('svg:marker')
+	    .attr('id', 'end-arrow')
+	    .attr('viewBox', '0 -5 10 10')
+	    .attr('refX', &quot;0&quot;)
+	    .attr('refY', &quot;0&quot;)
+	    .attr('markerWidth', markersize)
+	    .attr('markerHeight', markersize)
+	    .attr('orient', 'auto')
+	    .attr('markerUnits','userSpaceOnUse')
+	    .append('svg:path')
+	    .attr('d', 'M0,-5L10,0L0,5');
+
+
+
+
+
+
+	// x-axis
+	svg.append(&quot;g&quot;)
+	  .append(&quot;line&quot;)
+	  .style(&quot;stroke&quot;,&quot;#000000&quot;)
+	  .style('marker-end','url(#end-arrow-axis)')
+	  .attr(&quot;x1&quot;, function(d) {
+	    return 0-0.03*width;
+	  })
+	  .attr(&quot;y1&quot;, function(d) {
+	    return height;
+	  })
+	  .attr(&quot;x2&quot;, function(d) {
+	    return width;
+	  })
+	  .attr(&quot;y2&quot;, function(d) {
+	    return height;
+	  });
+
+if(show_y){
+	// y-axis
+	svg.append(&quot;g&quot;)
+	  .append(&quot;line&quot;)
+	  .style(&quot;stroke&quot;,&quot;#000000&quot;)
+	  .style('marker-end','url(#end-arrow-axis)')
+	  .attr(&quot;x1&quot;, function(d) {
+	    return width/2;
+	  })
+	  .attr(&quot;y1&quot;, function(d) {
+	    return height;
+	  })
+	  .attr(&quot;x2&quot;, function(d) {
+	    return width/2;
+	  })
+	  .attr(&quot;y2&quot;, function(d) {
+	    return 0;
+	  });	
+	}
+
+
+	// diracs
+	for(var i=0; i&lt;x.length;i++){
+		svg.append(&quot;g&quot;)
+		  .append(&quot;line&quot;)
+		  .style(&quot;stroke&quot;,&quot;#000000&quot;)
+		  .style('marker-end','url(#end-arrow)')
+		  .attr(&quot;x1&quot;, function(d) {
+		    return width/2 + x[i].x*width;
+		  })
+		  .attr(&quot;y1&quot;, function(d) {
+		    return height;
+		  })
+		  .attr(&quot;x2&quot;, function(d) {
+		    return width/2 + x[i].x*width;
+		  })
+		  .attr(&quot;y2&quot;, function(d) {
+		    return (1-x[i].w)*height;
+		  });
+
+		svg.append(&quot;g&quot;)
+		  	.append(&quot;text&quot;)
+		  	.text(x[i].t)
+		  	.attr(&quot;transform&quot;,&quot;translate(&quot; + (width/2 + x[i].x*width) + &quot;, &quot; + (height + 17) + &quot;)&quot;)
+		  	.attr(&quot;text-anchor&quot;,&quot;middle&quot;)
+
+	}
+
+
+
+	//null
+
+	svg.append(&quot;g&quot;)
+		.append(&quot;text&quot;)
+		.text(&quot;0&quot;)
+		.attr(&quot;transform&quot;,&quot;translate(&quot; + (width/2) + &quot;, &quot; + (height + 17) + &quot;)&quot;)
+		.attr(&quot;text-anchor&quot;,&quot;middle&quot;)
+
+	// path
+	if (path){
+
+		var line = d3.line()
+		         .x(function(d) { return width/2 + d.x*width; })
+                 .y(function(d) { return (1-d.w)*height; });
+		svg.append(&quot;svg:path&quot;)
+		    .attr(&quot;d&quot;, line(path))
+		    .style(&quot;stroke&quot;,&quot;#000000&quot;)
+		    .style(&quot;stroke-width&quot;,&quot;4&quot;)
+		    .style(&quot;fill&quot;,&quot;none&quot;)
+		    .style(&quot;opacity&quot;,0.2)
+	}
+
+
+
+}
+
+
+
+dirac_plot(&quot;#dirac&quot;,[{x:0,w:0.7,t:&quot;&quot;}], false, null);
+dirac_plot(&quot;#dirac_shift&quot;,[{x:0.25,w:0.7,t:&quot;y&quot;}], true, null);
+
+var nd = 17;
+var grid = [...Array(nd)].map((e,i)=&gt;{return (i - (nd-1)/2)/(1.5*nd)});
+comb = [...Array(nd)].map((e,i)=&gt;{return {x:grid[i], w:0.7, t:&quot;&quot;}})
+dirac_plot(&quot;#dirac_comb&quot;,comb, true, null);
+
+wcomb = [...Array(nd)].map((e,i)=&gt;{return {x:grid[i], w:0.1*gaussian(grid[i],0,0.15), t:&quot;&quot;}})
+
+var np = 101;
+gauss = [...Array(np)].map((e,i)=&gt;{return {x:(i - (np-1)/2)/(1.5*np), w:0.1*gaussian((i - (np-1)/2)/(1.5*np),0,0.15), t:&quot;&quot;};})
+
+dirac_plot(&quot;#dirac_wcomb&quot;,wcomb, true, gauss);
+&lt;/script&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;div id=&quot;rad_to_s&quot; style=&quot;width:100px&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;div1&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;div2&quot;&gt;&lt;/div&gt;
+&lt;!-- &lt;div id=&quot;system_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt; --&gt;
+&lt;!--&lt;div id=&quot;output_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt;--&gt;
+
+&lt;style&gt;
+.slidecontainer {
+    width: 100%; /* Width of the outside container */
+}
+
+/* The slider itself */
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 100%; /* Full-width */
+    height: 25px; /* Specified height */
+    background: #f0f0f0; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */ 
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #555555; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+.slider::-moz-range-thumb {
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #555555; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+&lt;/style&gt;
+
+&lt;script&gt;
+
+
+
+var slider = document.getElementById(&quot;myRange&quot;);
+
+slider.oninput = function() {
+
+	scene = scenes_name['race_track_mar_loc'];
+
+    // delete strips
+    scene.rt.delete_strip(&quot;inner&quot;);
+    scene.rt.delete_strip(&quot;outer&quot;);
+
+
+    // set strip domain
+    scene.rt.set_strip_domain(parseInt(this.value));
+
+
+    // create new bayes filter
+    scene.bf = init_bayes_filter(scene.rc, scene.rt);
+
+	// create strips
+    scene.rt.init_strip(&quot;inner&quot;,get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state) , scene.rt.strip_color.inner, scene.rt.strip_width.inner)
+    scene.rt.init_strip(&quot;outer&quot;, normalize_vector(scene.bf.posterior), scene.rt.strip_color.outer, scene.rt.strip_width.outer)
+    scene.restart()
+}
+&lt;/script&gt;</content><author><name></name></author><summary type="html">The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Introduction</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html" rel="alternate" type="text/html" title="Nonlinear filtering: Introduction" /><published>2018-10-29T18:04:07+09:00</published><updated>2018-10-29T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-intro</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html">&lt;p&gt;This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.&lt;/p&gt;
+
+&lt;!--more--&gt;
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
+
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://localhost:4000/assets/css/nonlinear_filter/style.css&quot; /&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+
+
+
+
+function draw_ssm(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 120;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 4;
+
+      for (var t = 0; t&lt;T;t++){
+
+
+      	ind = &quot;t&quot;
+
+      	if (t&lt;T-1) ind+=(t-T+1)
+
+
+      	if (t&lt;T-1) input_ns.push({title: &quot;\\( u_{&quot; + ind + &quot;}\\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y , fill:&quot;#e3e5feff&quot;});
+
+      	statefill = &quot;#FFFFFF&quot;;
+        state_ns.push({title: &quot;\\( x_{&quot; + ind + &quot;} \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+        output_ns.push({title: &quot;\\( y_{&quot; + ind + &quot;} \\)&quot;, type: &quot;prob&quot;, x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:&quot;#e3e5feff&quot;});
+
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:&quot;&quot;})
+        if (t&gt;0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:&quot;&quot;})
+        }
+      }
+
+
+    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+
+    edges.push({source: bstate_h, target: state_ns[0], dash:&quot;5,5&quot;})
+    edges.push({source: binput_h, target: state_ns[0], dash:&quot;5,5&quot;})
+
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+
+  	var svg_w = margin_x + dist_x*(T-1) + 50;
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+
+
+	// scene_flags
+
+	scene = [];
+	scenes = [];
+	scenes_name = [];
+	interval = null;
+	loaded = false;
+	var aa = 1;
+	var fast_dur = 300;
+	var slow_dur = 1000;
+	var ani_step = 3;
+
+
+	touch_id = null;
+
+
+
+
+
+&lt;/script&gt;
+
+&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+
+&lt;p&gt;Recently, I wrote an article about the &lt;a href=&quot;/jekyll/update/2018/10/10/kalman_filter.html&quot;&gt;derivation of the Kalman filter&lt;/a&gt;. When we are using the Kalman filter we assume that our models are linear Gaussian state space models. In this scenario, we are lucky because we can compute everything analytically in closed form. But at some point in time, we have to face the cruel truth that the real world is normally anything but linear. With nonlinear models, it is not possible to compute the equation of the Bayes filter in closed form, anymore. Nonetheless, we are still lucky, because there are many methods that provide approximations of the Bayes filter. Unfortunately, learning about those methods can be quite frustrating, many resources simply state the corresponding equations and are not providing any further explanations and intuitions. This series of blog posts is an attempt to fix this and provide derivations of these methods directly from the equations of the Bayes filter. Furthermore, presenting merely concatenations of equations can be very frustrating and tiring as well. Thus, the derivations are enriched with figures and examples to obtain a better understanding of what we are actually doing.
+The current plan is to write articles about the following methods:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;/jekyll/update/2018/10/29/nf-grid-based.html&quot;&gt;Grid-based filter&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Extended Kalman filter&lt;/li&gt;
+  &lt;li&gt;Unscented Kalman filter&lt;/li&gt;
+  &lt;li&gt;Particle filter&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In this first post, I will take the chance to introduce the concept of the Bayes filter and to present the running example for the rest of this series.
+Let’s get started!&lt;/p&gt;
+
+&lt;h2 id=&quot;bayes-filter&quot;&gt;Bayes filter&lt;/h2&gt;
+
+&lt;p&gt;Let’s try to state the main idea of the Bayes filter in a compact manner.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;p&gt;The &lt;strong&gt;Bayes filter&lt;/strong&gt; is used to &lt;strong&gt;infer&lt;/strong&gt; the current state of a probabilistic state space model given all observations and inputs up to the current timestep and a prior distribution of the initial state.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;We define our probabilistic state space model by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+x_{t+1} &amp;\sim p(x_{t+1}|x_{t}, u_{t}) \\
+
+y_t &amp;\sim p(y_t|x_t) 
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;and an initial state distribution \(p(x_0)\). In the figure below, our model is visualized as a probabilistic graphical model.&lt;/p&gt;
+
+&lt;svg class=&quot;pgm_centered&quot; onload=&quot;draw_ssm(this);&quot;&gt;&lt;/svg&gt;
+
+&lt;p&gt;Knowledge about probabilistic graphical models is not required to be able to follow this series, but it can be quite helpful for understanding the dependencies between the state, input and output.&lt;/p&gt;
+
+&lt;p&gt;Now that we have briefly introduced the state space model, we can formulate the objective of Bayes filters in a more rigorous way: We want to calculate \(p(x_t|y_{0:t},u_{0:t-1})\) given the prior initial distribution \(p(x_0)\), where the shorthand \(y_{n:m}\) stands for the set \(y_n,…,y_m\). With help of the basic rules of probability, we can find a way to calculate this expression in a recursive fashion. This recursion is composed of two distinct steps: the &lt;strong&gt;update&lt;/strong&gt; and &lt;strong&gt;predict&lt;/strong&gt; step.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Recursive formula of the Bayes filter&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the Bayes filter in state space models consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .&lt;/script&gt;
+
+  &lt;p&gt;The recursion is initialized with a prior distribution over the initial state \(p(x_0)\).&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;We will use the definition above as our starting point for the derivations of the particular nonlinear filtering methods. But first, it’s time to introduce the example, that will stay with us for the rest of this series.&lt;/p&gt;
+
+&lt;h2 id=&quot;interactive-example-race-track&quot;&gt;Interactive example: Race track&lt;/h2&gt;
+
+&lt;p&gt;The example that will accompany us for the rest of this series, consists of a race car that can drive around a race track. The race car can be controlled by the discrete actions of &lt;em&gt;forward&lt;/em&gt;, &lt;em&gt;backward&lt;/em&gt; and &lt;em&gt;stop&lt;/em&gt;. After the action is taken some process noise is added. Therefore, we won’t know exactly where the race car will be after we have taken this action. Inside the race course is a tree, which serves as a natural landmark. The race car has a distance meter on board, which obtains noisy measurements of the distance to this tree. The following graphic shows the race car in action. Please use your keyboard to set the input of the race car: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward). Alternatively, you can use the buttons below.&lt;/p&gt;
+
+&lt;svg id=&quot;race_track_intro&quot; style=&quot;width:100%&quot; onclick=&quot;on_click()&quot;&gt;&lt;/svg&gt;
+
+&lt;script&gt;
+	// defines scenes
+	n_scene = load_race_track(&quot;race_track_intro&quot;,&quot;http://localhost:4000&quot;);
+	n_scene.mode = 0;
+	n_scene.filter = null;
+	n_scene.dur=fast_dur;
+	n_scene.auto_start = true;
+
+	n_scene.loaded = function(){
+		document.getElementById(&quot;race_track_intro_input&quot;).style.display=&quot;block&quot;;
+	}.bind(n_scene)
+
+	n_scene.step= function(){
+		this.rc.step(this.rc.current_input);
+	}.bind(n_scene);
+
+	n_scene.key_down = function(key){
+		input = key_to_input(key);
+		if(input&gt;=0 &amp;&amp; input &lt;=2){
+			this.rc.current_input = input;
+		}
+	}.bind(n_scene)
+
+
+	n_scene.on_click = function(key){
+		ani(this);
+	}.bind(n_scene)
+	scenes_name['race_track_intro'] = n_scene;
+	scenes.push(n_scene);
+&lt;/script&gt;
+
+&lt;div id=&quot;race_track_intro_input&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_intro'].rc.current_input=0&quot;&gt;Backward&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_intro'].rc.current_input=1&quot;&gt;No action&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_intro'].rc.current_input=2&quot;&gt;Forward&lt;/div&gt;
+ &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Now that we have a good idea how the model will behave, you have the choice of either going directly to the first post about the grid-based filter or to learn more about the model of the dynamic \(p(x_{t+1}|x_{t}, u_{t})\) and observation \(p(y_t|x_t)\) of the example in the following section.&lt;/p&gt;
+
+&lt;h2 id=&quot;simulation-model&quot;&gt;Simulation model&lt;/h2&gt;
+
+&lt;p&gt;If you want to apply Bayes filters to real-life scenarios, a mathematical model of your system is needed. In general, you will have to learn it from data or derive it directly from the laws of physics. In our case we are lucky, because we are the designer of the real model and simply will use this exact model. Let’s start by taking a closer look at the system dynamic.&lt;/p&gt;
+
+&lt;h1 id=&quot;system-dynamic&quot;&gt;System dynamic&lt;/h1&gt;
+
+&lt;p&gt;The state \(x_t\) of the system is the current position on the race track. It is defined as the path length from the start to the current position following the race track. Having only the position without the velocity as a state representation is not very realistic, because it is not possible to model momentum. But for the sake of simplicity and visualisation, we will go without it. The input \(u_t\) is either \(-1\), \(0\) or \(1\) for backward, stop and forward.&lt;/p&gt;
+
+&lt;p&gt;Our system dynamics are defined by a Gaussian distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|x_t,u_t) = \mathcal{N}(x_{t+1}|\mu_s(x_t, u_t) ,\sigma_s^2(x_t) )&lt;/script&gt;
+
+&lt;p&gt;with nonlinear mean  \(\mu_s(x_t, u_t)\) and variance \(\sigma_s^2(x_t)\). To obtain the mean of the next state \(x_{t+1}\) the input \(u_t\), which is weighted by \(v\) and \(b(\kappa)\), is simply added to the current state \(x_t\):&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mu_s(x_t, u_t) = x_t + b(\kappa)vu_t.&lt;/script&gt;
+
+&lt;p&gt;The factor \(v\) is the velocity of the car, we will call it the step size. Intuitively, by multiplying \(u_t\) with the step size \(v\) you map the input from action space to the race track space. The weighting factor \(b(\kappa) = e^{- c\kappa}\), with the hand-tweaked parameter \(c\), is used to model a more realistic driving behavior that depends on the curvature&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\kappa(x_t) ={\frac {|L_x'(x_t)L_y''(x_t)-L_y'(x_t)L_x''(x_t)|}{\left(L_x'^2(x_t)+L_y'^2(x_t)\right)^{\frac {3}{2}}}}&lt;/script&gt;
+
+&lt;p&gt;of the track at the current position \(x_t\). The function \(L(x_t)\) maps the current position of the car \(x_t\) to \((x,y)\) coordinates&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;L(x_t) =  \begin{pmatrix}
+    L_x(x_t) \\
+    L_y(x_t) \\
+    \end{pmatrix}.&lt;/script&gt;
+
+&lt;p&gt;Intuitively, if we are in a sharp curve the curvature is low and we drive faster. If we are on a more straight part of the track, the curvature is high and we drive faster.&lt;/p&gt;
+
+&lt;p&gt;The variance of the next state \(x_{t+1}\) is defined by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\sigma_s^2(x_t, u_t) = \left[db(\kappa)v\right]^2.&lt;/script&gt;
+
+&lt;p&gt;The variance depends mainly on the curvature \(\kappa\) at the current position. If we have a low curvature, the mean of the next step will be larger. But if we take a larger step it is natural to assume, that we have a higher variance. The hand-tweaked parameter \(d\) and the step size \(v\) are fixed for the whole environment. Please be aware, that the variance is not depending on the input \(u_t\) itself, but only on the step size \(v\).&lt;/p&gt;
+
+&lt;p&gt;If you move your mouse or your finger over the race track below, you will notice a small blue strip outside the race track. This is the probability density of our dynamic model \(p(x_{t+1}|x_t,u_t)\). Therefore, it shows the distribution over the next state \(x_{t+1}\) given the current state \(x_t\) and action \(u_t\). If you want to check out the distribution for other inputs, you can use again your keyboard or the buttons below the race track.&lt;/p&gt;
+
+&lt;svg id=&quot;race_track_sys_dist&quot; style=&quot;width:100%&quot; onclick=&quot;on_click()&quot;&gt;&lt;/svg&gt;
+
+&lt;script&gt;
+
+
+	// defines scenes
+	n_scene = load_race_track(&quot;race_track_sys_dist&quot;, &quot;http://localhost:4000&quot;);
+	n_scene.mode = 3;
+	n_scene.me_show_system = true;
+
+	n_scene.me_show_observation_transposed = false;
+	n_scene.me_show_observation = false;
+	n_scene.filter = null;
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+	n_scene.rc.current_input = 0;
+
+	n_scene.loaded = function(){
+		document.getElementById(&quot;race_track_sys_dist_input&quot;).style.display=&quot;block&quot;;
+		this.nearest = []
+		this.nearest.pos = this.rc.state;
+	}.bind(n_scene)
+
+
+	n_scene.mouse_touch = function(coords){
+		var min_dist = 100.0;
+		this.nearest = this.rt.get_nearest_pos(coords);
+		if(this.nearest.distance &lt; min_dist){
+			this.rt.update_car(this.nearest.pos,this.dur, 0);
+			this.rt.update_strip(&quot;outer&quot;, get_system_dist_normalized(this.rc, this.rt, this.nearest.pos, this.rc.current_input));
+			this.rt.show_strip(&quot;outer&quot;);	
+		}else{
+			this.rt.hide_strip(&quot;outer&quot;);
+		}
+
+	}.bind(n_scene)
+
+	n_scene.update_strip_sys = function(){
+		if(this.rt.is_strip_visible(&quot;outer&quot;)){
+			this.rt.update_strip(&quot;outer&quot;, get_system_dist_normalized(this.rc, this.rt, this.nearest.pos, this.rc.current_input));
+		}
+	}.bind(n_scene)
+
+
+	n_scene.key_down = function(key){
+		input = key_to_input(key);
+		if(input&gt;=0 &amp;&amp; input &lt;=2){
+			this.rc.current_input = input;
+			this.update_strip_sys();
+		}
+		
+		
+	}.bind(n_scene)
+	
+	scenes_name['race_track_sys_dist'] = n_scene;
+	scenes.push(n_scene);
+&lt;/script&gt;
+
+&lt;div id=&quot;race_track_sys_dist_input&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_sys_dist'].rc.current_input=0;scenes_name['race_track_sys_dist'].update_strip_sys()&quot;&gt;Backward&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_sys_dist'].rc.current_input=1;scenes_name['race_track_sys_dist'].update_strip_sys()&quot;&gt;No action&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_sys_dist'].rc.current_input=2;scenes_name['race_track_sys_dist'].update_strip_sys()&quot;&gt;Forward&lt;/div&gt;
+ &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;h1 id=&quot;observation-model&quot;&gt;Observation model&lt;/h1&gt;
+
+&lt;p&gt;The race car has a distance meter on board, which will provide us with noisy measurements of the distance to the tree inside the race track, where the position of the tree in \((x,y)\) coordinates is defined as \(T = (T_x, T_y)\). As in the model of the system dynamics, we will model the uncertainty of the measurement with a Gaussian distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y_t|x_t) = \mathcal{N}(y_t| \mu_o(x_t), \sigma_o^2(x_t))&lt;/script&gt;
+
+&lt;p&gt;with nonlinear mean  \(\mu_o(x_t)\) and variance \(\sigma_o^2(x_t)\).&lt;/p&gt;
+
+&lt;p&gt;The mean of our observation is the exact distance to the tree&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mu_o(x_t) = d(L(x_t),T),&lt;/script&gt;
+
+&lt;p&gt;where \(d(\cdot,\cdot)\) is defined as the Euclidean distance.&lt;/p&gt;
+
+&lt;p&gt;The variance of our measuring device&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\sigma_o^2(x_t) = \left[ad(L(x_t),T)\right]^2&lt;/script&gt;
+
+&lt;p&gt;depends on the distance as well. The farther we are away from the tree, the more noise will be present in the signal. The parameter \(a\) is again hand-tweaked and constant.&lt;/p&gt;
+
+&lt;p&gt;By moving with your mouse or finger over the race track below you will notice two things. Again, there appears a strip, this time inside the race track and in a brownish color. Furthermore, you will notice another light green strip at the trunk of the tree. Both strips are showing parts of our observation model \(p(y_t|x_t)\). The light green strip shows the probability of observing a distance measurement at our current position. Not surprisingly, we find the maximum probability density at the true distance of tree. Like stated above, the variance is varying depending on the distance to the tree. 
+The brownish strip answers another question: Given the true distance \(d\) at our current position, what is the probability of obtaining this measurement \(d\) from another position on the race track. It represents  \(p(y_t=d|x_t)\) and is, therefore, a function of the race track \(x\). Please be aware, that this is not a proper probability density, because it is not integrating to 1.&lt;/p&gt;
+
+&lt;svg id=&quot;race_track_obs_dist&quot; style=&quot;width:100%&quot; onclick=&quot;on_click()&quot;&gt;&lt;/svg&gt;
+
+&lt;script&gt;
+
+	// defines scenes
+	n_scene = load_race_track(&quot;race_track_obs_dist&quot;, &quot;http://localhost:4000&quot;);
+	n_scene.mode = 3;
+	n_scene.me_show_system = false;
+	n_scene.me_show_observation_transposed = true;
+	n_scene.me_show_observation = true;
+	n_scene.filter = null;
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+	// define particle filter 
+
+
+	n_scene.mouse_touch = function(coords){
+		var min_dist = 100.0;
+		this.nearest = this.rt.get_nearest_pos(coords);
+		if(this.nearest.distance &lt; min_dist){
+			this.rt.update_car(this.nearest.pos,this.dur, 0);
+			this.rt.update_strip(&quot;inner&quot;, get_output_dist_normalized(this.rc, this.rt, this.nearest.pos));
+			this.rt.show_strip(&quot;inner&quot;);
+
+			this.rt.update_dist_strip(normalize_vector(this.rc.output_dist_array(this.rt.dist_strip_domain, this.nearest.pos, 0)), this.nearest.pos, 0);
+			this.rt.show_dist_strip();
+
+		}else{
+			this.rt.hide_strip(&quot;inner&quot;);
+			this.rt.hide_dist_strip();
+		}
+
+	}.bind(n_scene)
+
+	scenes.push(n_scene);
+&lt;/script&gt;
+
+&lt;p&gt;Now that we know the inner workings of our model, we are well prepared to start the series with the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-grid-based.html&quot;&gt;grid-based filter&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
+
+&lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot; src=&quot;http://localhost:4000/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/x-mathjax-config&quot;&gt;
+
+var mq = window.matchMedia( &quot;(max-width: 570px)&quot; );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  &quot;HTML-CSS&quot;: { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;new Svg_MathJax().install();&lt;/script&gt;</content><author><name></name></author><summary type="html">This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.</summary></entry><entry><title type="html">The score-Fisher-information-KL connection</title><link href="http://localhost:4000/jekyll/update/2018/10/17/fisher.html" rel="alternate" type="text/html" title="The score-Fisher-information-KL connection" /><published>2018-10-17T18:04:07+09:00</published><updated>2018-10-17T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/17/fisher</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/17/fisher.html">&lt;p&gt;This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_SVG&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
