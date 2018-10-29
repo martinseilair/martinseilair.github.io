@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-29T19:02:16+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-29T23:57:26+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
@@ -2071,7 +2071,7 @@ The expression \(\hat x_{t|t}\) is called the &lt;em&gt;updated&lt;/em&gt; state
 
 &lt;p&gt;By comparison with the numerator of our update step, we obtain&lt;/p&gt;
 
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})\mathcal{N}(y_{t}|C_tx_{t}, R_t ) = \mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),  P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})\mathcal{N}(y_{t}|C_tx_{t}, R_t ) = \mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t|t-1}),  P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
 
 &lt;p&gt;At a first glance, this is not looking like a simplification at all. Conceptually, we only transformed&lt;/p&gt;
 
@@ -2079,7 +2079,7 @@ The expression \(\hat x_{t|t}\) is called the &lt;em&gt;updated&lt;/em&gt; state
 
 &lt;p&gt;If we look closely at the final expression, we see that \(p(y)\) is canceling out. Therefore, the result is simply the remaining part&lt;/p&gt;
 
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t|t-1}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
 
 &lt;p&gt;If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)\), which was canceled out. The denominator can be simplified with the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, Toussaint)&lt;/p&gt;
 
@@ -2101,7 +2101,7 @@ P_{t+1|t} &amp;= Q_t + A_t P_{t|t} A_t^T  \end{align} %]]&gt;&lt;/script&gt;
   &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
 
   &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
-\begin{align}\hat x_{t|t} &amp;= \hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}) \\ 
+\begin{align}\hat x_{t|t} &amp;= \hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t|t-1}) \\ 
 P_{t|t} &amp;= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}.  \end{align} %]]&gt;&lt;/script&gt;
 
 &lt;/div&gt;
@@ -2152,7 +2152,7 @@ The random variable \(z_t\) has a Gaussian distribution with zero mean and varia
 
 &lt;p&gt;Let’s plug these definitions into the equations of our update step&lt;/p&gt;
 
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t|t} = \hat x_{t|t-1} + \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}(\underbrace{y_{t}-C_t\hat x_{t}}_{z_t})&lt;/script&gt;
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t|t} = \hat x_{t|t-1} + \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}(\underbrace{y_{t}-C_t\hat x_{t|t-1}}_{z_t})&lt;/script&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t|t} = P_{t|t-1} - \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}P_{t|t-1} .&lt;/script&gt;
 

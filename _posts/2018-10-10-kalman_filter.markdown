@@ -436,7 +436,7 @@ $$ \mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}(y|b + Fa,B + FA^TF^T)
 
 By comparison with the numerator of our update step, we obtain
 
-$$ \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})\mathcal{N}(y_{t}|C_tx_{t}, R_t ) = \mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),  P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
+$$ \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})\mathcal{N}(y_{t}|C_tx_{t}, R_t ) = \mathcal{N}(y_{t}|C_t\hat x_{t|t},R_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t|t-1}),  P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
 
 At a first glance, this is not looking like a simplification at all. Conceptually, we only transformed 
 
@@ -445,7 +445,7 @@ $$ \frac{p(y|x)p(x)}{p(y)} \to \frac{p(y,x)}{p(y)} \to \frac{p(x|y)p(y)}{p(y)}. 
 
 If we look closely at the final expression, we see that \\(p(y)\\) is canceling out. Therefore, the result is simply the remaining part
 
-$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
+$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t|t-1}),P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
 
 If our reasoning is correct the denominator should be equal to \\(\mathcal{N}(y_{t}\|C_t\hat x_{t\|t},R_t + C_tP_{t\|t-1}C_t^T)\\), which was canceled out. The denominator can be simplified with the *propagation* formula (Formula 37, Toussaint)
 
@@ -467,7 +467,7 @@ P_{t+1|t} &= Q_t + A_t P_{t|t} A_t^T  \end{align} $$
 and the **update step**
 
 
-$$ \begin{align}\hat x_{t|t} &= \hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t}) \\ 
+$$ \begin{align}\hat x_{t|t} &= \hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t|t-1}) \\ 
 P_{t|t} &= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}.  \end{align} $$
 
 
@@ -515,7 +515,7 @@ The random variable \\(z_t\\) has a Gaussian distribution with zero mean and var
 Let's plug these definitions into the equations of our update step
 
 
-$$ \hat x_{t|t} = \hat x_{t|t-1} + \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}(\underbrace{y_{t}-C_t\hat x_{t}}_{z_t}) $$
+$$ \hat x_{t|t} = \hat x_{t|t-1} + \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}(\underbrace{y_{t}-C_t\hat x_{t|t-1}}_{z_t}) $$
 
 $$ P_{t|t} = P_{t|t-1} - \underbrace{P_{t|t-1}C_t^T(\underbrace{R_t + C_tP_{t|t-1}C_t^T}_{S_t})^{-1}}_{K_t}P_{t|t-1} .$$
 
