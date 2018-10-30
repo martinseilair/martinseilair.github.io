@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"Intro","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/12/nf-ekf.html","headline":"Nonlinear filtering: Extended Kalman filter","dateModified":"2018-10-12T18:04:07+09:00","datePublished":"2018-10-12T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/12/nf-ekf.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1540825046723367958"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<link rel="stylesheet" href="/assets/main.css?1540864820949899278"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
@@ -128,6 +128,30 @@
  x_{t+1} &= f(x_t, u_t, w_t) \\
  y_t &= h(x_k, v_k)
  \end{align} %]]></script>
+
+<p>What does the probability distribution of</p>
+
+<script type="math/tex; mode=display">p(x_{t+1}|x_t,u_t)</script>
+
+<p>looks like?</p>
+
+<p>We can express our function \(x_{t+1} = f(x_t,u_t,w_t)\) as a probability distribution</p>
+
+<script type="math/tex; mode=display">p(x_{t+1}|x_t,u_t,v_t) = \delta(x_{t+1} - f(x_t, u_t, w_t)).</script>
+
+<p>We can express this also as</p>
+
+<script type="math/tex; mode=display">\delta(x_{t+1} - f(x_t, u_t, w_t)) = \sum_p \frac{\delta(x_t - a_i)\delta(u_t - a_i)\delta(v_t - a_i)}{|\nabla g(a_i)|} ,</script>
+
+<p>where the sum is over all points that satisfy x_{t+1} = f(x_t, u_t, w_t).</p>
+
+<p>To calculate \(p(x_{t+1}|x_t,u_t)\) we have to marginalize \(v_t)\ out:</p>
+
+<script type="math/tex; mode=display">p(x_{t+1}|x_t,u_t) = \int_{v_t}p(x_{t+1}|x_t,u_t,v_t)p(v_t) \,dv_t</script>
+
+<script type="math/tex; mode=display">p(x_{t+1}|x_t,u_t) = \int_{v_t}\delta(x_{t+1} - f(x_{t+1}, x_t, u_t, w_t))\,dv_t</script>
+
+<p>W</p>
 
 <p>with Gaussian process noise \( w_t \sim \mathcal{N}(w_t|0, Q_t) \) and Gaussian observation noise \( v_t \sim \mathcal{N}(v_t|0, R_t) \).</p>
 
