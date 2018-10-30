@@ -99,85 +99,134 @@ and the **update step**
 $$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .$$
 
 
-
+The extended Kalman filter is normally formulated with nonlinear functions with additive noise. In this article we directly derive the general case for non-additive noise. Therefore, our equations of the system are
 
 $$
 \begin{align}
  x_{t+1} &= f(x_t, u_t, w_t) \\
- y_t &= h(x_k, v_k)
+ y_t &= h(x_k, v_k).
  \end{align}
  $$
 
+with Gaussian process noise \\( w_t \sim \mathcal{N}(w_t\|0, Q_t) \\) and Gaussian observation noise \\( v_t \sim \mathcal{N}(v_t\|0, R_t) \\).
+
+In our formula of the Bayes we can't find any functions \\(f(x_t, u_t, w_t)\\) or \\(h(x_k, v_k)\\). Therefore, our first step will be to express these functions as \\(p(x_{t+1}\|x_{t}, u_{t})\\) and \\(p(y_t\|x_t)\\). The next box will show how to achieve this in general. **Warning:** Distributions are very weird and the following treatment is **not rigorous**. 
+ <div class="extra_box" markdown="1">
+We want to calculate \\(p(y|x)\\) given the function \\(y=f(x,z)\\) and \\(p(z)\\).
+We can express the deterministic function \\(y=f(x,z)\\) as probability distribution
+
+$$ p(y|x,z) = \delta(y-f(x,z)), $$
+
+with the [Dirac delta function](https://en.wikipedia.org/wiki/Dirac_delta_function) \\(\delta(x)\\).
+
+In order to calculate \\(p(y\|x)\\) we can simply marginalize out \\(z\\):
+
+$$
+\begin{align}
+p(y|x) &= \int_z p(y|x,z)p(z)\, dx \\
+ &= \int_z \delta(y-f(x,z))p(z)\, dx 
+\end{align}
+$$
+
+By using the composition rule of the Dirac delta function, we can express this as
+
+$$ p(y|x) = \sum_i \frac{p(z_i)}{\left|\det\nabla_z f(x,z)|_{z_i}\right|}, $$
+
+where the sum goes over all \\(z_i\\) which satisfy the equation \\(y = f(x,z)\\).
+</div>
+
+In our case we can express our system function \\(x_{t+1} = f(x_t,u_t,w_t)\\) as a probability distribution
+
+$$ p(x_{t+1}|x_t,u_t) = \sum_i \frac{p(w_i)}{\left|\det\nabla_w f(x_t, u_t, w_t)|_{w_i}\right|} $$
+
+where the sum is over all \\(w_i\\) which satisfy \\(x_{t+1} = f(x_t,u_t,w_t)\\).
+
+Similarly, we can express our observation function  \\(y_t = h(x_k, v_k)\\) as probability distribution
+
+$$ p(y_t|x_t) = \sum_i \frac{p(v_i)}{\left|\det\nabla_v h(x_t, v_t)|_{v_i}\right|} $$
+
+where the sum is over all \\(v_i\\) which satisfy \\(x_{t+1} = h(x_t,v_t)\\).
+
+Even if we are assuming Gaussian process and measurement noise, the resulting distributions of our model will in general be non-Gaussian.
+This is where the extended Kalman filter comes into play. It approximates our probability distributions by using linearization.
+In my limited scope, linearization of a probability distribution makes no sense. But what is then linearized?
+
+Instead of linearizing our probability distributions we will do this with our deterministic functions.
+
+ We are performing a first order Taylor expansion
+
+ $$ f(x_t, u_t, w_t) \approx f(x_t, u_t, w_t)|_{x_t=\hat x_{t|t},u_t=u,w_t=0} + \nabla_{x_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}(x_t - x)+ \nabla_{u_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}(u_t - u) + \nabla_{w_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}w_t$$
 
 
- What does the probability distribution of 
 
- $$ p(x_{t+1}|x_t,u_t) $$ 
-
- looks like?
-
- We can express our function \\(x_{t+1} = f(x_t,u_t,w_t)\\) as a probability distribution
-
- $$ p(x_{t+1}|x_t,u_t,v_t) = \delta(x_{t+1} - f(x_t, u_t, w_t)). $$
-
- We can express this also as 
-
- $$ \delta(x_{t+1} - f(x_t, u_t, w_t)) = \sum_p \frac{\delta(x_t - a_i)\delta(u_t - a_i)\delta(v_t - a_i)}{|\nabla g(a_i)|} ,$$
-
- where the sum is over all points that satisfy x_{t+1} = f(x_t, u_t, w_t).
+ around the current state \\(x_t = \hat x_{t\|t}\\), current input \\(u_t=u\\) and zero process noise \\(w_t=0\\).
 
 
+ We define \\(A_t = \nabla_{x_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) , \\(B_t = \nabla_{u_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) and \\(L_t = \nabla_{w_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) and obtain
 
 
- To calculate \\(p(x_{t+1}\|x_t,u_t)\\) we have to marginalize \\(v_t)\\ out:
+ 
 
-  $$ p(x_{t+1}|x_t,u_t) = \int_{v_t}p(x_{t+1}|x_t,u_t,v_t)p(v_t) \,dv_t $$
+$$ \hat{f}(x_t, u_t, w_t) = f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u)  + L_tw_t.$$
 
- $$ p(x_{t+1}|x_t,u_t) = \int_{v_t}\delta(x_{t+1} - f(x_{t+1}, x_t, u_t, w_t))\,dv_t  $$
-
-W
+Now we are ready to transform our linearized deterministic system function into a probability distribution. We will use the same formula as above and arrive at
 
 
+$$ p(x_{t+1}|x_t,u_t) = \sum_i \frac{\mathcal{N}(w_i|0,Q_t)}{\left|\det\nabla_w \hat{f}(x_t, u_t, w_t)|_{w_i}\right|}, $$
+
+where the sum is over all \\(w_i\\) which satisfy \\(x_{t+1} = \hat{f}(x_t, u_t, w_t)\\). Let's try to simplify this expression! First we notice that if the matrix \\(L_t\\) is invertible, then there is exactly one \\(w\\) that satisfies \\(x_{t+1} = \hat{f}(x_t, u_t, w_t)\\). We can express it as
 
 
+$$ w = L_t^{-1}\left(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)\right). $$
 
- with Gaussian process noise \\( w_t \sim \mathcal{N}(w_t\|0, Q_t) \\) and Gaussian observation noise \\( v_t \sim \mathcal{N}(v_t\|0, R_t) \\).
+Next, let's look at the denominator. We can express the derivative of \\(\hat{f}(x_t, u_t, w_t)\\) with respect to \\(w_t\\) as
 
- First order Taylor expansion around the current state \\(x_t = x\\), current input \\(u_t=u\\) and zero process noise \\(w_t=0\\)
-
- $$ x_{t+1} \approx f(x_t, u_t, w_t)|_{x_t=x,u_t=u,w_t=0} + \nabla_{x_t} f(x_t, u_t, w_t)^T|_{x_t=x,u_t=u,w_t=0}(x_t - x)+ \nabla_{u_t} f(x_t, u_t, w_t)^T|_{x_t=x,u_t=u,w_t=0}(u_t - u) + \nabla_{w_t} f(x_t, u_t, w_t)^T|_{x_t=x,u_t=u,w_t=0}w_t$$
-
-  $$ x_{t+1} \approx f(x, u, 0) + A_t(x_t - x)+ B_t(u_t - u) + L_tw_t$$
-
-  $$ \hat{p}(x_{t+1}|x_t,u_t) = \mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) + A_t(x_t - x)+ B_t(u_t - u),L_t^TQ_tL_t\right)  $$
-
-$$ \hat{p}(x_{t+1}|x_t,u_t) = \mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) - A_tx - B_tu + A_tx_t + B_tu_t,L_t^TQ_tL_t\right)  $$
+$$ \nabla_w \hat{f}(x_t, u_t, w_t) =\nabla_w( f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u)  + L_tw_t) = L_t. $$
 
 
-   First order Taylor expansion around the current state \\(x_t = x\\) and zero measurement noise \\(v_t=0\\)
+Let's plug in the information our new information about \\(w\\) and the derivative:
 
- $$ y_t \approx h(x_t, v_t)|_{x_t=x,v_t=0} + \nabla_{x_t} h(x_t, v_t)^T|_{x_t=x,v_t=0}(x_t - x) + \nabla_{v_t} h(x_t, v_t)^T|_{x_t=x,v_t=0}v_t$$
+$$ p(x_{t+1}|x_t,u_t) = \frac{\mathcal{N}(L_t^{-1}\left(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)\right)|0,Q_t)}{\left|\det L_t\right|}. $$
 
-  $$ y_t \approx h(x, 0) + C_t(x_t - x) + M_tv_t$$
+We apply the transformation identity (Formula 35, [Toussaint](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf)):
 
-$$ \hat{p}(y_{t}|x_t) = \mathcal{N}\left(y_{t}\middle| h(x, 0) + C_t(x_t - x),M_t^TR_tM_t\right)  $$
+$$ p(x_{t+1}|x_t,u_t) = \frac{\frac{1}{\left|\det L_t^{-1}\right|}\mathcal{N}(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)|0,L_tQ_tL_t^T)}{\left|\det L_t\right|} $$
 
-$$ \hat{p}(y_{t}|x_t) = \mathcal{N}\left(y_{t}\middle| h(x, 0) - C_tx + C_tx_t ,M_t^TR_tM_t\right)  $$
+And it apply it once more:
 
-$$  \begin{align}
-p(x_t|y_{0:t},u_{0:t-1}) &:= \mathcal{N}(x_{t}|\hat x_{t|t}, P_{t|t}) \\
-p(x_t|y_{0:t-1},u_{0:t-1}) &:= \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) .
- \end{align}$$
+$$ p(x_{t+1}|x_t,u_t) = \mathcal{N}(x_{t+1}|f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u),L_tQ_tL_t^T). $$
+
+We are done! The linearization of our function has lead us back to Gaussianity!
+
+With the same strategy we obtain for our observation model
+
+$$ p(y_t|x_t) = \mathcal{N}(y_T|h(\hat x_{t|t-1}, 0) + C_t(x_t - \hat x_{t|t-1}),M_tQ_tM_t^T), $$
+
+with \\(C_t = \nabla_{x_t} h(x_t, v_t)^T\|_ {x_t=\hat x_{t\|t-1},v_t=0}\\) and \\(M_t = \nabla_{v_t} h(x_t, v_t)^T\|_ {x_t=\hat x_{t\|t-1},v_t=0}\\)
 
 
+With our approximation again all distributions are Gaussians. Therefore, the distribution of the updated state estimate
+
+
+$$ p(x_t|y_{0:t},u_{0:t-1}) := \mathcal{N}(x_{t}|\hat x_{t|t}, P_{t|t}) $$
+
+and the distribution of the predicted state estimate
+
+$$ p(x_t|y_{0:t-1},u_{0:t-1}) := \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) $$
+
+will be Gaussians as well. 
+
+Now we are ready to plug our surrogate into the equations of the Bayes filter:
+ <div class="important_box" markdown="1">
 **Prediction step**
 
-$$ \mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) - A_tx - B_tu + A_tx_t + B_tu_t,L_t^TQ_tL_t\right) \mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.$$
+$$ \mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u),L_t^TQ_tL_t\right) \mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.$$
 
 **Update step**
 
-$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}\left(y_{t}\middle| h(x, 0) - C_tx + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(x, 0) - C_tx + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}   $$ 
+$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}\left(y_{t}\middle| h(x, 0) C_t(x_t - \hat x_{t|t-1}) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(x, 0) C_t(x_t - \hat x_{t|t-1}) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}   $$ 
 
+</div>
 
 
 Let's try to simplify these equations!
@@ -186,7 +235,7 @@ Let's try to simplify these equations!
 
 We will start with the prediction step
 
-$$ \mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) - A_tx - B_tu + A_tx_t + B_tu_t,L_t^TQ_tL_t\right) \mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.$$
+$$ \mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) - A_t\hat x_{t|t} - B_tu + A_tx_t + B_tu_t,L_t^TQ_tL_t\right) \mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.$$
 
 In order to find a closed form solution of this integral, we could simply plug in the corresponding expressions of the Gaussian distributions and solve the integral. Fortunately, Marc Toussaint already gathered the most important [Gaussian identities](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf), which will lighten our workload a lot.  To find an expression for our prediction step we can simply use the *propagation* formula (Formula 37, Toussaint)
 
@@ -203,7 +252,7 @@ $$ P_{t+1|t} = L_t^TQ_tL_t + A_t P_{t|t} A_t^T  .$$
 
 We will start to simplify the update step 
 
-$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}\left(y_{t}\middle| h(x, 0) - C_tx + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(x, 0) - C_tx + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}   $$ 
+$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t\hat x_{t|t-1} + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t\hat x_{t|t-1} + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}   $$ 
 
 
 by focussing on the numerator first. We notice that we can rewrite it as a joint distribution (Formula 39, Toussaint)
@@ -220,33 +269,33 @@ $$ \mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}(y|b + Fa,B + FA^TF^T)
 
 By comparison with the numerator of our update step, we obtain
 
-$$ \mathcal{N}\left(y_{t}\middle| h(x, 0) - C_t x_{t|t-1} + C_t x_{t|t-1} ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}(y_{t}|h(x, 0) - C_t x_{t|t-1} + C_t\hat x_{t|t-1},M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(x, 0) + C_t x_{t|t-1} -C_t\hat x_{t|t-1}),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}), $$ 
+$$ \mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t x_{t|t-1} ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t\hat x_{t|t-1},M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0) + C_t x_{t|t-1} -C_t\hat x_{t|t-1}),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}), $$ 
 
 which simplifies to
 
-$$ \mathcal{N}\left(y_{t}\middle| h(x, 0) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}(y_{t}|h(x, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(x, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
+$$ \mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
 
-At a first glance, this is not looking like a simplification at all. Conceptually, we only transformed 
+We applied the sam trick as in the [derivation of the Kalman filter]({% post_url 2018-10-10-kalman_filter %}). Conceptually, we only transformed 
 
 $$ \frac{p(y|x)p(x)}{p(y)} \to \frac{p(y,x)}{p(y)} \to \frac{p(x|y)p(y)}{p(y)}. $$
 
 
 If we look closely at the final expression, we see that \\(p(y)\\) is canceling out. Therefore, the result is simply the remaining part
 
-$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(x, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
+$$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
 
 If our reasoning is correct the denominator should be equal to \\(\mathcal{N}(y_{t}\|h(x, 0),M_t^TR_tM_t + C_tP_{t\|t-1}C_t^T)\\), which was canceled out. The denominator can be simplified with the *propagation* formula (Formula 37, Toussaint)
 
-$$ \int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(x, 0) - C_t x_{t|t-1} + C_t x_{t|t-1} ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|h(x, 0) - C_t x_{t|t-1} + C_t\hat x_{t|t-1}, M_t^TR_tM_t + C_tP_{t|t-1}C_t^T ) = \mathcal{N}(y_{t}|h(x, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T).$$
+$$ \int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t x_{t|t-1} ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t\hat x_{t|t-1}, M_t^TR_tM_t + C_tP_{t|t-1}C_t^T ) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T).$$
 
 Yay! We see, that the denominator is exactly the same as the canceled factor in the numerator.
 
 Let's summarize our results:
 
 <div class="important_box" markdown="1">
-<h1>Bayes filter in linear Gaussian state space models</h1>
+<h1>Extended Kalman filter with non-additive noise</h1>
 
-The recursive formula for the Bayes filter in linear Gaussian state space models consists of the **prediction step**
+The recursive formula for the extended Kalman filter with non-additive noise consists of the **prediction step**
 
 $$ \begin{align}\hat x_{t+1|t} &= f(x_{t|t}, u_t, 0) \\ 
 P_{t+1|t} &= L_t^TQ_tL_t + A_t P_{t|t} A_t^T   \end{align} $$
@@ -255,20 +304,29 @@ P_{t+1|t} &= L_t^TQ_tL_t + A_t P_{t|t} A_t^T   \end{align} $$
 and the **update step**
 
 
-$$ \begin{align}\hat x_{t|t} &= \hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(x, 0)) \\ 
-P_{t|t} &= P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}.  \end{align} $$
+$$ \begin{align}\hat x_{t|t} &= \hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)) \\ 
+P_{t|t} &= P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}  \end{align} $$
+
+with
+
+$$ \begin{align}
+A_t &= \nabla_{x_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+B_t &= \nabla_{u_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
+L_t &= \nabla_{w_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+M_t &= \nabla_{v_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}.
+\end{align} $$
+
 
 
 </div>
-That's it! We derived the equations of the Bayes filter in linear Gaussian state space models, which is nothing else but the good old Kalman filter.
-In the next section, we will split these equations up to finally obtain the formulation normally used for the Kalman filter.
-
+That's it! We derived the equations of the extended Kalman filter. To bring the equations in a more implementation friendly form we are restating the extended Kalman filter as:
 
 
 <div class="important_box" markdown="1">
-<h1>Equations of the Kalman filter</h1>
+<h1>Extended Kalman filter with non-additive noise</h1>
 
-The recursive formula for the Kalman filter consists of the **prediction step**
+The recursive formula for the extended Kalman filter with non-additive noise consists of the **prediction step**
 
 $$ \begin{align}\hat x_{t+1|t} &= f(x_{t|t}, u_t, 0) \\ 
 P_{t+1|t} &= L_t^TQ_tL_t + A_t P_{t|t} A_t^T   \end{align} $$
@@ -277,18 +335,32 @@ P_{t+1|t} &= L_t^TQ_tL_t + A_t P_{t|t} A_t^T   \end{align} $$
 and the **update step**
 
 $$ \begin{align}
-z_t &= y_{t}-h(x, 0)\\
+z_t &= y_{t}-h(\hat x_{t|t-1}, 0)\\
 S_t &= M_t^TR_tM_t + C_tP_{t|t-1}C_t^T\\
 K_t &= P_{t|t-1}C_t^TS_t^{-1} \\
 \hat x_{t|t} &= \hat x_{t|t-1} + K_t z_t\\
-P_{t|t} &= (I - K_tC_t)P_{t|t-1}.
+P_{t|t} &= (I - K_tC_t)P_{t|t-1}
+\end{align}
+ $$
+
+with
+
+$$ \begin{align}
+A_t &= \nabla_{x_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+B_t &= \nabla_{u_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
+L_t &= \nabla_{w_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+M_t &= \nabla_{v_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}.
 \end{align} $$
+
 
 </div>
 
-Additive noise
+As promised we will also look at the special case with additive noise. Therefore, our functions will look like:
 
-$$ f(x_t, u_t, w_t) = \bar{f}(x_t, u_t) + w_t $$
+$$ f(x_t, u_t, w_t) = \bar{f}(x_t, u_t) + w_t. $$
+
+In this case the matrix \\(L_t\\) will be identity matri
 
 $$ L_t = \nabla_{w_t} f(x_t, u_t, w_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{w_t} \bar{f}(x_t, u_t)}_{0}|_{x_t=x,v_t=0} + \underbrace{\nabla_{w_t} w_t}_{I}|_{x_t=x,v_t=0} = I $$
 
@@ -298,9 +370,9 @@ $$ M_t = \nabla_{v_t} h(x_t, v_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{v_t} \bar
 
 
 <div class="important_box" markdown="1">
-<h1>Equations of the Kalman filter</h1>
+<h1>Extended Kalman filter with additive noise</h1>
 
-The recursive formula for the Kalman filter consists of the **prediction step**
+The recursive formula for the extended Kalman filter with additive noise consists of the **prediction step**
 
 $$ \begin{align}\hat x_{t+1|t} &= f(x_{t|t}, u_t, 0) \\ 
 P_{t+1|t} &= Q_t + A_t P_{t|t} A_t^T   \end{align} $$
@@ -309,14 +381,33 @@ P_{t+1|t} &= Q_t + A_t P_{t|t} A_t^T   \end{align} $$
 and the **update step**
 
 $$ \begin{align}
-z_t &= y_{t}-h(x, 0)\\
+z_t &= y_{t}-h(\hat x_{t|t-1}, 0)\\
 S_t &= R_t + C_tP_{t|t-1}C_t^T\\
 K_t &= P_{t|t-1}C_t^TS_t^{-1} \\
 \hat x_{t|t} &= \hat x_{t|t-1} + K_t z_t\\
-P_{t|t} &= (I - K_tC_t)P_{t|t-1}.
+P_{t|t} &= (I - K_tC_t)P_{t|t-1}
+\end{align} $$
+
+with 
+
+$$ \begin{align}
+A_t &= \nabla_{x_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+B_t &= \nabla_{u_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 \end{align} $$
 
 </div>
+
+
+
+
+# Example
+
+# Acknowledgement
+
+The vector graphics of the [car](https://www.freepik.com/free-photos-vectors/car) were created by [Freepik](https://www.freepik.com/).
+
+
 
 <a href='https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm'></a>
 
