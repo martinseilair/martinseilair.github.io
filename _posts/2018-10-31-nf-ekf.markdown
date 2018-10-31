@@ -1,11 +1,11 @@
 ---
 layout: post
 title:  "Nonlinear filtering: Extended Kalman filter"
-date:   2018-10-12 18:04:07 +0900
+date:   2018-10-31 23:04:07 +0900
 categories: jekyll update
 excerpt_separator: <!--more-->
 ---
-Intro
+This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  <!--more--> If you haven't read the [introduction]({% post_url 2018-10-29-nf-intro %}), I would recommend to read it first. Before we dive into the derivation, let's try to state the main idea behind extended Kalman filter.
 <!--more-->
 <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
 
@@ -89,6 +89,10 @@ Intro
 </script>
 
 
+<div class="important_box"  markdown="1">
+The **extended Kalman filter** approximates the Bayes filter by linearizing the system and observation equations.
+</div>
+
 ## Derivation
 
 We will start the derivation directly from the recursive equations of the Bayes filter with the **prediction step**
@@ -100,7 +104,7 @@ and the **update step**
 $$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .$$
 
 
-The extended Kalman filter is normally formulated with nonlinear functions with additive noise. In this article we directly derive the general case for non-additive noise. Therefore, our equations of the system are
+The extended Kalman filter is normally formulated with nonlinear functions with additive noise. In this article, we directly derive the general case for non-additive noise and obtain the extended Kalman filter as a special case. Therefore, our equations of the system are
 
 $$
 \begin{align}
@@ -111,7 +115,7 @@ $$
 
 with Gaussian process noise \\( w_t \sim \mathcal{N}(w_t\|0, Q_t) \\) and Gaussian observation noise \\( v_t \sim \mathcal{N}(v_t\|0, R_t) \\).
 
-In our formula of the Bayes we can't find any functions \\(f(x_t, u_t, w_t)\\) or \\(h(x_k, v_k)\\). Therefore, our first step will be to express these functions as \\(p(x_{t+1}\|x_{t}, u_{t})\\) and \\(p(y_t\|x_t)\\). The next box will show how to achieve this in general. **Warning:** Distributions are very weird and the following treatment is **not rigorous**. 
+In our formula of the Bayes filter, we can't find any functions \\(f(x_t, u_t, w_t)\\) or \\(h(x_k, v_k)\\). Therefore, our first step will be to express these functions as probability distributions \\(p(x_{t+1}\|x_{t}, u_{t})\\) and \\(p(y_t\|x_t)\\). The next box will show how to achieve this in general. **Warning:** Distributions are very weird and the following treatment is **not rigorous**. 
  <div class="extra_box" markdown="1">
 We want to calculate \\(p(y|x)\\) given the function \\(y=f(x,z)\\) and \\(p(z)\\).
 We can express the deterministic function \\(y=f(x,z)\\) as probability distribution
@@ -136,49 +140,51 @@ $$ p(y|x) = \sum_i \frac{p(z_i)}{\left|\det\nabla_z f(x,z)|_{z_i}\right|}, $$
 where the sum goes over all \\(z_i\\) which satisfy the equation \\(y = f(x,z)\\).
 </div>
 
-In our case we can express our system function \\(x_{t+1} = f(x_t,u_t,w_t)\\) as a probability distribution
+In our case, we can express our system function \\(x_{t+1} = f(x_t,u_t,w_t)\\) as a probability distribution
 
-$$ p(x_{t+1}|x_t,u_t) = \sum_i \frac{p(w_i)}{\left|\det\nabla_w f(x_t, u_t, w_t)|_{w_i}\right|} $$
+$$ p(x_{t+1}|x_t,u_t) = \sum_i \frac{p(w_i)}{\left|\det\nabla_w f(x_t, u_t, w_t)|_{w_i}\right|}, $$
 
-where the sum is over all \\(w_i\\) which satisfy \\(x_{t+1} = f(x_t,u_t,w_t)\\).
+where the sum goes over all \\(w_i\\) which satisfy \\(x_{t+1} = f(x_t,u_t,w_t)\\).
 
 Similarly, we can express our observation function  \\(y_t = h(x_k, v_k)\\) as probability distribution
 
 $$ p(y_t|x_t) = \sum_i \frac{p(v_i)}{\left|\det\nabla_v h(x_t, v_t)|_{v_i}\right|} $$
 
-where the sum is over all \\(v_i\\) which satisfy \\(x_{t+1} = h(x_t,v_t)\\).
+where the sum goes over all \\(v_i\\) which satisfy \\(x_{t+1} = h(x_t,v_t)\\).
 
-Even if we are assuming Gaussian process and measurement noise, the resulting distributions of our model will in general be non-Gaussian.
+Even if we are assuming Gaussian process and measurement noise, the resulting distributions of our model will, in general, be non-Gaussian.
 This is where the extended Kalman filter comes into play. It approximates our probability distributions by using linearization.
 In my limited scope, linearization of a probability distribution makes no sense. But what is then linearized?
 
-Instead of linearizing our probability distributions we will do this with our deterministic functions.
+Instead of linearizing our probability distributions we will do this with our deterministic functions before we express them as probability distributions.
 
- We are performing a first order Taylor expansion
+ In order to linearize, we are performing a first-order Taylor expansion
 
  $$ f(x_t, u_t, w_t) \approx f(x_t, u_t, w_t)|_{x_t=\hat x_{t|t},u_t=u,w_t=0} + \nabla_{x_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}(x_t - x)+ \nabla_{u_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}(u_t - u) + \nabla_{w_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}w_t$$
 
 
 
- around the current state \\(x_t = \hat x_{t\|t}\\), current input \\(u_t=u\\) and zero process noise \\(w_t=0\\).
+ around the current state estimate \\(x_t = \hat x_{t\|t}\\), current input \\(u_t=u\\) and zero process noise \\(w_t=0\\).
 
 
- We define \\(A_t = \nabla_{x_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) , \\(B_t = \nabla_{u_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) and \\(L_t = \nabla_{w_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) and obtain
+ To unclutter the notation, we define \\(A_t = \nabla_{x_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) , \\(B_t = \nabla_{u_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) and \\(L_t = \nabla_{w_t} f(x_t, u_t, w_t)^T\|_ {x_t=\hat x_{t\|t},u_t=u,w_t=0}\\) to finally obtain the much cleaner representation
 
 
  
 
 $$ \hat{f}(x_t, u_t, w_t) = f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u)  + L_tw_t.$$
 
-Now we are ready to transform our linearized deterministic system function into a probability distribution. We will use the same formula as above and arrive at
+Now we are ready to transform our linearized deterministic system function into a probability distribution. We will use the same formula as above, but replace the true function \\(f(x_t, u_t, w_t)\\) with \\(\hat{f}(x_t, u_t, w_t)\\), and arrive at
 
 
 $$ p(x_{t+1}|x_t,u_t) = \sum_i \frac{\mathcal{N}(w_i|0,Q_t)}{\left|\det\nabla_w \hat{f}(x_t, u_t, w_t)|_{w_i}\right|}, $$
 
-where the sum is over all \\(w_i\\) which satisfy \\(x_{t+1} = \hat{f}(x_t, u_t, w_t)\\). Let's try to simplify this expression! First we notice that if the matrix \\(L_t\\) is invertible, then there is exactly one \\(w\\) that satisfies \\(x_{t+1} = \hat{f}(x_t, u_t, w_t)\\). We can express it as
+where the sum is over all \\(w_i\\) which satisfy \\(x_{t+1} = \hat{f}(x_t, u_t, w_t)\\). Let's try to simplify this expression! First, we notice that if the matrix \\(L_t\\) is invertible, then there is exactly one \\(w\\) that satisfies \\(x_{t+1} = \hat{f}(x_t, u_t, w_t)\\). We can express it as
 
 
 $$ w = L_t^{-1}\left(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)\right). $$
+
+Note, that if the martrix \\(L_t\\) is not invertible, we would have to integrate over the whole null space and the sum would become an integral. 
 
 Next, let's look at the denominator. We can express the derivative of \\(\hat{f}(x_t, u_t, w_t)\\) with respect to \\(w_t\\) as
 
@@ -193,20 +199,20 @@ We apply the transformation identity (Formula 35, [Toussaint](https://ipvs.infor
 
 $$ p(x_{t+1}|x_t,u_t) = \frac{\frac{1}{\left|\det L_t^{-1}\right|}\mathcal{N}(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)|0,L_tQ_tL_t^T)}{\left|\det L_t\right|} $$
 
-And it apply it once more:
+And apply it once more, to obtain our final result:
 
 $$ p(x_{t+1}|x_t,u_t) = \mathcal{N}(x_{t+1}|f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u),L_tQ_tL_t^T). $$
 
 We are done! The linearization of our function has lead us back to Gaussianity!
 
-With the same strategy we obtain for our observation model
+With the same strategy, we obtain for our observation model
 
 $$ p(y_t|x_t) = \mathcal{N}(y_T|h(\hat x_{t|t-1}, 0) + C_t(x_t - \hat x_{t|t-1}),M_tQ_tM_t^T), $$
 
 with \\(C_t = \nabla_{x_t} h(x_t, v_t)^T\|_ {x_t=\hat x_{t\|t-1},v_t=0}\\) and \\(M_t = \nabla_{v_t} h(x_t, v_t)^T\|_ {x_t=\hat x_{t\|t-1},v_t=0}\\)
 
 
-With our approximation again all distributions are Gaussians. Therefore, the distribution of the updated state estimate
+Our linearization led to a Gaussian system and observation model. Therefore, the distribution of the updated state estimate
 
 
 $$ p(x_t|y_{0:t},u_{0:t-1}) := \mathcal{N}(x_{t}|\hat x_{t|t}, P_{t|t}) $$
@@ -238,7 +244,7 @@ We will start with the prediction step
 
 $$ \mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) - A_t\hat x_{t|t} - B_tu + A_tx_t + B_tu_t,L_t^TQ_tL_t\right) \mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.$$
 
-In order to find a closed form solution of this integral, we could simply plug in the corresponding expressions of the Gaussian distributions and solve the integral. Fortunately, Marc Toussaint already gathered the most important [Gaussian identities](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf), which will lighten our workload a lot.  To find an expression for our prediction step we can simply use the *propagation* formula (Formula 37, Toussaint)
+To find an expression for our prediction step we can simply use the *propagation* formula (Formula 37, [Toussaint](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf))
 
 $$ \int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T ). $$
 
@@ -249,6 +255,8 @@ $$ \hat x_{t+1|t} = f(x_{t|t}, u_t, 0) -A_t \hat x_{t|t} - B_tu_t + A_t \hat x_{
 
 $$ P_{t+1|t} = L_t^TQ_tL_t + A_t P_{t|t} A_t^T  .$$
 
+
+
 ### Update step
 
 We will start to simplify the update step 
@@ -256,7 +264,7 @@ We will start to simplify the update step
 $$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t\hat x_{t|t-1} + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t\hat x_{t|t-1} + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}   $$ 
 
 
-by focussing on the numerator first. We notice that we can rewrite it as a joint distribution (Formula 39, Toussaint)
+by focussing on the numerator first. We notice that we can rewrite it as a joint distribution (Formula 39, [Toussaint](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf))
 
 $$ \mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b + Fa \end{matrix},\begin{matrix}A & A^TF^T\\FA & B + FA^TF^T\end{matrix}\right) .$$
 
@@ -276,7 +284,7 @@ which simplifies to
 
 $$ \mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
 
-We applied the sam trick as in the [derivation of the Kalman filter]({% post_url 2018-10-10-kalman_filter %}). Conceptually, we only transformed 
+We applied the same trick as in the [derivation of the Kalman filter]({% post_url 2018-10-10-kalman_filter %}): Conceptually, we only transformed 
 
 $$ \frac{p(y|x)p(x)}{p(y)} \to \frac{p(y,x)}{p(y)} \to \frac{p(x|y)p(y)}{p(y)}. $$
 
@@ -285,7 +293,7 @@ If we look closely at the final expression, we see that \\(p(y)\\) is canceling 
 
 $$ \mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}). $$ 
 
-If our reasoning is correct the denominator should be equal to \\(\mathcal{N}(y_{t}\|h(x, 0),M_t^TR_tM_t + C_tP_{t\|t-1}C_t^T)\\), which was canceled out. The denominator can be simplified with the *propagation* formula (Formula 37, Toussaint)
+If our reasoning is correct the denominator should be equal to \\(\mathcal{N}(y_{t}\|h(x, 0),M_t^TR_tM_t + C_tP_{t\|t-1}C_t^T)\\), which was canceled out. The denominator can be simplified with the *propagation* formula (Formula 37, [Toussaint](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf))
 
 $$ \int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t x_{t|t-1} ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t\hat x_{t|t-1}, M_t^TR_tM_t + C_tP_{t|t-1}C_t^T ) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T).$$
 
@@ -321,7 +329,7 @@ M_t &= \nabla_{v_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}.
 
 
 </div>
-That's it! We derived the equations of the extended Kalman filter. To bring the equations in a more implementation friendly form we are restating the extended Kalman filter as:
+That's it! We derived the equations of the extended Kalman filter. To bring the equations in a more implementation friendly form, we are restating the extended Kalman filter as:
 
 
 <div class="important_box" markdown="1">
@@ -357,18 +365,20 @@ M_t &= \nabla_{v_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}.
 
 </div>
 
-As promised we will also look at the special case with additive noise. Therefore, our functions will look like:
+As promised we will also look at the special case with **additive** noise. Therefore, our functions will look like:
 
 $$ f(x_t, u_t, w_t) = \bar{f}(x_t, u_t) + w_t. $$
 
-In this case the matrix \\(L_t\\) will be identity matri
+$$ h(x_t, v_t) = \bar{h}(x_t) + v_t. $$
+
+In this case, the matrix \\(L_t\\) and \\(M_t\\) will be identity matrices:
 
 $$ L_t = \nabla_{w_t} f(x_t, u_t, w_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{w_t} \bar{f}(x_t, u_t)}_{0}|_{x_t=x,v_t=0} + \underbrace{\nabla_{w_t} w_t}_{I}|_{x_t=x,v_t=0} = I $$
 
-$$ f(x_t, u_t, w_t) = \bar{f}(x_t, u_t) + w_t $$
 
-$$ M_t = \nabla_{v_t} h(x_t, v_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{v_t} \bar{h}(x_t)}_{0}|_{x_t=x,v_t=0} + \underbrace{\nabla_{v_t} v_t}_{I}|_{x_t=x,v_t=0} = I $$
+$$ M_t = \nabla_{v_t} h(x_t, v_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{v_t} \bar{h}(x_t)}_{0}|_{x_t=x,v_t=0} + \underbrace{\nabla_{v_t} v_t}_{I}|_{x_t=x,v_t=0} = I. $$
 
+Finally, we can state the equations of the extended Kalman filter with additive noise.
 
 <div class="important_box" markdown="1">
 <h1>Extended Kalman filter with additive noise</h1>
@@ -417,11 +427,6 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 	n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}",1000);
 	n_scene.mode = 2;
 	n_scene.filter = "";
-
-
-
-
-
 	n_scene.dur=slow_dur;
 	// define particle filter 
 
@@ -432,14 +437,7 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 	n_scene.ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
 
 	n_scene.loaded = function(){
-		//var ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
-		//for (var i=0; i<ids.length;i++){
 
-		//	document.getElementById(ids[i]).style.display="none";
-		//}
-
-
-		//this.bf = init_bayes_filter(this.rc, this.rt);
 		var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#006eff'), d3.rgb('#00028e')]);
 		var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
 
@@ -496,7 +494,6 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 			this.rt.hide_strip("inner");
 		}else if(this.t % 4 == 1){
 			// PREDICT
-			//this.bf.predict(this.last_input);
 			this.ekf.predict(this.last_input);
 
 			// trim ekf posterior
@@ -504,17 +501,12 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 				this.ekf.posterior_mu+=this.rt.track_length;
 			}
 			this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
-
-						//this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
-
-			// update posterior strip ekf
 			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
 		}else if(this.t % 4 == 2){
 			// OBSERVE
 			this.rt.show_strip("inner");
 			this.output = scene.rc.output_dist_sample(0);
-			//console.log(C, this.output/C, this.ekf.output_sigma(this.ekf.posterior_mu)/(C*C), this.rt)
 			var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
 			this.rt.update_strip("inner", get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
 
@@ -522,16 +514,12 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 		}else if(this.t % 4 == 3){
 			// UPDATE
 
-			//console.log("state", this.rc.state);
 			this.ekf.update(this.output);
 
 			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 
 			document.getElementById("race_track_mar_loc_timestep").style.display="block";
 		}
-
-//console.log(this.ekf.posterior_sigma)
-//this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 
 	}.bind(n_scene);
 
@@ -569,10 +557,13 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 
 
 
-On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the __OBSERVE__ button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the __UPDATE STEP__ button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the __PREDICT STEP__ button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.
+On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the __OBSERVE__ button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the __UPDATE STEP__ button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the __PREDICT STEP__ button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.
 
-With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
+If you want to reset the environment, just press the reset button in the bottom left corner.
 As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
+
+We see, that it is actually working pretty well. But one thing seems particularly weird: At certain positions on the race track, the brownish inner strip (our likelihood) seems to be uniformly distributed. This is not a bug, but a shortcoming of the linearization. We will always experience this behavior, if the part of the road at our current posterior mean is pointing only in _tangential_ direction, with the tree as the center. In other words: A small change in position wouldn't change the distance. When we are linearizing, we assume this local behavior applies for the whole system and we won't get any new information out of our measurement. To get an intuitive understanding of this, you can imagine two parallel lines. Our car is driving along one of the parallel lines and we take the nearest distance to the other line as a measurement. This measurement would be uninformative because the distance to the parallel line is always the same.
+
 
 
 

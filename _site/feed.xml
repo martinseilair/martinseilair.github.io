@@ -1,4 +1,551 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-31T17:05:50+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-31T23:35:54+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
+&lt;!--more--&gt;
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
+
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://localhost:4000/assets/css/nonlinear_filter/style.css&quot; /&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+
+// mit keys oder button steuerbar
+// strips ein und ausblendbar
+// weights ein und ausblendbar
+// update resample predict manuell oder langsam automatisch (weiter button)
+// update resample predict button (hier macht input keinen sinn, außer man hat 3 button für predict)
+// mit maus car position festlegen (geringster abstand)
+
+
+// herangehensweise
+
+// 1. auto fährt 
+// 2. Vorstellung der system und beobachtungsfunktion (plot)
+// 3. mit maus car position festlegen, entsprechende verteilung innen und außen anzeigen
+// 3a. Bayes filter approximierung außen posterior innen beobachtung (update prediction weiter)
+// 4. standbild: particle anzeigen
+// 5. standbild: update step (5 sek vorher 5 sek nachher) (prob strip innen anzeigen)
+// 6. standbild: resampling (5 sek vorher 5 sek nachher)
+// 7. standbild: predict (5 sek vorher 5 sek nachher)
+// 8. update resample predict manuell (weiter button)
+// 9. update resample predict automatisch (geschwindigkeit einstellbar) (steuerung über pfeiltasten)
+// 10. zwei trees
+
+	// SITE NOT LOADED!!!
+
+	// input modes
+	// 0: Automatisch langsam; sequential
+	// 1: Set input per  A = backward, S = no movement, D = forward; one step
+	// 2: Set input per  A = backward, S = no movement, D = forward; sequential
+	// 3: Mouse exploring
+	// 4: No input
+
+	// scene_flags
+
+	scene = [];
+	scenes = [];
+	scenes_name = [];
+	interval = null;
+	loaded = false;
+	var aa = 1;
+	var fast_dur = 300;
+	var slow_dur = 1000;
+	var ani_step = 3;
+
+
+	touch_id = null;
+
+
+
+
+
+&lt;/script&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;p&gt;The &lt;strong&gt;extended Kalman filter&lt;/strong&gt; approximates the Bayes filter by linearizing the system and observation equations.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;derivation&quot;&gt;Derivation&lt;/h2&gt;
+
+&lt;p&gt;We will start the derivation directly from the recursive equations of the Bayes filter with the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .&lt;/script&gt;
+
+&lt;p&gt;The extended Kalman filter is normally formulated with nonlinear functions with additive noise. In this article, we directly derive the general case for non-additive noise and obtain the extended Kalman filter as a special case. Therefore, our equations of the system are&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+ x_{t+1} &amp;= f(x_t, u_t, w_t) \\
+ y_t &amp;= h(x_k, v_k).
+ \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;with Gaussian process noise \( w_t \sim \mathcal{N}(w_t|0, Q_t) \) and Gaussian observation noise \( v_t \sim \mathcal{N}(v_t|0, R_t) \).&lt;/p&gt;
+
+&lt;p&gt;In our formula of the Bayes filter, we can’t find any functions \(f(x_t, u_t, w_t)\) or \(h(x_k, v_k)\). Therefore, our first step will be to express these functions as probability distributions \(p(x_{t+1}|x_{t}, u_{t})\) and \(p(y_t|x_t)\). The next box will show how to achieve this in general. &lt;strong&gt;Warning:&lt;/strong&gt; Distributions are very weird and the following treatment is &lt;strong&gt;not rigorous&lt;/strong&gt;.&lt;/p&gt;
+&lt;div class=&quot;extra_box&quot;&gt;
+  &lt;p&gt;We want to calculate \(p(y|x)\) given the function \(y=f(x,z)\) and \(p(z)\).
+We can express the deterministic function \(y=f(x,z)\) as probability distribution&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y|x,z) = \delta(y-f(x,z)),&lt;/script&gt;
+
+  &lt;p&gt;with the &lt;a href=&quot;https://en.wikipedia.org/wiki/Dirac_delta_function&quot;&gt;Dirac delta function&lt;/a&gt; \(\delta(x)\).&lt;/p&gt;
+
+  &lt;p&gt;In order to calculate \(p(y|x)\) we can simply marginalize out \(z\):&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+p(y|x) &amp;= \int_z p(y|x,z)p(z)\, dx \\
+ &amp;= \int_z \delta(y-f(x,z))p(z)\, dx 
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;By using the composition rule of the Dirac delta function, we can express this as&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y|x) = \sum_i \frac{p(z_i)}{\left|\det\nabla_z f(x,z)|_{z_i}\right|},&lt;/script&gt;
+
+  &lt;p&gt;where the sum goes over all \(z_i\) which satisfy the equation \(y = f(x,z)\).&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;In our case, we can express our system function \(x_{t+1} = f(x_t,u_t,w_t)\) as a probability distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|x_t,u_t) = \sum_i \frac{p(w_i)}{\left|\det\nabla_w f(x_t, u_t, w_t)|_{w_i}\right|},&lt;/script&gt;
+
+&lt;p&gt;where the sum goes over all \(w_i\) which satisfy \(x_{t+1} = f(x_t,u_t,w_t)\).&lt;/p&gt;
+
+&lt;p&gt;Similarly, we can express our observation function  \(y_t = h(x_k, v_k)\) as probability distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y_t|x_t) = \sum_i \frac{p(v_i)}{\left|\det\nabla_v h(x_t, v_t)|_{v_i}\right|}&lt;/script&gt;
+
+&lt;p&gt;where the sum goes over all \(v_i\) which satisfy \(x_{t+1} = h(x_t,v_t)\).&lt;/p&gt;
+
+&lt;p&gt;Even if we are assuming Gaussian process and measurement noise, the resulting distributions of our model will, in general, be non-Gaussian.
+This is where the extended Kalman filter comes into play. It approximates our probability distributions by using linearization.
+In my limited scope, linearization of a probability distribution makes no sense. But what is then linearized?&lt;/p&gt;
+
+&lt;p&gt;Instead of linearizing our probability distributions we will do this with our deterministic functions before we express them as probability distributions.&lt;/p&gt;
+
+&lt;p&gt;In order to linearize, we are performing a first-order Taylor expansion&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;f(x_t, u_t, w_t) \approx f(x_t, u_t, w_t)|_{x_t=\hat x_{t|t},u_t=u,w_t=0} + \nabla_{x_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}(x_t - x)+ \nabla_{u_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}(u_t - u) + \nabla_{w_t} f(x_t, u_t, w_t)^T|_{x_t=\hat x_{t|t},u_t=u,w_t=0}w_t&lt;/script&gt;
+
+&lt;p&gt;around the current state estimate \(x_t = \hat x_{t|t}\), current input \(u_t=u\) and zero process noise \(w_t=0\).&lt;/p&gt;
+
+&lt;p&gt;To unclutter the notation, we define \(A_t = \nabla_{x_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\) , \(B_t = \nabla_{u_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\) and \(L_t = \nabla_{w_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\) to finally obtain the much cleaner representation&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{f}(x_t, u_t, w_t) = f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u)  + L_tw_t.&lt;/script&gt;
+
+&lt;p&gt;Now we are ready to transform our linearized deterministic system function into a probability distribution. We will use the same formula as above, but replace the true function \(f(x_t, u_t, w_t)\) with \(\hat{f}(x_t, u_t, w_t)\), and arrive at&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|x_t,u_t) = \sum_i \frac{\mathcal{N}(w_i|0,Q_t)}{\left|\det\nabla_w \hat{f}(x_t, u_t, w_t)|_{w_i}\right|},&lt;/script&gt;
+
+&lt;p&gt;where the sum is over all \(w_i\) which satisfy \(x_{t+1} = \hat{f}(x_t, u_t, w_t)\). Let’s try to simplify this expression! First, we notice that if the matrix \(L_t\) is invertible, then there is exactly one \(w\) that satisfies \(x_{t+1} = \hat{f}(x_t, u_t, w_t)\). We can express it as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;w = L_t^{-1}\left(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)\right).&lt;/script&gt;
+
+&lt;p&gt;Note, that if the martrix \(L_t\) is not invertible, we would have to integrate over the whole null space and the sum would become an integral.&lt;/p&gt;
+
+&lt;p&gt;Next, let’s look at the denominator. We can express the derivative of \(\hat{f}(x_t, u_t, w_t)\) with respect to \(w_t\) as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\nabla_w \hat{f}(x_t, u_t, w_t) =\nabla_w( f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u)  + L_tw_t) = L_t.&lt;/script&gt;
+
+&lt;p&gt;Let’s plug in the information our new information about \(w\) and the derivative:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|x_t,u_t) = \frac{\mathcal{N}(L_t^{-1}\left(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)\right)|0,Q_t)}{\left|\det L_t\right|}.&lt;/script&gt;
+
+&lt;p&gt;We apply the transformation identity (Formula 35, &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Toussaint&lt;/a&gt;):&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|x_t,u_t) = \frac{\frac{1}{\left|\det L_t^{-1}\right|}\mathcal{N}(x_{t+1} - f(\hat x_{t|t}, u, 0) - A_t(x_t - \hat x_{t|t})- B_t(u_t - u)|0,L_tQ_tL_t^T)}{\left|\det L_t\right|}&lt;/script&gt;
+
+&lt;p&gt;And apply it once more, to obtain our final result:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|x_t,u_t) = \mathcal{N}(x_{t+1}|f(\hat x_{t|t}, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u),L_tQ_tL_t^T).&lt;/script&gt;
+
+&lt;p&gt;We are done! The linearization of our function has lead us back to Gaussianity!&lt;/p&gt;
+
+&lt;p&gt;With the same strategy, we obtain for our observation model&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y_t|x_t) = \mathcal{N}(y_T|h(\hat x_{t|t-1}, 0) + C_t(x_t - \hat x_{t|t-1}),M_tQ_tM_t^T),&lt;/script&gt;
+
+&lt;p&gt;with \(C_t = \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\) and \(M_t = \nabla_{v_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\)&lt;/p&gt;
+
+&lt;p&gt;Our linearization led to a Gaussian system and observation model. Therefore, the distribution of the updated state estimate&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) := \mathcal{N}(x_{t}|\hat x_{t|t}, P_{t|t})&lt;/script&gt;
+
+&lt;p&gt;and the distribution of the predicted state estimate&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t-1},u_{0:t-1}) := \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})&lt;/script&gt;
+
+&lt;p&gt;will be Gaussians as well.&lt;/p&gt;
+
+&lt;p&gt;Now we are ready to plug our surrogate into the equations of the Bayes filter:&lt;/p&gt;
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;p&gt;&lt;strong&gt;Prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) + A_t(x_t - \hat x_{t|t})+ B_t(u_t - u),L_t^TQ_tL_t\right) \mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.&lt;/script&gt;
+
+  &lt;p&gt;&lt;strong&gt;Update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}\left(y_{t}\middle| h(x, 0) C_t(x_t - \hat x_{t|t-1}) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(x, 0) C_t(x_t - \hat x_{t|t-1}) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}&lt;/script&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;Let’s try to simplify these equations!&lt;/p&gt;
+
+&lt;h3 id=&quot;prediction-step&quot;&gt;Prediction step&lt;/h3&gt;
+
+&lt;p&gt;We will start with the prediction step&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}\left(x_{t+1}\middle| f(x, u, 0) - A_t\hat x_{t|t} - B_tu + A_tx_t + B_tu_t,L_t^TQ_tL_t\right) \mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t.&lt;/script&gt;
+
+&lt;p&gt;To find an expression for our prediction step we can simply use the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Toussaint&lt;/a&gt;)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T ).&lt;/script&gt;
+
+&lt;p&gt;By comparison with our expression, we see that&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat x_{t+1|t} = f(x_{t|t}, u_t, 0) -A_t \hat x_{t|t} - B_tu_t + A_t \hat x_{t|t} + B_tu_t = f(x_{t|t}, u_t, 0)&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1|t} = L_t^TQ_tL_t + A_t P_{t|t} A_t^T  .&lt;/script&gt;
+
+&lt;h3 id=&quot;update-step&quot;&gt;Update step&lt;/h3&gt;
+
+&lt;p&gt;We will start to simplify the update step&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \frac{\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t\hat x_{t|t-1} + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1})}{\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t\hat x_{t|t-1} + C_tx_t ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t}}&lt;/script&gt;
+
+&lt;p&gt;by focussing on the numerator first. We notice that we can rewrite it as a joint distribution (Formula 39, &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Toussaint&lt;/a&gt;)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b + Fa \end{matrix},\begin{matrix}A &amp; A^TF^T\\FA &amp; B + FA^TF^T\end{matrix}\right) . %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Then again, this joint distribution can be rewritten as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}d\\e \end{matrix},\begin{matrix}D &amp; F\\F^T &amp; E\end{matrix}\right) = \mathcal{N}(y|e,E)\mathcal{N}(x|d + F^TE^{-1}(y-e),D - F^T E^{-1}F) . %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;We can combine the two previous equations to the following expression&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a,A)\mathcal{N}(y|b + Fx,B) = \mathcal{N}(y|b + Fa,B + FA^TF^T) \mathcal{N}(x|a + A^TF^T(B + FA^TF^T)^{-1}(y-b -Fa),A - A^TF^T (B + FA^TF^T)^{-1}FA) .&lt;/script&gt;
+
+&lt;p&gt;By comparison with the numerator of our update step, we obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t x_{t|t-1} ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t\hat x_{t|t-1},M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0) + C_t x_{t|t-1} -C_t\hat x_{t|t-1}),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}),&lt;/script&gt;
+
+&lt;p&gt;which simplifies to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)  \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
+
+&lt;p&gt;We applied the same trick as in the &lt;a href=&quot;/jekyll/update/2018/10/10/kalman_filter.html&quot;&gt;derivation of the Kalman filter&lt;/a&gt;: Conceptually, we only transformed&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{p(y|x)p(x)}{p(y)} \to \frac{p(y,x)}{p(y)} \to \frac{p(x|y)p(y)}{p(y)}.&lt;/script&gt;
+
+&lt;p&gt;If we look closely at the final expression, we see that \(p(y)\) is canceling out. Therefore, the result is simply the remaining part&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t}|\hat x_{t|{t}}, P_{t|t} ) = \mathcal{N}(x_{t}|\hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)),  P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}).&lt;/script&gt;
+
+&lt;p&gt;If our reasoning is correct the denominator should be equal to \(\mathcal{N}(y_{t}|h(x, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)\), which was canceled out. The denominator can be simplified with the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Toussaint&lt;/a&gt;)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{x_{t}}\mathcal{N}\left(y_{t}\middle| h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t x_{t|t-1} ,M_t^TR_tM_t\right) \mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) dx_{t} =  \mathcal{N}({y_{t}}|h(\hat x_{t|t-1}, 0) - C_t x_{t|t-1} + C_t\hat x_{t|t-1}, M_t^TR_tM_t + C_tP_{t|t-1}C_t^T ) = \mathcal{N}(y_{t}|h(\hat x_{t|t-1}, 0),M_t^TR_tM_t + C_tP_{t|t-1}C_t^T).&lt;/script&gt;
+
+&lt;p&gt;Yay! We see, that the denominator is exactly the same as the canceled factor in the numerator.&lt;/p&gt;
+
+&lt;p&gt;Let’s summarize our results:&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Extended Kalman filter with non-additive noise&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the extended Kalman filter with non-additive noise consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t+1|t} &amp;= f(x_{t|t}, u_t, 0) \\ 
+P_{t+1|t} &amp;= L_t^TQ_tL_t + A_t P_{t|t} A_t^T   \end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t|t} &amp;= \hat x_{t|t-1} + P_{t|t-1}C_t^T(M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-h(\hat x_{t|t-1}, 0)) \\ 
+P_{t|t} &amp;= P_{t|t-1} - P_{t|t-1}C_t^T (M_t^TR_tM_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1}  \end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;with&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+A_t &amp;= \nabla_{x_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+B_t &amp;= \nabla_{u_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
+L_t &amp;= \nabla_{w_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+M_t &amp;= \nabla_{v_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}.
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;/div&gt;
+&lt;p&gt;That’s it! We derived the equations of the extended Kalman filter. To bring the equations in a more implementation friendly form, we are restating the extended Kalman filter as:&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Extended Kalman filter with non-additive noise&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the extended Kalman filter with non-additive noise consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t+1|t} &amp;= f(x_{t|t}, u_t, 0) \\ 
+P_{t+1|t} &amp;= L_t^TQ_tL_t + A_t P_{t|t} A_t^T   \end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+z_t &amp;= y_{t}-h(\hat x_{t|t-1}, 0)\\
+S_t &amp;= M_t^TR_tM_t + C_tP_{t|t-1}C_t^T\\
+K_t &amp;= P_{t|t-1}C_t^TS_t^{-1} \\
+\hat x_{t|t} &amp;= \hat x_{t|t-1} + K_t z_t\\
+P_{t|t} &amp;= (I - K_tC_t)P_{t|t-1}
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;with&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+A_t &amp;= \nabla_{x_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+B_t &amp;= \nabla_{u_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
+L_t &amp;= \nabla_{w_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+M_t &amp;= \nabla_{v_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}.
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;As promised we will also look at the special case with &lt;strong&gt;additive&lt;/strong&gt; noise. Therefore, our functions will look like:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;f(x_t, u_t, w_t) = \bar{f}(x_t, u_t) + w_t.&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;h(x_t, v_t) = \bar{h}(x_t) + v_t.&lt;/script&gt;
+
+&lt;p&gt;In this case, the matrix \(L_t\) and \(M_t\) will be identity matrices:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;L_t = \nabla_{w_t} f(x_t, u_t, w_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{w_t} \bar{f}(x_t, u_t)}_{0}|_{x_t=x,v_t=0} + \underbrace{\nabla_{w_t} w_t}_{I}|_{x_t=x,v_t=0} = I&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;M_t = \nabla_{v_t} h(x_t, v_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{v_t} \bar{h}(x_t)}_{0}|_{x_t=x,v_t=0} + \underbrace{\nabla_{v_t} v_t}_{I}|_{x_t=x,v_t=0} = I.&lt;/script&gt;
+
+&lt;p&gt;Finally, we can state the equations of the extended Kalman filter with additive noise.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Extended Kalman filter with additive noise&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the extended Kalman filter with additive noise consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t+1|t} &amp;= f(x_{t|t}, u_t) \\ 
+P_{t+1|t} &amp;= Q_t + A_t P_{t|t} A_t^T   \end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+z_t &amp;= y_{t}-h(\hat x_{t|t-1})\\
+S_t &amp;= R_t + C_tP_{t|t-1}C_t^T\\
+K_t &amp;= P_{t|t-1}C_t^TS_t^{-1} \\
+\hat x_{t|t} &amp;= \hat x_{t|t-1} + K_t z_t\\
+P_{t|t} &amp;= (I - K_tC_t)P_{t|t-1}
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;with&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+A_t &amp;= \nabla_{x_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+B_t &amp;= \nabla_{u_t} f(x_t, u_t, w_t)^T|_ {x_t=\hat x_{t|t},u_t=u,w_t=0}\\
+C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&quot;example&quot;&gt;Example&lt;/h2&gt;
+
+&lt;p&gt;Enough of the dry theory! Let’s play around with the grid-based filter in our race track example.&lt;/p&gt;
+
+&lt;svg id=&quot;race_track_mar_loc&quot; style=&quot;width:100%&quot; onclick=&quot;on_click()&quot;&gt;&lt;/svg&gt;
+&lt;script&gt;
+
+
+	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;http://localhost:4000&quot;,1000);
+	n_scene.mode = 2;
+	n_scene.filter = &quot;&quot;;
+	n_scene.dur=slow_dur;
+	// define particle filter 
+
+	n_scene.auto_start = false;
+
+	n_scene.t = 1;
+
+	n_scene.ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
+
+	n_scene.loaded = function(){
+
+		var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style(&quot;background-color&quot;)), d3.rgb('#006eff'), d3.rgb('#00028e')]);
+		var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style(&quot;background-color&quot;)), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
+
+		this.ekf = init_ekf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
+		this.rt.init_strip(&quot;inner&quot;, get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
+		this.rt.init_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt), outer_color, 60);
+
+
+
+		document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+		this.rt.hide_strip(&quot;inner&quot;);
+
+
+		this.restart = function(){
+			for (var i=0; i&lt;this.ids.length;i++){
+
+				document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+			}
+			document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+			this.rc.reset();
+			this.t = 1;
+
+			
+
+			//this.bf.reset();
+			this.ekf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
+			this.rt.hide_strip(&quot;inner&quot;);
+			this.rt.show_strip(&quot;outer&quot;);
+			this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+		}
+
+
+		this.rt.set_restart_button(this.restart.bind(this))
+
+
+
+
+	}.bind(n_scene)
+
+
+	n_scene.step = function(){
+		this.t++;
+		for (var i=0; i&lt;this.ids.length;i++){
+
+			document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+		}
+
+
+		if(this.t % 4 == 0){
+			//CHOOSE ACTION
+			this.rc.step(this.rc.current_input);
+			this.last_input = this.rc.current_input;
+			document.getElementById(&quot;race_track_mar_loc_predict&quot;).style.display=&quot;block&quot;;
+			this.rt.hide_strip(&quot;inner&quot;);
+		}else if(this.t % 4 == 1){
+			// PREDICT
+			this.ekf.predict(this.last_input);
+
+			// trim ekf posterior
+			if(this.ekf.posterior_mu&lt;0){
+				this.ekf.posterior_mu+=this.rt.track_length;
+			}
+			this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
+			this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+			document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+		}else if(this.t % 4 == 2){
+			// OBSERVE
+			this.rt.show_strip(&quot;inner&quot;);
+			this.output = scene.rc.output_dist_sample(0);
+			var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
+			this.rt.update_strip(&quot;inner&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
+
+			document.getElementById(&quot;race_track_mar_loc_update&quot;).style.display=&quot;block&quot;;
+		}else if(this.t % 4 == 3){
+			// UPDATE
+
+			this.ekf.update(this.output);
+
+			this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+
+			document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+		}
+
+	}.bind(n_scene);
+
+	scenes_name[&quot;race_track_mar_loc&quot;] = n_scene;
+	scenes.push(n_scene);
+
+&lt;/script&gt;
+
+&lt;div id=&quot;race_track_mar_loc_timestep&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=0;scenes_name['race_track_mar_loc'].step();&quot;&gt;Backward&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=1;scenes_name['race_track_mar_loc'].step();&quot;&gt;No action&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=2;scenes_name['race_track_mar_loc'].step();&quot;&gt;Forward&lt;/div&gt;
+ &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_predict&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;Predict step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_likelihood&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;Observe&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_update&quot; class=&quot;button_set&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot;&gt;Update step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;p&gt;On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
+
+&lt;p&gt;If you want to reset the environment, just press the reset button in the bottom left corner.
+As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
+
+&lt;p&gt;We see, that it is actually working pretty well. But one thing seems particularly weird: At certain positions on the race track, the brownish inner strip (our likelihood) seems to be uniformly distributed. This is not a bug, but a shortcoming of the linearization. We will always experience this behavior, if the part of the road at our current posterior mean is pointing only in &lt;em&gt;tangential&lt;/em&gt; direction, with the tree as the center. In other words: A small change in position wouldn’t change the distance. When we are linearizing, we assume this local behavior applies for the whole system and we won’t get any new information out of our measurement. To get an intuitive understanding of this, you can imagine two parallel lines. Our car is driving along one of the parallel lines and we take the nearest distance to the other line as a measurement. This measurement would be uninformative because the distance to the parallel line is always the same.&lt;/p&gt;
+
+&lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
+
+&lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;div id=&quot;rad_to_s&quot; style=&quot;width:100px&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;div1&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;div2&quot;&gt;&lt;/div&gt;
+&lt;!-- &lt;div id=&quot;system_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt; --&gt;
+&lt;!--&lt;div id=&quot;output_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt;--&gt;
+&lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/x-mathjax-config&quot;&gt;
+
+var mq = window.matchMedia( &quot;(max-width: 570px)&quot; );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  &quot;HTML-CSS&quot;: { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+&lt;/script&gt;</content><author><name></name></author><summary type="html">This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
@@ -385,6 +932,8 @@ slider.oninput = function() {
 }
 &lt;/script&gt;
 
+&lt;p&gt;Still feeling hungry for Bayes filters? Then you should definitely check out the next part of the nonlinear filtering series covering the derivation of the &lt;a href=&quot;/jekyll/update/2018/10/31/nf-ekf.html&quot;&gt;extended Kalman filter&lt;/a&gt;. See you there!&lt;/p&gt;
+
 &lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
 
 &lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
@@ -522,7 +1071,7 @@ The current plan is to write articles about the following methods:&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;&lt;a href=&quot;/jekyll/update/2018/10/29/nf-grid-based.html&quot;&gt;Grid-based filter&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;Extended Kalman filter&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;/jekyll/update/2018/10/31/nf-ekf.html&quot;&gt;Éxtended Kalman filter&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;Unscented Kalman filter&lt;/li&gt;
   &lt;li&gt;Particle filter&lt;/li&gt;
 &lt;/ul&gt;

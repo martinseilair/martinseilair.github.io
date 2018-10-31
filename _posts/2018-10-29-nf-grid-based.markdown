@@ -440,9 +440,13 @@ slider.oninput = function() {
 }
 </script>
 
+Still feeling hungry for Bayes filters? Then you should definitely check out the next part of the nonlinear filtering series covering the derivation of the [extended Kalman filter]({% post_url 2018-10-31-nf-ekf %}). See you there!
+
 # Acknowledgement
 
 The vector graphics of the [car](https://www.freepik.com/free-photos-vectors/car) were created by [Freepik](https://www.freepik.com/).
+
+
 
 <script>
 
