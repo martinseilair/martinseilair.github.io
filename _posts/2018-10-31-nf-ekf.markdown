@@ -154,7 +154,7 @@ where the sum goes over all \\(v_i\\) which satisfy \\(x_{t+1} = h(x_t,v_t)\\).
 
 Even if we are assuming Gaussian process and measurement noise, the resulting distributions of our model will, in general, be non-Gaussian.
 This is where the extended Kalman filter comes into play. It approximates our probability distributions by using linearization.
-In my limited scope, linearization of a probability distribution makes no sense. But what is then linearized?
+In my limited scope, linearization of a probability distribution makes no sense. But what is linearized instead?
 
 Instead of linearizing our probability distributions we will do this with our deterministic functions before we express them as probability distributions.
 
