@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-30T21:19:43+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-31T10:53:34+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
@@ -355,221 +355,6 @@ Therefore, the posterior will have the form&lt;/p&gt;
 &lt;p&gt;With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
 As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
 
-&lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
-
-&lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
-
-&lt;script&gt;
-
-function dirac_plot(div_id, x, show_y, path){
-	var dp = d3.select(div_id);
-
-	var margin = {top: 20, right: 30, bottom: 30, left: 30},
-	width = dp.node().getBoundingClientRect().width - margin.right- margin.left,
-	height = width/4;
-
-
-	var svg = dp.append(&quot;svg&quot;)
-	  .attr(&quot;viewBox&quot;,&quot;0 0 &quot; + (width + margin.left + margin.right) + &quot; &quot; + (height + margin.top + margin.bottom))
-	  .append(&quot;g&quot;)
-	    .attr(&quot;transform&quot;, &quot;translate(&quot; + margin.left + &quot;,&quot; + margin.top + &quot;)&quot;);
-
-	  var markersize=10;
-	  var defs = svg.append('svg:defs');
-	  defs.append('svg:marker')
-	    .attr('id', 'end-arrow-axis')
-	    .attr('viewBox', '0 -5 10 10')
-	    .attr('refX', &quot;0&quot;)
-	    .attr('refY', &quot;0&quot;)
-	    .attr('markerWidth', markersize)
-	    .attr('markerHeight', markersize)
-	    .attr('orient', 'auto')
-	    .attr('markerUnits','userSpaceOnUse')
-	    .append('svg:path')
-	    .attr('d', 'M0,-5L10,0L0,5');
-
-
-	  markersize=5;
-	  defs.append('svg:marker')
-	    .attr('id', 'end-arrow')
-	    .attr('viewBox', '0 -5 10 10')
-	    .attr('refX', &quot;0&quot;)
-	    .attr('refY', &quot;0&quot;)
-	    .attr('markerWidth', markersize)
-	    .attr('markerHeight', markersize)
-	    .attr('orient', 'auto')
-	    .attr('markerUnits','userSpaceOnUse')
-	    .append('svg:path')
-	    .attr('d', 'M0,-5L10,0L0,5');
-
-
-
-
-
-
-	// x-axis
-	svg.append(&quot;g&quot;)
-	  .append(&quot;line&quot;)
-	  .style(&quot;stroke&quot;,&quot;#000000&quot;)
-	  .style('marker-end','url(#end-arrow-axis)')
-	  .attr(&quot;x1&quot;, function(d) {
-	    return 0-0.03*width;
-	  })
-	  .attr(&quot;y1&quot;, function(d) {
-	    return height;
-	  })
-	  .attr(&quot;x2&quot;, function(d) {
-	    return width;
-	  })
-	  .attr(&quot;y2&quot;, function(d) {
-	    return height;
-	  });
-
-if(show_y){
-	// y-axis
-	svg.append(&quot;g&quot;)
-	  .append(&quot;line&quot;)
-	  .style(&quot;stroke&quot;,&quot;#000000&quot;)
-	  .style('marker-end','url(#end-arrow-axis)')
-	  .attr(&quot;x1&quot;, function(d) {
-	    return width/2;
-	  })
-	  .attr(&quot;y1&quot;, function(d) {
-	    return height;
-	  })
-	  .attr(&quot;x2&quot;, function(d) {
-	    return width/2;
-	  })
-	  .attr(&quot;y2&quot;, function(d) {
-	    return 0;
-	  });	
-	}
-
-
-	// diracs
-	for(var i=0; i&lt;x.length;i++){
-		svg.append(&quot;g&quot;)
-		  .append(&quot;line&quot;)
-		  .style(&quot;stroke&quot;,&quot;#000000&quot;)
-		  .style('marker-end','url(#end-arrow)')
-		  .attr(&quot;x1&quot;, function(d) {
-		    return width/2 + x[i].x*width;
-		  })
-		  .attr(&quot;y1&quot;, function(d) {
-		    return height;
-		  })
-		  .attr(&quot;x2&quot;, function(d) {
-		    return width/2 + x[i].x*width;
-		  })
-		  .attr(&quot;y2&quot;, function(d) {
-		    return (1-x[i].w)*height;
-		  });
-
-		svg.append(&quot;g&quot;)
-		  	.append(&quot;text&quot;)
-		  	.text(x[i].t)
-		  	.attr(&quot;transform&quot;,&quot;translate(&quot; + (width/2 + x[i].x*width) + &quot;, &quot; + (height + 17) + &quot;)&quot;)
-		  	.attr(&quot;text-anchor&quot;,&quot;middle&quot;)
-
-	}
-
-
-
-	//null
-
-	svg.append(&quot;g&quot;)
-		.append(&quot;text&quot;)
-		.text(&quot;0&quot;)
-		.attr(&quot;transform&quot;,&quot;translate(&quot; + (width/2) + &quot;, &quot; + (height + 17) + &quot;)&quot;)
-		.attr(&quot;text-anchor&quot;,&quot;middle&quot;)
-
-	// path
-	if (path){
-
-		var line = d3.line()
-		         .x(function(d) { return width/2 + d.x*width; })
-                 .y(function(d) { return (1-d.w)*height; });
-		svg.append(&quot;svg:path&quot;)
-		    .attr(&quot;d&quot;, line(path))
-		    .style(&quot;stroke&quot;,&quot;#000000&quot;)
-		    .style(&quot;stroke-width&quot;,&quot;4&quot;)
-		    .style(&quot;fill&quot;,&quot;none&quot;)
-		    .style(&quot;opacity&quot;,0.2)
-	}
-
-
-
-}
-
-
-
-dirac_plot(&quot;#dirac&quot;,[{x:0,w:0.7,t:&quot;&quot;}], false, null);
-dirac_plot(&quot;#dirac_shift&quot;,[{x:0.25,w:0.7,t:&quot;y&quot;}], true, null);
-
-var nd = 17;
-var grid = [...Array(nd)].map((e,i)=&gt;{return (i - (nd-1)/2)/(1.5*nd)});
-comb = [...Array(nd)].map((e,i)=&gt;{return {x:grid[i], w:0.7, t:&quot;&quot;}})
-dirac_plot(&quot;#dirac_comb&quot;,comb, true, null);
-
-wcomb = [...Array(nd)].map((e,i)=&gt;{return {x:grid[i], w:0.1*gaussian(grid[i],0,0.15), t:&quot;&quot;}})
-
-var np = 101;
-gauss = [...Array(np)].map((e,i)=&gt;{return {x:(i - (np-1)/2)/(1.5*np), w:0.1*gaussian((i - (np-1)/2)/(1.5*np),0,0.15), t:&quot;&quot;};})
-
-dirac_plot(&quot;#dirac_wcomb&quot;,wcomb, true, gauss);
-&lt;/script&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm&quot;&gt;&lt;/a&gt;&lt;/p&gt;
-
-&lt;div id=&quot;rad_to_s&quot; style=&quot;width:100px&quot;&gt;&lt;/div&gt;
-&lt;div id=&quot;div1&quot;&gt;&lt;/div&gt;
-&lt;div id=&quot;div2&quot;&gt;&lt;/div&gt;
-&lt;!-- &lt;div id=&quot;system_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt; --&gt;
-&lt;!--&lt;div id=&quot;output_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt;--&gt;
-
-&lt;style&gt;
-.slidecontainer {
-    width: 100%; /* Width of the outside container */
-}
-
-/* The slider itself */
-.slider {
-    -webkit-appearance: none;  /* Override default CSS styles */
-    appearance: none;
-    width: 100%; /* Full-width */
-    height: 25px; /* Specified height */
-    background: #f0f0f0; /* Grey background */
-    outline: none; /* Remove outline */
-    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
-    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
-    transition: opacity .2s;
-    margin-top:20px;
-    margin-bottom:20px;
-}
-
-/* Mouse-over effects */
-.slider:hover {
-    opacity: 1; /* Fully shown on mouse-over */
-}
-
-/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */ 
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none; /* Override default look */
-    appearance: none;
-    width: 25px; /* Set a specific slider handle width */
-    height: 25px; /* Slider handle height */
-    background: #555555; /* Green background */
-    cursor: pointer; /* Cursor on hover */
-}
-
-.slider::-moz-range-thumb {
-    width: 25px; /* Set a specific slider handle width */
-    height: 25px; /* Slider handle height */
-    background: #555555; /* Green background */
-    cursor: pointer; /* Cursor on hover */
-}
-&lt;/style&gt;
-
 &lt;script&gt;
 
 
@@ -597,6 +382,29 @@ slider.oninput = function() {
     scene.rt.init_strip(&quot;outer&quot;, normalize_vector(scene.bf.posterior), scene.rt.strip_color.outer, scene.rt.strip_width.outer)
     scene.restart()
 }
+&lt;/script&gt;
+
+&lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
+
+&lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
+
+&lt;script&gt;
+
+
+dirac_plot(&quot;#dirac&quot;,[{x:0,w:0.7,t:&quot;&quot;}], false, null);
+dirac_plot(&quot;#dirac_shift&quot;,[{x:0.25,w:0.7,t:&quot;y&quot;}], true, null);
+
+var nd = 17;
+var grid = [...Array(nd)].map((e,i)=&gt;{return (i - (nd-1)/2)/(1.5*nd)});
+comb = [...Array(nd)].map((e,i)=&gt;{return {x:grid[i], w:0.7, t:&quot;&quot;}})
+dirac_plot(&quot;#dirac_comb&quot;,comb, true, null);
+
+wcomb = [...Array(nd)].map((e,i)=&gt;{return {x:grid[i], w:0.1*gaussian(grid[i],0,0.15), t:&quot;&quot;}})
+
+var np = 101;
+gauss = [...Array(np)].map((e,i)=&gt;{return {x:(i - (np-1)/2)/(1.5*np), w:0.1*gaussian((i - (np-1)/2)/(1.5*np),0,0.15), t:&quot;&quot;};})
+
+dirac_plot(&quot;#dirac_wcomb&quot;,wcomb, true, gauss);
 &lt;/script&gt;</content><author><name></name></author><summary type="html">The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Introduction</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html" rel="alternate" type="text/html" title="Nonlinear filtering: Introduction" /><published>2018-10-29T18:04:07+09:00</published><updated>2018-10-29T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-intro</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html">&lt;p&gt;This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.&lt;/p&gt;
 
 &lt;!--more--&gt;

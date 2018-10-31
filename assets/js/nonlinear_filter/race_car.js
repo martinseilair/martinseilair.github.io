@@ -55,6 +55,17 @@ class RaceCar {
 		return this.d*this.b_cache*this.u_abs;
 	}
 
+	mu_s_no_cache(state, input){
+		this.b_cache = this.b(state);
+		return this.mu_s(state, input);
+
+	}
+
+	sigma_s_no_cache(state, input){
+		this.b_cache = this.b(state);
+		return this.sigma_s(input);
+	}
+
 	system_dist(state_p, state, input){
 		return gaussian(state_p, this.mu_s(state, input), this.sigma_s(input)) + gaussian(state_p+this.race_track.track_length, this.mu_s(state, input), this.sigma_s(input)) + gaussian(state_p-this.race_track.track_length, this.mu_s(state, input), this.sigma_s(input));
 	}
@@ -113,6 +124,20 @@ class RaceCar {
 		//return this.a*100.0;
 		return this.a*this.dist_cache;
 	}
+
+	mu_o_no_cache(state){
+		var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(state), 0.0);
+		this.dist_cache = distance_xy(L, this.race_track.trees[0]);
+		return this.mu_o();
+	}
+
+	sigma_o_no_cache(state){
+		var L = this.race_track.race_track_pos_abs(this.race_track.get_rad(state), 0.0);
+		this.dist_cache = distance_xy(L, this.race_track.trees[0]);
+		return this.sigma_o();
+	}
+
+
 
 	output_dist(distance, state, tree_id){
 		return gaussian(distance, this.mu_o(), this.sigma_o());

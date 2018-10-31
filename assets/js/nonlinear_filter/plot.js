@@ -303,3 +303,148 @@ for (var i=0;i<dist.length;i++){
 
 }
 
+
+function dirac_plot(div_id, x, show_y, path){
+	var dp = d3.select(div_id);
+
+	var margin = {top: 20, right: 30, bottom: 30, left: 30},
+	width = dp.node().getBoundingClientRect().width - margin.right- margin.left,
+	height = width/4;
+
+
+	var svg = dp.append("svg")
+	  .attr("viewBox","0 0 " + (width + margin.left + margin.right) + " " + (height + margin.top + margin.bottom))
+	  .append("g")
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	  var markersize=10;
+	  var defs = svg.append('svg:defs');
+	  defs.append('svg:marker')
+	    .attr('id', 'end-arrow-axis')
+	    .attr('viewBox', '0 -5 10 10')
+	    .attr('refX', "0")
+	    .attr('refY', "0")
+	    .attr('markerWidth', markersize)
+	    .attr('markerHeight', markersize)
+	    .attr('orient', 'auto')
+	    .attr('markerUnits','userSpaceOnUse')
+	    .append('svg:path')
+	    .attr('d', 'M0,-5L10,0L0,5');
+
+
+	  markersize=5;
+	  defs.append('svg:marker')
+	    .attr('id', 'end-arrow')
+	    .attr('viewBox', '0 -5 10 10')
+	    .attr('refX', "0")
+	    .attr('refY', "0")
+	    .attr('markerWidth', markersize)
+	    .attr('markerHeight', markersize)
+	    .attr('orient', 'auto')
+	    .attr('markerUnits','userSpaceOnUse')
+	    .append('svg:path')
+	    .attr('d', 'M0,-5L10,0L0,5');
+
+
+
+
+
+
+	// x-axis
+	svg.append("g")
+	  .append("line")
+	  .style("stroke","#000000")
+	  .style('marker-end','url(#end-arrow-axis)')
+	  .attr("x1", function(d) {
+	    return 0-0.03*width;
+	  })
+	  .attr("y1", function(d) {
+	    return height;
+	  })
+	  .attr("x2", function(d) {
+	    return width;
+	  })
+	  .attr("y2", function(d) {
+	    return height;
+	  });
+
+if(show_y){
+	// y-axis
+	svg.append("g")
+	  .append("line")
+	  .style("stroke","#000000")
+	  .style('marker-end','url(#end-arrow-axis)')
+	  .attr("x1", function(d) {
+	    return width/2;
+	  })
+	  .attr("y1", function(d) {
+	    return height;
+	  })
+	  .attr("x2", function(d) {
+	    return width/2;
+	  })
+	  .attr("y2", function(d) {
+	    return 0;
+	  });	
+	}
+
+
+	// diracs
+	for(var i=0; i<x.length;i++){
+		svg.append("g")
+		  .append("line")
+		  .style("stroke","#000000")
+		  .style('marker-end','url(#end-arrow)')
+		  .attr("x1", function(d) {
+		    return width/2 + x[i].x*width;
+		  })
+		  .attr("y1", function(d) {
+		    return height;
+		  })
+		  .attr("x2", function(d) {
+		    return width/2 + x[i].x*width;
+		  })
+		  .attr("y2", function(d) {
+		    return (1-x[i].w)*height;
+		  });
+
+		svg.append("g")
+		  	.append("text")
+		  	.text(x[i].t)
+		  	.attr("transform","translate(" + (width/2 + x[i].x*width) + ", " + (height + 17) + ")")
+		  	.attr("text-anchor","middle")
+
+	}
+
+
+
+	//null
+
+	svg.append("g")
+		.append("text")
+		.text("0")
+		.attr("transform","translate(" + (width/2) + ", " + (height + 17) + ")")
+		.attr("text-anchor","middle")
+
+	// path
+	if (path){
+
+		var line = d3.line()
+		         .x(function(d) { return width/2 + d.x*width; })
+                 .y(function(d) { return (1-d.w)*height; });
+		svg.append("svg:path")
+		    .attr("d", line(path))
+		    .style("stroke","#000000")
+		    .style("stroke-width","4")
+		    .style("fill","none")
+		    .style("opacity",0.2)
+	}
+
+
+
+}
+
+
+
+
+

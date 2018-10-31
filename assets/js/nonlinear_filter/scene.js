@@ -106,7 +106,6 @@ function load_race_track(id, url,strip_n_e){
 
 	var strip_dist_n = 1000;
 
-	
 
 	// define race track
 	var w = 800;
@@ -166,6 +165,14 @@ function init_bayes_filter(race_car, race_track){
 		return Math.floor(output_n*output/max_dist);
 	}
 	return new DiscreteBayesFilter(bf_system_dist, bf_output_dist, bf_initial_dist, cont_2_disc_output);
+
+}
+
+function init_ekf_1D(race_car, initial_mu, initial_sigma){
+	return new ExtendedKalmanFilter_1D(race_car.mu_s_no_cache.bind(race_car), 
+		race_car.sigma_s_no_cache.bind(race_car),race_car.mu_o_no_cache.bind(race_car),
+		race_car.sigma_o_no_cache.bind(race_car),
+		initial_mu, initial_sigma);
 
 }
 

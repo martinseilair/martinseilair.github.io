@@ -21,6 +21,7 @@ Intro
 
 <script src="{{ base.url | prepend: site.url }}/assets/js/nonlinear_filter/scene.js"></script>
 
+<script src="{{ base.url | prepend: site.url }}/assets/js/nonlinear_filter/ekf.js"></script>
 <script src="{{ base.url | prepend: site.url }}/assets/js/nonlinear_filter/discrete_bayes_filter.js"></script>
 
 
@@ -374,14 +375,14 @@ $$ M_t = \nabla_{v_t} h(x_t, v_t)|_{x_t=x,v_t=0} = \underbrace{\nabla_{v_t} \bar
 
 The recursive formula for the extended Kalman filter with additive noise consists of the **prediction step**
 
-$$ \begin{align}\hat x_{t+1|t} &= f(x_{t|t}, u_t, 0) \\ 
+$$ \begin{align}\hat x_{t+1|t} &= f(x_{t|t}, u_t) \\ 
 P_{t+1|t} &= Q_t + A_t P_{t|t} A_t^T   \end{align} $$
 
 
 and the **update step**
 
 $$ \begin{align}
-z_t &= y_{t}-h(\hat x_{t|t-1}, 0)\\
+z_t &= y_{t}-h(\hat x_{t|t-1})\\
 S_t &= R_t + C_tP_{t|t-1}C_t^T\\
 K_t &= P_{t|t-1}C_t^TS_t^{-1} \\
 \hat x_{t|t} &= \hat x_{t|t-1} + K_t z_t\\
@@ -401,7 +402,194 @@ C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 
 
 
-# Example
+
+## Example
+
+Enough of the dry theory! Let's play around with the grid-based filter in our race track example. 
+
+
+
+
+<svg id="race_track_mar_loc" style="width:100%"  onclick="on_click()"></svg>
+<script>
+
+
+	n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}",400);
+	n_scene.mode = 2;
+	n_scene.filter = "";
+
+
+
+
+
+	n_scene.dur=slow_dur;
+	// define particle filter 
+
+	n_scene.auto_start = false;
+
+	n_scene.t = 1;
+
+	n_scene.ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
+
+	n_scene.loaded = function(){
+		//var ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
+		//for (var i=0; i<ids.length;i++){
+
+		//	document.getElementById(ids[i]).style.display="none";
+		//}
+
+
+		this.bf = init_bayes_filter(this.rc, this.rt);
+		var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#006eff'), d3.rgb('#00028e')]);
+		var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
+
+		this.rt.init_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
+		this.rt.init_strip("outer", normalize_vector(this.bf.posterior), outer_color, 60);
+
+		this.ekf = init_ekf_1D(this.rc, this.rc.state, 2*this.rc.sigma_o_no_cache(this.rc.state));
+
+
+		document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+		this.rt.hide_strip("inner");
+
+
+		this.restart = function(){
+			for (var i=0; i<this.ids.length;i++){
+
+				document.getElementById(this.ids[i]).style.display="none";
+			}
+			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+			this.rc.reset();
+			this.t = 1;
+
+			
+
+			this.bf.reset();
+			this.ekf.reset(this.rc.state, 2*this.rc.sigma_o_no_cache(this.rc.state))
+			this.rt.hide_strip("inner");
+			this.rt.show_strip("outer");
+			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+		}
+
+
+		this.rt.set_restart_button(this.restart.bind(this))
+
+
+
+	}.bind(n_scene)
+
+
+	n_scene.step = function(){
+		this.t++;
+		for (var i=0; i<this.ids.length;i++){
+
+			document.getElementById(this.ids[i]).style.display="none";
+		}
+
+
+		if(this.t % 4 == 0){
+			this.rc.step(this.rc.current_input);
+			this.last_input = this.rc.current_input;
+			document.getElementById("race_track_mar_loc_predict").style.display="block";
+			this.rt.hide_strip("inner");
+		}else if(this.t % 4 == 1){
+			this.bf.predict(this.last_input);
+			this.ekf.predict(this.last_input);
+
+			// trim ekf posterior
+			
+			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+
+			// update posterior strip ekf
+			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+		}else if(this.t % 4 == 2){
+			this.rt.show_strip("inner");
+			// update likelihood strip ekf
+			this.rt.update_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			document.getElementById("race_track_mar_loc_update").style.display="block";
+		}else if(this.t % 4 == 3){
+			var output = scene.rc.output_dist_sample(0);
+	    	var y = scene.bf.cont_2_disc_output(output);
+			this.bf.update(y);
+			this.ekf.update(y);
+			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			document.getElementById("race_track_mar_loc_timestep").style.display="block";
+		}
+
+
+
+	}.bind(n_scene);
+
+	scenes_name["race_track_mar_loc"] = n_scene;
+	scenes.push(n_scene);
+
+</script>
+
+<div style="float:right" class="slidecontainer">
+  <input type="range" min="100" max="700" value="400" class="slider" id="myRange">
+</div>
+
+
+
+<div id="race_track_mar_loc_timestep" class="button_set">
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=0;scenes_name['race_track_mar_loc'].step();">Backward</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=1;scenes_name['race_track_mar_loc'].step();">No action</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=2;scenes_name['race_track_mar_loc'].step();">Forward</div>
+ <span class="stretch"></span>
+</div>
+
+<div id="race_track_mar_loc_predict" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_mar_loc'].step();">Predict step</div>
+  <span class="stretch"></span>
+</div>
+
+
+
+<div id="race_track_mar_loc_likelihood" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_mar_loc'].step();">Observe</div>
+  <span class="stretch"></span>
+</div>
+
+<div id="race_track_mar_loc_update" class="button_set" onclick="scenes_name['race_track_mar_loc'].step();">
+<div class="bt1  bt">Update step</div>
+  <span class="stretch"></span>
+</div>
+
+
+
+On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the __OBSERVE__ button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the __UPDATE STEP__ button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the __PREDICT STEP__ button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.
+
+With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
+As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
+
+<script>
+
+
+
+var slider = document.getElementById("myRange");
+
+slider.oninput = function() {
+
+	scene = scenes_name['race_track_mar_loc'];
+
+    // delete strips
+    scene.rt.delete_strip("inner");
+    scene.rt.delete_strip("outer");
+
+
+    // set strip domain
+    scene.rt.set_strip_domain(parseInt(this.value));
+
+
+    // create new bayes filter
+    scene.bf = init_bayes_filter(scene.rc, scene.rt);
+
+	// create strips
+    scene.rt.init_strip("inner",get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state) , scene.rt.strip_color.inner, scene.rt.strip_width.inner)
+    scene.rt.init_strip("outer", normalize_vector(scene.bf.posterior), scene.rt.strip_color.outer, scene.rt.strip_width.outer)
+    scene.restart()
+}
+</script>
 
 # Acknowledgement
 

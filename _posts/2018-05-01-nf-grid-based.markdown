@@ -410,237 +410,6 @@ On the outside the race track, you will notice a blue colored strip. This strip 
 With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
 As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
 
-# Acknowledgement
-
-The vector graphics of the [car](https://www.freepik.com/free-photos-vectors/car) were created by [Freepik](https://www.freepik.com/).
-
-<script>
-
-function dirac_plot(div_id, x, show_y, path){
-	var dp = d3.select(div_id);
-
-	var margin = {top: 20, right: 30, bottom: 30, left: 30},
-	width = dp.node().getBoundingClientRect().width - margin.right- margin.left,
-	height = width/4;
-
-
-	var svg = dp.append("svg")
-	  .attr("viewBox","0 0 " + (width + margin.left + margin.right) + " " + (height + margin.top + margin.bottom))
-	  .append("g")
-	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-	  var markersize=10;
-	  var defs = svg.append('svg:defs');
-	  defs.append('svg:marker')
-	    .attr('id', 'end-arrow-axis')
-	    .attr('viewBox', '0 -5 10 10')
-	    .attr('refX', "0")
-	    .attr('refY', "0")
-	    .attr('markerWidth', markersize)
-	    .attr('markerHeight', markersize)
-	    .attr('orient', 'auto')
-	    .attr('markerUnits','userSpaceOnUse')
-	    .append('svg:path')
-	    .attr('d', 'M0,-5L10,0L0,5');
-
-
-	  markersize=5;
-	  defs.append('svg:marker')
-	    .attr('id', 'end-arrow')
-	    .attr('viewBox', '0 -5 10 10')
-	    .attr('refX', "0")
-	    .attr('refY', "0")
-	    .attr('markerWidth', markersize)
-	    .attr('markerHeight', markersize)
-	    .attr('orient', 'auto')
-	    .attr('markerUnits','userSpaceOnUse')
-	    .append('svg:path')
-	    .attr('d', 'M0,-5L10,0L0,5');
-
-
-
-
-
-
-	// x-axis
-	svg.append("g")
-	  .append("line")
-	  .style("stroke","#000000")
-	  .style('marker-end','url(#end-arrow-axis)')
-	  .attr("x1", function(d) {
-	    return 0-0.03*width;
-	  })
-	  .attr("y1", function(d) {
-	    return height;
-	  })
-	  .attr("x2", function(d) {
-	    return width;
-	  })
-	  .attr("y2", function(d) {
-	    return height;
-	  });
-
-if(show_y){
-	// y-axis
-	svg.append("g")
-	  .append("line")
-	  .style("stroke","#000000")
-	  .style('marker-end','url(#end-arrow-axis)')
-	  .attr("x1", function(d) {
-	    return width/2;
-	  })
-	  .attr("y1", function(d) {
-	    return height;
-	  })
-	  .attr("x2", function(d) {
-	    return width/2;
-	  })
-	  .attr("y2", function(d) {
-	    return 0;
-	  });	
-	}
-
-
-	// diracs
-	for(var i=0; i<x.length;i++){
-		svg.append("g")
-		  .append("line")
-		  .style("stroke","#000000")
-		  .style('marker-end','url(#end-arrow)')
-		  .attr("x1", function(d) {
-		    return width/2 + x[i].x*width;
-		  })
-		  .attr("y1", function(d) {
-		    return height;
-		  })
-		  .attr("x2", function(d) {
-		    return width/2 + x[i].x*width;
-		  })
-		  .attr("y2", function(d) {
-		    return (1-x[i].w)*height;
-		  });
-
-		svg.append("g")
-		  	.append("text")
-		  	.text(x[i].t)
-		  	.attr("transform","translate(" + (width/2 + x[i].x*width) + ", " + (height + 17) + ")")
-		  	.attr("text-anchor","middle")
-
-	}
-
-
-
-	//null
-
-	svg.append("g")
-		.append("text")
-		.text("0")
-		.attr("transform","translate(" + (width/2) + ", " + (height + 17) + ")")
-		.attr("text-anchor","middle")
-
-	// path
-	if (path){
-
-		var line = d3.line()
-		         .x(function(d) { return width/2 + d.x*width; })
-                 .y(function(d) { return (1-d.w)*height; });
-		svg.append("svg:path")
-		    .attr("d", line(path))
-		    .style("stroke","#000000")
-		    .style("stroke-width","4")
-		    .style("fill","none")
-		    .style("opacity",0.2)
-	}
-
-
-
-}
-
-
-
-dirac_plot("#dirac",[{x:0,w:0.7,t:""}], false, null);
-dirac_plot("#dirac_shift",[{x:0.25,w:0.7,t:"y"}], true, null);
-
-var nd = 17;
-var grid = [...Array(nd)].map((e,i)=>{return (i - (nd-1)/2)/(1.5*nd)});
-comb = [...Array(nd)].map((e,i)=>{return {x:grid[i], w:0.7, t:""}})
-dirac_plot("#dirac_comb",comb, true, null);
-
-wcomb = [...Array(nd)].map((e,i)=>{return {x:grid[i], w:0.1*gaussian(grid[i],0,0.15), t:""}})
-
-var np = 101;
-gauss = [...Array(np)].map((e,i)=>{return {x:(i - (np-1)/2)/(1.5*np), w:0.1*gaussian((i - (np-1)/2)/(1.5*np),0,0.15), t:""};})
-
-dirac_plot("#dirac_wcomb",wcomb, true, gauss);
-</script>
-
-
-
-
-
-
-
-
-
-
-<a href='https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm'></a>
-
-
-<div id="rad_to_s" style="width:100px"></div>
-<div id="div1"></div>
-<div id="div2"></div>
-<!-- <div id="system_dist_approx"  style="width: 600px; height: 600px;"></div> -->
-<!--<div id="output_dist_approx"  style="width: 600px; height: 600px;"></div>-->
-
-
-<style>
-.slidecontainer {
-    width: 100%; /* Width of the outside container */
-}
-
-/* The slider itself */
-.slider {
-    -webkit-appearance: none;  /* Override default CSS styles */
-    appearance: none;
-    width: 100%; /* Full-width */
-    height: 25px; /* Specified height */
-    background: #f0f0f0; /* Grey background */
-    outline: none; /* Remove outline */
-    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
-    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
-    transition: opacity .2s;
-    margin-top:20px;
-    margin-bottom:20px;
-}
-
-/* Mouse-over effects */
-.slider:hover {
-    opacity: 1; /* Fully shown on mouse-over */
-}
-
-/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */ 
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none; /* Override default look */
-    appearance: none;
-    width: 25px; /* Set a specific slider handle width */
-    height: 25px; /* Slider handle height */
-    background: #555555; /* Green background */
-    cursor: pointer; /* Cursor on hover */
-}
-
-.slider::-moz-range-thumb {
-    width: 25px; /* Set a specific slider handle width */
-    height: 25px; /* Slider handle height */
-    background: #555555; /* Green background */
-    cursor: pointer; /* Cursor on hover */
-}
-</style>
-
-
-
-
-
-
 <script>
 
 
@@ -669,4 +438,32 @@ slider.oninput = function() {
     scene.restart()
 }
 </script>
+
+# Acknowledgement
+
+The vector graphics of the [car](https://www.freepik.com/free-photos-vectors/car) were created by [Freepik](https://www.freepik.com/).
+
+<script>
+
+
+dirac_plot("#dirac",[{x:0,w:0.7,t:""}], false, null);
+dirac_plot("#dirac_shift",[{x:0.25,w:0.7,t:"y"}], true, null);
+
+var nd = 17;
+var grid = [...Array(nd)].map((e,i)=>{return (i - (nd-1)/2)/(1.5*nd)});
+comb = [...Array(nd)].map((e,i)=>{return {x:grid[i], w:0.7, t:""}})
+dirac_plot("#dirac_comb",comb, true, null);
+
+wcomb = [...Array(nd)].map((e,i)=>{return {x:grid[i], w:0.1*gaussian(grid[i],0,0.15), t:""}})
+
+var np = 101;
+gauss = [...Array(np)].map((e,i)=>{return {x:(i - (np-1)/2)/(1.5*np), w:0.1*gaussian((i - (np-1)/2)/(1.5*np),0,0.15), t:""};})
+
+dirac_plot("#dirac_wcomb",wcomb, true, gauss);
+</script>
+
+
+
+
+
 
