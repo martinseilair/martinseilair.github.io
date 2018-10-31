@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"Intro","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/12/nf-ekf.html","headline":"Nonlinear filtering: Extended Kalman filter","dateModified":"2018-10-12T18:04:07+09:00","datePublished":"2018-10-12T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/12/nf-ekf.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1540950814011211127"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<link rel="stylesheet" href="/assets/main.css?1540973150664162091"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
@@ -416,7 +416,7 @@ C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 <script>
 
 
-	n_scene = load_race_track("race_track_mar_loc","http://localhost:4000",400);
+	n_scene = load_race_track("race_track_mar_loc","http://localhost:4000",1000);
 	n_scene.mode = 2;
 	n_scene.filter = "";
 
@@ -441,14 +441,14 @@ C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 		//}
 
 
-		this.bf = init_bayes_filter(this.rc, this.rt);
+		//this.bf = init_bayes_filter(this.rc, this.rt);
 		var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#006eff'), d3.rgb('#00028e')]);
 		var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
 
+		this.ekf = init_ekf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
 		this.rt.init_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
-		this.rt.init_strip("outer", normalize_vector(this.bf.posterior), outer_color, 60);
+		this.rt.init_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt), outer_color, 60);
 
-		this.ekf = init_ekf_1D(this.rc, this.rc.state, 2*this.rc.sigma_o_no_cache(this.rc.state));
 
 
 		document.getElementById("race_track_mar_loc_likelihood").style.display="block";
@@ -466,15 +466,16 @@ C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 
 			
 
-			this.bf.reset();
-			this.ekf.reset(this.rc.state, 2*this.rc.sigma_o_no_cache(this.rc.state))
+			//this.bf.reset();
+			this.ekf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
 			this.rt.hide_strip("inner");
 			this.rt.show_strip("outer");
-			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 		}
 
 
 		this.rt.set_restart_button(this.restart.bind(this))
+
 
 
 
@@ -490,35 +491,49 @@ C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 
 
 		if(this.t % 4 == 0){
+			//CHOOSE ACTION
 			this.rc.step(this.rc.current_input);
 			this.last_input = this.rc.current_input;
 			document.getElementById("race_track_mar_loc_predict").style.display="block";
 			this.rt.hide_strip("inner");
 		}else if(this.t % 4 == 1){
-			this.bf.predict(this.last_input);
+			// PREDICT
+			//this.bf.predict(this.last_input);
 			this.ekf.predict(this.last_input);
 
 			// trim ekf posterior
-			
-			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			if(this.ekf.posterior_mu<0){
+				this.ekf.posterior_mu+=this.rt.track_length;
+			}
+			this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
+
+						//this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
 
 			// update posterior strip ekf
+			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
 		}else if(this.t % 4 == 2){
+			// OBSERVE
 			this.rt.show_strip("inner");
-			// update likelihood strip ekf
-			this.rt.update_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			this.output = scene.rc.output_dist_sample(0);
+			//console.log(C, this.output/C, this.ekf.output_sigma(this.ekf.posterior_mu)/(C*C), this.rt)
+			var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
+			this.rt.update_strip("inner", get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
+
 			document.getElementById("race_track_mar_loc_update").style.display="block";
 		}else if(this.t % 4 == 3){
-			var output = scene.rc.output_dist_sample(0);
-	    	var y = scene.bf.cont_2_disc_output(output);
-			this.bf.update(y);
-			this.ekf.update(y);
-			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			// UPDATE
+
+			//console.log("state", this.rc.state);
+			this.ekf.update(this.output);
+
+			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+
 			document.getElementById("race_track_mar_loc_timestep").style.display="block";
 		}
 
-
+//console.log(this.ekf.posterior_sigma)
+//this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 
 	}.bind(n_scene);
 
@@ -526,10 +541,6 @@ C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 	scenes.push(n_scene);
 
 </script>
-
-<div style="float:right" class="slidecontainer">
-  <input type="range" min="100" max="700" value="400" class="slider" id="myRange" />
-</div>
 
 <div id="race_track_mar_loc_timestep" class="button_set">
 <div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=0;scenes_name['race_track_mar_loc'].step();">Backward</div>
@@ -557,35 +568,6 @@ C_t &= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 
 <p>With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
 As before you can control the car by using your keyboard: <strong>A</strong> (Backward), <strong>S</strong> (Stop),  <strong>D</strong> (Forward) or the buttons below the race track.</p>
-
-<script>
-
-
-
-var slider = document.getElementById("myRange");
-
-slider.oninput = function() {
-
-	scene = scenes_name['race_track_mar_loc'];
-
-    // delete strips
-    scene.rt.delete_strip("inner");
-    scene.rt.delete_strip("outer");
-
-
-    // set strip domain
-    scene.rt.set_strip_domain(parseInt(this.value));
-
-
-    // create new bayes filter
-    scene.bf = init_bayes_filter(scene.rc, scene.rt);
-
-	// create strips
-    scene.rt.init_strip("inner",get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state) , scene.rt.strip_color.inner, scene.rt.strip_width.inner)
-    scene.rt.init_strip("outer", normalize_vector(scene.bf.posterior), scene.rt.strip_color.outer, scene.rt.strip_width.outer)
-    scene.restart()
-}
-</script>
 
 <h1 id="acknowledgement">Acknowledgement</h1>
 

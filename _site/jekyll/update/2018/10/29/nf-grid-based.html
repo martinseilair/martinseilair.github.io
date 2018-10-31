@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html","headline":"Nonlinear filtering: Grid-based filter","dateModified":"2018-10-29T18:05:07+09:00","datePublished":"2018-10-29T18:05:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1540950814011211127"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<link rel="stylesheet" href="/assets/main.css?1540973150664162091"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
 <body><header class="site-header" role="banner">
 
   <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
@@ -341,11 +341,12 @@ Therefore, the posterior will have the form</p>
 			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
 		}else if(this.t % 4 == 2){
 			this.rt.show_strip("inner");
-			this.rt.update_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			this.output = scene.rc.output_dist_sample(0);
+			this.rt.update_strip("inner", get_output_dist_normalized_from_distance(this.rc, this.rt, this.output));
 			document.getElementById("race_track_mar_loc_update").style.display="block";
 		}else if(this.t % 4 == 3){
-			var output = scene.rc.output_dist_sample(0);
-	    	var y = scene.bf.cont_2_disc_output(output);
+			
+	    	var y = scene.bf.cont_2_disc_output(this.output);
 			this.bf.update(y);
 			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
 			document.getElementById("race_track_mar_loc_timestep").style.display="block";

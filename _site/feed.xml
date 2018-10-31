@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-31T10:53:34+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-10-31T17:05:50+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
@@ -305,11 +305,12 @@ Therefore, the posterior will have the form&lt;/p&gt;
 			document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
 		}else if(this.t % 4 == 2){
 			this.rt.show_strip(&quot;inner&quot;);
-			this.rt.update_strip(&quot;inner&quot;, get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			this.output = scene.rc.output_dist_sample(0);
+			this.rt.update_strip(&quot;inner&quot;, get_output_dist_normalized_from_distance(this.rc, this.rt, this.output));
 			document.getElementById(&quot;race_track_mar_loc_update&quot;).style.display=&quot;block&quot;;
 		}else if(this.t % 4 == 3){
-			var output = scene.rc.output_dist_sample(0);
-	    	var y = scene.bf.cont_2_disc_output(output);
+			
+	    	var y = scene.bf.cont_2_disc_output(this.output);
 			this.bf.update(y);
 			this.rt.update_strip(&quot;outer&quot;, normalize_vector(this.bf.posterior));
 			document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;

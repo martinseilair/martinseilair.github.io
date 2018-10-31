@@ -414,7 +414,7 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 <script>
 
 
-	n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}",400);
+	n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}",1000);
 	n_scene.mode = 2;
 	n_scene.filter = "";
 
@@ -439,14 +439,14 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 		//}
 
 
-		this.bf = init_bayes_filter(this.rc, this.rt);
+		//this.bf = init_bayes_filter(this.rc, this.rt);
 		var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#006eff'), d3.rgb('#00028e')]);
 		var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
 
+		this.ekf = init_ekf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
 		this.rt.init_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
-		this.rt.init_strip("outer", normalize_vector(this.bf.posterior), outer_color, 60);
+		this.rt.init_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt), outer_color, 60);
 
-		this.ekf = init_ekf_1D(this.rc, this.rc.state, 2*this.rc.sigma_o_no_cache(this.rc.state));
 
 
 		document.getElementById("race_track_mar_loc_likelihood").style.display="block";
@@ -464,15 +464,16 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 
 			
 
-			this.bf.reset();
-			this.ekf.reset(this.rc.state, 2*this.rc.sigma_o_no_cache(this.rc.state))
+			//this.bf.reset();
+			this.ekf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
 			this.rt.hide_strip("inner");
 			this.rt.show_strip("outer");
-			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 		}
 
 
 		this.rt.set_restart_button(this.restart.bind(this))
+
 
 
 
@@ -488,35 +489,49 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 
 
 		if(this.t % 4 == 0){
+			//CHOOSE ACTION
 			this.rc.step(this.rc.current_input);
 			this.last_input = this.rc.current_input;
 			document.getElementById("race_track_mar_loc_predict").style.display="block";
 			this.rt.hide_strip("inner");
 		}else if(this.t % 4 == 1){
-			this.bf.predict(this.last_input);
+			// PREDICT
+			//this.bf.predict(this.last_input);
 			this.ekf.predict(this.last_input);
 
 			// trim ekf posterior
-			
-			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			if(this.ekf.posterior_mu<0){
+				this.ekf.posterior_mu+=this.rt.track_length;
+			}
+			this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
+
+						//this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
 
 			// update posterior strip ekf
+			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
 		}else if(this.t % 4 == 2){
+			// OBSERVE
 			this.rt.show_strip("inner");
-			// update likelihood strip ekf
-			this.rt.update_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			this.output = scene.rc.output_dist_sample(0);
+			//console.log(C, this.output/C, this.ekf.output_sigma(this.ekf.posterior_mu)/(C*C), this.rt)
+			var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
+			this.rt.update_strip("inner", get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
+
 			document.getElementById("race_track_mar_loc_update").style.display="block";
 		}else if(this.t % 4 == 3){
-			var output = scene.rc.output_dist_sample(0);
-	    	var y = scene.bf.cont_2_disc_output(output);
-			this.bf.update(y);
-			this.ekf.update(y);
-			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			// UPDATE
+
+			//console.log("state", this.rc.state);
+			this.ekf.update(this.output);
+
+			this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+
 			document.getElementById("race_track_mar_loc_timestep").style.display="block";
 		}
 
-
+//console.log(this.ekf.posterior_sigma)
+//this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
 
 	}.bind(n_scene);
 
@@ -525,9 +540,6 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 
 </script>
 
-<div style="float:right" class="slidecontainer">
-  <input type="range" min="100" max="700" value="400" class="slider" id="myRange">
-</div>
 
 
 
@@ -562,34 +574,7 @@ On the outside the race track, you will notice a blue colored strip. This strip 
 With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
 As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
 
-<script>
 
-
-
-var slider = document.getElementById("myRange");
-
-slider.oninput = function() {
-
-	scene = scenes_name['race_track_mar_loc'];
-
-    // delete strips
-    scene.rt.delete_strip("inner");
-    scene.rt.delete_strip("outer");
-
-
-    // set strip domain
-    scene.rt.set_strip_domain(parseInt(this.value));
-
-
-    // create new bayes filter
-    scene.bf = init_bayes_filter(scene.rc, scene.rt);
-
-	// create strips
-    scene.rt.init_strip("inner",get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state) , scene.rt.strip_color.inner, scene.rt.strip_width.inner)
-    scene.rt.init_strip("outer", normalize_vector(scene.bf.posterior), scene.rt.strip_color.outer, scene.rt.strip_width.outer)
-    scene.restart()
-}
-</script>
 
 # Acknowledgement
 

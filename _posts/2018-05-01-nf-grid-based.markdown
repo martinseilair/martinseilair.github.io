@@ -354,11 +354,12 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
 		}else if(this.t % 4 == 2){
 			this.rt.show_strip("inner");
-			this.rt.update_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state));
+			this.output = scene.rc.output_dist_sample(0);
+			this.rt.update_strip("inner", get_output_dist_normalized_from_distance(this.rc, this.rt, this.output));
 			document.getElementById("race_track_mar_loc_update").style.display="block";
 		}else if(this.t % 4 == 3){
-			var output = scene.rc.output_dist_sample(0);
-	    	var y = scene.bf.cont_2_disc_output(output);
+			
+	    	var y = scene.bf.cont_2_disc_output(this.output);
 			this.bf.update(y);
 			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
 			document.getElementById("race_track_mar_loc_timestep").style.display="block";

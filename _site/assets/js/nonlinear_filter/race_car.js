@@ -40,14 +40,11 @@ class RaceCar {
 
 	b(state){
 		var kappa = this.race_track.get_curvature_pos(state);
-		//return Math.max(this.l, 1.0 - this.c*kappa);
-		//return 1.0;
-
 		return Math.max(this.min_b, Math.exp(-kappa*this.c));
 	}
 
 	mu_s(state, input){
-		return state + this.b_cache*this.u_abs*(input-1.0);
+		return state +this.b_cache*this.u_abs*(input-1.0);
 
 	}
 

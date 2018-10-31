@@ -147,7 +147,7 @@ class RadialRaceTrack {
 
 
     create_map(){
-	    var n = 1000;
+	    var n = 100000;
 		var s = 0;
 
 		var r = 0.0;
@@ -179,7 +179,7 @@ class RadialRaceTrack {
 	get_curvature(rad){
 		// approximate curvature
 
-		var eps = 0.000001;
+		var eps = 0.0001;
 
 		
 		var pm = this.race_track_pos_abs(rad - eps, 0.0);

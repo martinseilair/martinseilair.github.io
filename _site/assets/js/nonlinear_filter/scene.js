@@ -191,6 +191,28 @@ function get_output_dist_normalized(race_car, race_track, pos){
 	return normalize_vector(out_dist);
 }
 
+function get_output_dist_normalized_from_distance(race_car, race_track, distance){
+	var out_dist = race_track.strip_pos.map((e)=>{return race_car.output_dist_single(distance, e, 0);})
+	return normalize_vector(out_dist);
+}
+
+
+function get_gaussian_circ_normalized(states, mu, sigma, race_track) {
+	var p = [];
+
+	for (var i=0;i<states.length;i++){
+
+		p.push(gaussian(states[i], mu, sigma) + gaussian(states[i]+race_track.track_length, mu, sigma) + gaussian(states[i]-race_track.track_length, mu, sigma));
+	}
+	//p = p.map((e)=>{return Math.pow(e,2);})
+	return normalize_vector(p);
+}
+
+
+
+
+
+
 function mouse_touch(id, coords){
 
 
