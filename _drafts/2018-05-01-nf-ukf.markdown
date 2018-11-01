@@ -8,7 +8,6 @@ excerpt_separator: <!--more-->
 Intro
 <!--more-->
 <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
-<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <script src="{{ base.url | prepend: site.url }}/assets/js/nonlinear_filter/particle_filter.js"></script>
@@ -29,44 +28,13 @@ Intro
 
 <link rel="stylesheet" type="text/css" href="{{ base.url | prepend: site.url }}/assets/css/nonlinear_filter/style.css">
 
-
+<script src="{{ base.url | prepend: site.url }}/assets/js/nonlinear_filter/ekf.js"></script>
+<script src="{{ base.url | prepend: site.url }}/assets/js/nonlinear_filter/ukf.js"></script>
 
 
 
 
 <script type="text/javascript">
-
-
-// mit keys oder button steuerbar
-// strips ein und ausblendbar
-// weights ein und ausblendbar
-// update resample predict manuell oder langsam automatisch (weiter button)
-// update resample predict button (hier macht input keinen sinn, außer man hat 3 button für predict)
-// mit maus car position festlegen (geringster abstand)
-
-
-// herangehensweise
-
-// 1. auto fährt 
-// 2. Vorstellung der system und beobachtungsfunktion (plot)
-// 3. mit maus car position festlegen, entsprechende verteilung innen und außen anzeigen
-// 3a. Bayes filter approximierung außen posterior innen beobachtung (update prediction weiter)
-// 4. standbild: particle anzeigen
-// 5. standbild: update step (5 sek vorher 5 sek nachher) (prob strip innen anzeigen)
-// 6. standbild: resampling (5 sek vorher 5 sek nachher)
-// 7. standbild: predict (5 sek vorher 5 sek nachher)
-// 8. update resample predict manuell (weiter button)
-// 9. update resample predict automatisch (geschwindigkeit einstellbar) (steuerung über pfeiltasten)
-// 10. zwei trees
-
-	// SITE NOT LOADED!!!
-
-	// input modes
-	// 0: Automatisch langsam; sequential
-	// 1: Set input per  A = backward, S = no movement, D = forward; one step
-	// 2: Set input per  A = backward, S = no movement, D = forward; sequential
-	// 3: Mouse exploring
-	// 4: No input
 
 	// scene_flags
 
@@ -88,131 +56,22 @@ Intro
 
 
 </script>
+## Derivation
 
-
-## Unscented Kalman filter
-
-
-
-The unscented Kalman filter is another approximation of the Bayes filter with Gaussian belief states. 
-
-
-
-
-
-
-When we are doing the **prediction step**
+We will start the derivation directly from the recursive equations of the Bayes filter with the **prediction step**
 
 $$ p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t} $$
 
-with 
+and the **update step**
+
+$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .$$
+
+If we want to apply the unscented Kalman filter, we assume that we have nonlinear models with additive noise
 
 $$  \begin{align}
 p(x_{t+1}|x_{t}, u_{t})  &= \mathcal{N}(x_{t+1}|f(x_t, u_t), Q_t) \\
-p(y_t|x_t) &=  \mathcal{N}(y_t|C_tx_t, R_t). 
+p(y_t|x_t) &=  \mathcal{N}(y_t|C_tx_t, R_t),
  \end{align}$$
-
-
-with a Gaussian belief distribution xxx we will receive a non-Gaussian function as a result. The first idea of the unscented Kalman filter is, that we want a Gaussian posterior in the end. In other words we are only intrested in the mean and variance of the true posterior. We try to approximate the real posterior with a Gaussian. In this scenario, we have two problems:
-
-1. The integral is intractable, because of the non-linear sytem dynamic \\(f(x_t,u_t)\\). 
-2. It is intractable to calculate the mean and covariance of the resulting posterior
-
-How can we solve this problem?
-
-One solution is sampling. We could simply obtain the empricial distribution by sampling from our Gaussian. Then we replace our belief with the emprical distribution in the predict step. The integral will become a sum. Please be aware, that the resulting function will still be a continuous function. Nonetheless, we know that this function is a mixture of gaussians, where each component is a Gaussian with mean \\(f(\xi^i_t,u_t)\\) and variance \\(Q_t\\). When we are forming our empirical distrobution our samples are weighted by \\(w^i  = \frac{1}{N}\\). 
-
-By assuming an arbitray weighting of the samples the resulting mean is
-
-$$ \hat{\mu} = \mathbb{E}_{\hat{p}(x_{t+1}|y_{0:t},u_{0:t})}[x_{t+1}] $$
-
-$$ \hat{\mu} = \int_{x_{t+1}} \hat{p}(x_{t+1}|y_{0:t},u_{0:t}) x_{t+1}dx_{t+1} $$
-
-$$ \hat{\mu} = \int_{x_{t+1}} \sum_{i=1}^N w^i p(x_{t+1}|x_{t} = \xi_t^i, u_{t}) x_{t+1}dx_{t+1} $$
-
-$$ \hat{\mu} = \int_{x_{t+1}} \sum_{i=1}^N w^i\mathcal{N}(x_{t+1}|f(\xi^i_t, u_t), Q_t) x_{t+1}dx_{t+1} $$
-
-$$ \hat{\mu} = \sum_{i=1}^N w^i\int_{x_{t+1}}  w^i\mathcal{N}(x_{t+1}|f(\xi^i_t, u_t), Q_t) x_{t+1}dx_{t+1} $$
-
-$$ \hat{\mu} = \sum_{i=1}^N w^i f(\xi^i_t, u_t) $$
-
-
-
-and the variance
-
-$$ \hat{\Sigma} = \mathbb{E}_{\hat{p}(x_{t+1}|y_{0:t},u_{0:t})}\left[(x_{t+1}-\hat{\mu})(x_{t+1}-\hat{\mu})^T\right] $$
-
-$$ \hat{\Sigma} = \mathbb{E}_{\hat{p}(x_{t+1}|y_{0:t},u_{0:t})}\left[x_{t+1}x_{t+1}^T - x_{t+1}\hat{\mu}^T - \hat{\mu}x_{t+1}^T + \hat{\mu}\hat{\mu}^T\right] $$
-
-$$ \hat{\Sigma} = \mathbb{E}_{\hat{p}(x_{t+1}|y_{0:t},u_{0:t})}\left[x_{t+1}x_{t+1}^T\right] - \mathbb{E}_{\hat{p}(x_{t+1}|y_{0:t},u_{0:t})}\left[x_{t+1}\hat{\mu}^T\right] - \mathbb{E}_{\hat{p}(x_{t+1}|y_{0:t},u_{0:t})}\left[\hat{\mu}x_{t+1}^T\right] + \mathbb{E}_{\hat{p}(x_{t+1}|y_{0:t},u_{0:t})}\left[\hat{\mu}\hat{\mu}^T\right] $$
-
-$$ \hat{\Sigma} = \int_{x_{t+1}} \hat{p}(x_{t+1}|y_{0:t},u_{0:t}) x_{t+1}x_{t+1}^Tdx_{t+1} - \hat{\mu}\hat{\mu}^T - \hat{\mu}\hat{\mu}^T + \hat{\mu}\hat{\mu}^T $$
-
-$$ \hat{\Sigma} = \int_{x_{t+1}}  \sum_{i=1}^N w^ip(x_{t+1}|x_{t} = \xi_t^i, u_{t}) x_{t+1}x_{t+1}^Tdx_{t+1} - \hat{\mu}\hat{\mu}^T $$
-
-$$ \hat{\Sigma} = \int_{x_{t+1}}  \sum_{i=1}^N w^i\mathcal{N}(x_{t+1}|f(\xi^i_t, u_t), Q_t) x_{t+1}x_{t+1}^Tdx_{t+1} - \hat{\mu}\hat{\mu}^T $$
-
-$$ \hat{\Sigma} = \sum_{i=1}^N w^i\int_{x_{t+1}}   \mathcal{N}(x_{t+1}|f(\xi^i_t, u_t), Q_t) x_{t+1}x_{t+1}^Tdx_{t+1} - \hat{\mu}\hat{\mu}^T $$
-
-$$ \hat{\Sigma} = \sum_{i=1}^N w^i\int_{x_{t+1}}   \mathcal{N}(x_{t+1}|f(\xi^i_t, u_t), Q_t) x_{t+1}x_{t+1}^Tdx_{t+1} - \hat{\mu}\hat{\mu}^T $$
-
-$$ \hat{\Sigma} = \sum_{i=1}^N w^i\int_{x_{t+1}}   \mathcal{N}(x_{t+1}|f(\xi^i_t, u_t), Q_t) x_{t+1}x_{t+1}^Tdx_{t+1} - \hat{\mu}\hat{\mu}^T $$
-
-$$ \hat{\Sigma} = \sum_{i=1}^N w^i(Q_t + f(\xi^i_t, u_t)f(\xi^i_t, u_t)^T) - \hat{\mu}\hat{\mu}^T $$
-
-
-$$ \hat{\Sigma} = \sum_{i=1}^N w^i(Q_t + f(\xi^i_t, u_t)f(\xi^i_t, u_t)^T) - \hat{\mu}\hat{\mu}^T $$
-
-$$ \hat{\Sigma} = Q_t + \sum_{i=1}^N w^i f(\xi^i_t, u_t)f(\xi^i_t, u_t)^T - \hat{\mu}\hat{\mu}^T $$
-
-
-
-Because of this we can find the true mean and variance of the continuous posterior. In the limit with inifinitley many samples this procedure will procduce the correct mean and variance.
-
-Great, we have a nice method! But there is another problem. Sampling can be very inefficient. Maybe there is a smarter way.
-
-The second big idea of the unscented Kalman filter is, that we are replacing the our belief distribution with a surrogate distribution, which is distributoin containing weighted samples.
-
-We choose this surrogate distribution in such a way, that it has the same mean and variance as the Gaussian belief distribution. This distribution is not unique.
-
-For our samples we use
-
-$$ \xi_t^0 = \mu_t $$
-
-$$ \xi_t^i = \mu_t + \sqrt{n+\lambda}L i=1,..,n $$
-
-$$ \xi_t^i = \mu_t - \sqrt{n+\lambda}L i=n+1, ..., 2n$$
-
-with weights
-
-$$ w_c^0 = \frac{\lambda}{n + \lambda} $$
-
-$$ w_m^0 = \frac{\lambda}{n + \lambda} + (1-\alpha^2+\beta)$$
-
-$$ w_m^i =   \frac{\lambda}{2(n + \lambda)} $$
-
-Why do they choose another Wc0?????????
-
-$$ D_{KL}(\hat{p}(x_{t+1}|y_{0:t},u_{0:t})||\mathcal{N}(x_{t+1}|\hat{\mu},\hat{\Sigma})) $$
-
-and the **update step**
-
-$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{p(y_t|y_{0:t-1},u_{0:t-1})} .$$
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Unscented Kalman filter
 
 The unscented Kalman filter was born by intuition. It seems that it is not derived from the general Bayes filter but from the Kalman filter
 
@@ -230,99 +89,171 @@ $$ p(x) = \mathcal{N}(y|\mu, \Sigma) $$
 
 For developing the equations I would state the UT in another form. The nonlinear equations is in our case a Gaussian distribution with constant variance and nonlinear mean:
 
+like in the case of the extended Kalman filter with additive noise. 
+
+<div class="extra_box" markdown="1">
+
+# Joint probability interpretation of the unscented transform
+
+In this section we explore an interpretation of the unscented transform in terms of the joint probability. We are in a setting with a Gaussian conditional distribution with nonlinear mean and constant variance
+
 
 $$ p(y|x) = \mathcal{N}(y|f(x),B) $$
 
+and a Gaussian prior \\(p(x) = \mathcal{N}(y\|\mu, \Sigma) \\).
 
-. Now, the big difference is that we dont want to estimate the distribution of the output \\(p(x)\\), but the distribution over the joint probability.
+Conceptually, we will first replace the prior with a surrogate distribution \\(\hat{p}(x)\\). Subsequently we will approximate the joint distribution of the true conditional distribution \\(p(y\|x)\\) and the surrogate distribution \\(\hat{p}(x)\\) with a Gaussian distribution \\( \hat{p}(x,y) = \mathcal{N}(x,y\|\hat{\mu},\hat{\Sigma}).\\)
 
-The first step is to replace the Gaussian distribution \\( p(x) = \mathcal{N}(y\|\mu, \Sigma) \\) with a surrogate distribution. This surrogate distribution is a weighted dirac distribution.
+**Surrogate distribution**
 
-For our samples we use
+The first step is to replace the Gaussian distribution \\( p(x)  \\) with a surrogate distribution  \\(\hat{p}(x)\\), that has the same mean and variance. For this surrogate distribution we choose a mix of weighted Dirac delta functions
 
-$$ \chi^0 = \mu $$
+$$ \hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x), $$
 
-$$ \chi^i = \mu + a_iL_i  i=1,..,n $$
+where \\(\delta_{\chi^i}(x)\\) is a shorthand for \\(\delta(x-\chi^i)\\) and the weights are summing to 1: 
 
-$$ \chi^i = \mu - a_iL_{i-n}  i=n+1, ..., 2n$$
+$$ \sum_{i} w^i = 1. $$
 
-
-With the property
-
-$$ \mu= \sum_{i} w^i \chi^i$$
-
-$$ \Sigma = \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T$$
-
-where 
-
-$$ \sum_{i} w^i = 1 $$
-
-$$ a_i = a_{i+n} i=1,..,n$$ 
-
-$$ w_i = w_{i+n} i=1,..,n$$ 
+The shifting parameter of the Dirac delta functions \\(\chi^i\\) are called _sigma points_ and are chosen corresponding to
 
 
 $$
 \begin{align}
- \Sigma &= \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T \\
-&= w^0 (\chi^0-\mu)(\chi^0-\mu)^T + \sum_{i=1}^{n} w^i (\chi^i-\mu)(\chi^i-\mu)^T + \sum_{i=n+1}^{2n} w^i (\chi^i-\mu)(\chi^i-\mu)^T \\
- &= w^0 (\mu-\mu)(\mu-\mu)^T + \sum_{i=1}^{n} w^i (\mu + a_iL_i-\mu)(\mu + a_iL_i-\mu)^T + \sum_{i=n+1}^{2n} w^i (\mu - a_iL_{i-n}-\mu)(\mu - a_iL_{i-n}-\mu)^T \\
-&= \sum_{i=1}^{n} w^i (a_iL_i)(a_iL_i)^T + \sum_{i=n+1}^{2n} w^i (- a_iL_{i-n})(- a_iL_{i-n})^T \\
-&= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=n+1}^{2n} w^i a_i^2 L_{i-n}L_{i-n}^T \\
-&= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=1}^{n} w^{i+n} a_{i+n}^2 L_{i}L_{i}^T \\
-&= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=1}^{n} w^i a_i^2 L_{i}L_{i}^T \\
-&= \sum_{i=1}^{n} 2w^i a_i^2 L_iL_i^T \\
-&\stackrel{!}{=} \sum_{i=1}^{n} L_iL_i^T = LL^T = \Sigma \\
+\chi^0 &= \mu \\
+\chi^i &= \mu + a_iL_i  &i=1,\ldots,n \\
+\chi^i &= \mu - a_{i-n}L_{i-n}  &i=n+1, \ldots, 2n
 \end{align}
 $$
 
-It follows that \\(w^i = \frac{1}{2a_i^2} \\) has to hold for \\(i=1,..,n\\).
 
-From \\(\sum_{i} w^i = 1\\) follows that
-
-$$ w^0  = 1 - \sum_{i=1}^{n}\frac{1}{2a_i^2}$$
+where \\(L_i\\) describes the \\(i\\)th column of the Cholesky decompositoin \\(\Sigma = LL^T\\) and \\(n\\) is the dimension of the multivariate Gaussian distribution \\(p(x)\\). The parameters \\(a_i\\) are arbitrary and can be chosen by the designer. Because of the symmetry of the sigma points, the weights will be symmetric as well
 
 
-Given the deviations \\(a_i\\) we can uniquely determine the corresponding weights.
+$$
+\begin{align}
+ w^i &= w^{i+n} & i=1,\ldots,n. \\
+\end{align}
+$$
+
+Let's answer the question of how we have to choose the weights \\(w^i\\), to obtain the desired property
+
+
+$$
+\begin{align}
+\mu &\stackrel{!}{=}\sum_{i} w^i \chi^i \\
+\Sigma &\stackrel{!}{=} \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T.\\
+\end{align}
+$$
+
+We start by plugging our sigma points \\(\chi^i\\) into the mean
+
+$$
+\begin{align}
+\sum_{i} w^i \chi^i &= w^0 \mu + \sum_{i=1}^{n}w^i(\mu + a_iL_i) + \sum_{i=n+1}^{2n} w^i(\mu + a_{i-n}L_{i-n}) \\
+&= \mu\sum_{i=0}^{2n}w^i + \sum_{i=1}^{n}w^ia_iL_i - \sum_{i=1}^{n} w^ia_iL_i \\
+&=\mu
+\end{align}
+$$
 
 
 
+and notice, that this property is independent of the weights \\(w^i\\). 
 
-Because of the symmetry of the points and the fact that the weights sum to 1, the first property is always fulfilled. You have to choose the weights based on \\(\{a_i\}_{1:2n}\\) to fulfill the second property.
+Let's move ob to the variance and see how we have to choose the weights \\(w^i\\) to match it
 
-
-In total our surrogate distribution is defined as:
-
-$$ \hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x). $$
+ $$\Sigma \stackrel{!}{=} \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T .$$
 
 
-Now we can write down the joint probability based on \\(\hat{p}(x)\\) and  \\(p(y\|x)\\)
+
+We start by plugging the corresponding sigma points \\(\chi^i\\) into the variance
+
+$$
+\begin{align}
+ \Sigma &\stackrel{!}{=} \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T \\
+&= w^0 (\chi^0-\mu)(\chi^0-\mu)^T + \sum_{i=1}^{n} w^i (\chi^i-\mu)(\chi^i-\mu)^T + \sum_{i=n+1}^{2n} w^i (\chi^i-\mu)(\chi^i-\mu)^T \\
+ &= w^0 (\mu-\mu)(\mu-\mu)^T + \sum_{i=1}^{n} w^i (\mu + a_iL_i-\mu)(\mu + a_iL_i-\mu)^T + \sum_{i=n+1}^{2n} w^i (\mu - a_{i-n}L_{i-n}-\mu)(\mu - a_{i-n}L_{i-n}-\mu)^T .\\
+\end{align}
+$$
+
+We note, that the all occurences of the mean are cancelled out. In particular, the first term corresponding to the central sigma point \\(\chi^0\\) is vanishing completely. Therefore, the corresponding weight plays no direct role for the mean _and_ variance. By using the symmetry properties we arrive finally at
+
+$$
+ \begin{align}
+&= \sum_{i=1}^{n} w^i (a_iL_i)(a_iL_i)^T + \sum_{i=n+1}^{2n} w^i (- a_{i-n}L_{i-n})(- a_{i-n}L_{i-n})^T \\
+&= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=n+1}^{2n} w^i a_i^2 L_{i-n}L_{i-n}^T \\
+&= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=1}^{n} w^{i+n} a_{i+n}^2 L_{i}L_{i}^T \\
+&= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=1}^{n} w^i a_i^2 L_{i}L_{i}^T \\
+&= \sum_{i=1}^{n} 2w^i a_i^2 L_iL_i^T. \\
+\end{align}
+$$
+
+We know, that the variance can be expressed by
+
+$$ \Sigma = LL^T = \sum_{i=1}^{n} L_iL_i^T.  $$
+
+By a comparison of coefficients, we notice that the property
+
+$$ w^i a_i^2 = 1 $$
+
+has to be satisified. It follows that the weights should be \\(w^i = \frac{1}{2a_i^2} \\) for \\(i=1,\ldots,n\\).
+
+Furthemore, by knowing that all weights has to sum to \\(1\\) it follows that of the central sigma point \\(\chi^0\\) has to be
+
+$$ w^0  = 1 - \sum_{i=1}^{n}\frac{1}{2a_i^2}.$$
+
+
+We finally found our surrogate distributoin
+
+$$ \hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x) $$
+
+with the correct mean \\(\mu\\) and variance \\(\Sigma\\). 
+
+**Gaussian approximation of joint probability**
+
+Let's look at the second part: We want to approximate the joint distribution of the true conditional distribution \\(p(y\|x)\\) and the surrogate distribution \\(\hat{p}(x)\\) with a Gaussian distribution \\( \hat{p}(x,y) = \mathcal{N}(x,y\|\hat{\mu},\hat{\Sigma}).\\)
+
+
+We can write the joint probability of \\(p(y\|x)\\) and \\(\hat{p}(x)\\) as 
 
 $$ \hat{p}(x,y) = p(y|x)\hat{p}(x) = \mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x). $$
 
 This joint probability will look like slices of the \\(p(y\|x) \\).
 
-Now comes the crucial part. Now we are calculating the mean and covariance of this surrogate joint probability. lets start with the mean
+Now we want to approximate this weird looking distribution with a Gaussian distribution. But how should we choose this Gaussian joint distribution? The answer is simple. We are simply calculating the mean and the variance of the joint probability, which will define the Gaussian distribution. Fair enough! So, let's dive directly into the calculation of the mean. We are starting directly from the definition of the expectation
 
-$$
-\begin{align}
-\hat{\mu} &= \iint\limits_{x\,y}\hat{p}(x,y) \begin{pmatrix}
+$$ 
+\hat{\mu} = \iint\limits_{x\,y}\hat{p}(x,y) \begin{pmatrix}
     x  \\
     y \\
-    \end{pmatrix} \,dx\,dy \\ 
-&= \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x)\begin{pmatrix}
+    \end{pmatrix} \,dx\,dy $$
+
+and plug in the corresponding distributions to obtain
+
+$$ \hat{\mu} = \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x)\begin{pmatrix}
     x  \\
     y \\
-    \end{pmatrix} \,dx\,dy \\ 
-&= \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\begin{pmatrix}
+    \end{pmatrix} \,dx\,dy. $$
+
+
+We interchange the sum with the integrals 
+
+$$ \hat{\mu} = \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\begin{pmatrix}
     x  \\
     y \\
-    \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy \\ 
-&= \sum_{i} w^i \int\limits_{x}\mathcal{N}(y|f(\chi^i),B)\begin{pmatrix}
+    \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy $$
+
+and use the sifting property of the Dirac delta function to obtain
+
+$$ \hat{\mu}= \sum_{i} w^i \int\limits_{x}\mathcal{N}(y|f(\chi^i),B)\begin{pmatrix}
     \chi^i \\
     y \\
-    \end{pmatrix} \,dy \\ 
-&= \sum_{i} w^i \begin{pmatrix}
+    \end{pmatrix} \,dy \\. $$
+
+We can simplify this expression even further to 
+
+$$ 
+\begin{align}
+\hat{\mu}&= \sum_{i} w^i \begin{pmatrix}
     \chi^i \\
     f(\chi^i) \\
     \end{pmatrix} =  \begin{pmatrix}
@@ -336,7 +267,7 @@ $$
 \end{align}
 $$
 
-Lets calculate the covariance
+We are done! To finish our approximation we have to calculate the covariance of the joint probability. Let's start again from the definition of the variance
 
 $$
 \begin{align}
@@ -351,14 +282,36 @@ $$
     (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T & (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
     (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T & (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
     \end{pmatrix} \,dx\,dy \\ 
+\end{align}
+$$    
+
+and plug in our distributions to obtain
+
+$$
+\begin{align}
 &= \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x) \begin{pmatrix}
     (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T & (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
     (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T & (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
-    \end{pmatrix} \,dx\,dy \\ 
+    \end{pmatrix} \,dx\,dy. \\ 
+\end{align}
+$$    
+
+Again we are rearranging sum and integrals and use the sifting property
+
+$$
+\begin{align}
 &= \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B) \begin{pmatrix}
     (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T & (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
     (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T & (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
-    \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy \\ 
+    \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy. \\ 
+
+\end{align}
+$$    
+
+and finally obtain
+
+$$
+\begin{align}
 &= \sum_{i} w^i \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) \begin{pmatrix}
     (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T & (\chi^i-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
     (y-\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T & (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
@@ -367,7 +320,6 @@ $$
     \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T \,dy& \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (\chi^i-\hat{\mu}_x)(y-\hat{\mu}_y)^T\,dy\\
     \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (y-\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\,dy & \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T\,dy \\
     \end{pmatrix}  \\ 
-
 &= \sum_{i} w^i \begin{pmatrix}
     (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T& (\chi^i-\hat{\mu}_x)\left[\int\limits_{y}\mathcal{N}(y|f(\chi^i),B)y\,dy -\hat{\mu}_y\right]^T\\
     \left[\int\limits_{y}\mathcal{N}(y|f(\chi^i),B)y\,dy -\hat{\mu}_y\right](\chi^i-\hat{\mu}_x)^T &  (f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
@@ -383,12 +335,48 @@ $$
 &=  \begin{pmatrix}
     \Sigma & \sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
     \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T &  \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
-    \end{pmatrix}  \\ 
+    \end{pmatrix}  .\\ 
 \end{align}
 $$    
 
+Now we have also a nice expression for the mean of the approximated joint probability \\(\hat{p}(x,y)\\).
 
-In total we get for the estimated surrogate joint probability 
+
+Let's summarize our result 
+<div class="important_box" markdown="1">
+<h1>Joint probability interpretation of the unscented transform</h1>
+
+
+Given the Gaussian conditional distribution with nonlinear mean and constant variance
+
+$$ p(y|x) = \mathcal{N}(y|f(x),B) $$
+
+and a Gaussian prior \\(p(x) = \mathcal{N}(y\|\mu, \Sigma) \\). We can approximate the joint probability \\(p(x,y)\\) by a Gaussian joint probability \\(\hat{p}(x,y)\\), where the prior \\(p(x)\\) is replaced by
+
+$$ \hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x), $$
+
+where the weights \\(w^i\\) are defined by 
+
+$$
+\begin{align}
+w^i &= \frac{1}{2a_i^2} & i=1,\ldots,n \\
+w^i &= w^{i+n} & i=1,\ldots,n. \\
+w^0 &= 1 - \sum_{i=1}^{n}\frac{1}{2a_i^2}. &
+\end{align}
+$$
+
+
+ and the with sigma points \\(\chi^i\\) by
+
+$$
+\begin{align}
+\chi^0 &= \mu \\
+\chi^i &= \mu + a_iL_i  &i=1,\ldots,n \\
+\chi^i &= \mu - a_{i-n}L_{i-n}  &i=n+1, \ldots, 2n.
+\end{align}
+$$
+
+The resulting Gaussian approximation has the following form
 
 $$ \hat{p}(x,y) = \mathcal{N}\left(\begin{matrix}
     x  \\
@@ -397,26 +385,49 @@ $$ \hat{p}(x,y) = \mathcal{N}\left(\begin{matrix}
     \mu \\
     \sum_{i} w^i f(\chi^i) \\
     \end{matrix},\begin{matrix}
-    \Sigma & \sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
-    \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T &  \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
-    \end{matrix}\right) $$
+    \Sigma                                                          &   \sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
+    \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T      &   \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
+    \end{matrix}\right). $$
 
 
-This is the result of this variant of the UT transform. Lets look how this goes into the Bayes filter and with the **prediction step**:
+$$ \hat{p}(x,y) = \mathcal{N}\left(x\middle|\mu,\Sigma\right) \mathcal{N}\left(y\middle|\sum_{i} w^i f(\chi^i) + \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}(x-\mu),\sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B - \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}\sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T \right) $$
 
+$$ \hat{p}(y|x) = \mathcal{N}\left(y\middle|\sum_{i} w^i f(\chi^i) + \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}(x-\mu),\sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B - \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}\sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T \right) $$
+
+
+</div>
+
+</div>
+
+
+Please be aware, that this is **not** the definition of the unscented transform. But it will be easier to work with this pure form for now and identify the vanilla unscented transform as a special case.
+
+Ok, now we know how to approximate the joint probability of Gaussian distributions with nonlinear mean and a Gaussian prior. But what can we do with it? 
+
+If we look closely at the equations of the general Bayes filter we can find joint probability of the form we just discussed. For the prediction step we have 
+
+
+$$ \int_x p(y|x)p(x)\,dx \to \int_x p(x,y)\,dx $$
+
+and for the update 
+
+$$ \frac{p(y|x)p(x)}{\int_x p(y|x)p(x)\,dx} \to \frac{p(x,y)}{\int_x p(x,y)\,dx}. $$
+
+That is pretty nice! We can approximate our joint probabilities and our equations of the Bayes filter can take joint probabilities as input. The only thing that is left over is to actually do it. So let's start with the prediction step.
+
+
+# Prediction step
+
+We want to calculate 
 $$ p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}. $$
 
-This is equation is nothing else but marginalization
+But instead of using the true joint probability \\(p(x_{t+1}\|x_{t}, u_{t})p(x_{t}\|y_{0:t},u_{0:t-1})\\) we will use our approximation \\(\hat{p}(x_{t+1},x_{t}\|y_{0:t},u_{0:t})\\)
 
-$$ p(y) = \int_x p(y|x)p(x)dx  $$
+$$ p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} \hat{p}(x_{t+1},x_{t}|y_{0:t},u_{0:t}) dx_{t}. $$
 
-we can also write it as 
 
-$$ p(y) = \int_x p(x,y)dx  $$
 
-and have identified our joint probability distribution, that we can approximate with our variant of the UT transform.
-
-It is very important to notice, that in this case you dont have to calculate the whole joint Gaussian probability, because you are marginalizing afterwards.
+Marginalizing over a joint Gaussian ditribution is very simple. You just have to discard the dimensions you marginalize over: 
 
 $$ \int\limits_{x}\mathcal{N}\left(\begin{matrix}
     x  \\
@@ -427,43 +438,294 @@ $$ \int\limits_{x}\mathcal{N}\left(\begin{matrix}
     \end{matrix}, \begin{matrix}
     A & C \\
     C^T & B\\
-    \end{matrix} \right) \,dx = \mathcal{N}(y|b,B) $$
+    \end{matrix} \right) \,dx = \mathcal{N}(y|b,B). $$
+
+
+Because we have a marginalization over a joint distribution we just have to look at mean and variance of the remainning dimensions. Finally, our predicted state estimate will be a Gaussian with parameters
 
 
 
-
-Now lets look at the **update step**
-
-$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})\,dx_t} .$$
-
-We see that we have a joint probability in the numerator and a marginalization of the same joint probability in the denominator.
-
-
-$$ p(y|x) = \frac{p(x,y)}{\int_{x}p(x,y)\,dx} .$$
+$$ 
+\begin{align}
+\hat x_{t+1|t} &=  \sum_{i} w^i f(\chi^i) \\
+P_{t+1|t} &= \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T + Q_t.
+\end{align}
+$$
 
 
-We can calculate this analytically with our estimate of the surrogate function and obtain directly a Gaussian posterior.
+# Update step
 
-We can calculate the joint probability for the Linear Gaussian case and then do a coefficient comparison. To obtain the corresponding filtering equations.
+
+Now we will look at the update step
+
+$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})\,dx_t}$$
+
+and replace the true joint probability \\(p(y_t\|x_t)p(x_t\|y_{0:t-1},u_{0:t-1})\\) with our approximation \\(\hat{p}(y_t,x_t\|y_{0:t-1},u_{0:t-1})\\) and obtain
+
+$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{\hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t} \hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1})\,dx_t}.$$
+
+Now we have to options to go on. Either we just simplify these equations to obtain the final update equation of the unscented Kalman filter or we can be smart and note, that would compute nothing else, but the update step of the Kalman filter. Let's try the second way.
+
+The joint probability in the Linear Gaussian case (where we already have the equations of the Kalman filter) can be expressed as
 
 $$ \mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}\left(\begin{matrix}x_t \\y_t\end{matrix}\middle|\begin{matrix}\hat x_{t|t-1}\\C_t\hat x_{t|t-1} \end{matrix},\begin{matrix}P_{t|t-1} & P_{t|t-1}^TC_t^T\\C_tP_{t|t-1} & R_t + C_tP_{t|t-1}^TC_t^T\end{matrix}\right) .$$
 
-and 
+The only thing we have to do is a coefficient comparison with the joint Gaussian of our estimate:
 
-$$ \hat{p}(x,y) = \mathcal{N}\left(\begin{matrix}
-    x  \\
-    y \\
+$$ \hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1}) = \mathcal{N}\left(\begin{matrix}
+    x_t  \\
+    y_t \\
     \end{matrix}\middle|\begin{matrix}
-    \mu \\
+    \hat x_{t|t-1} \\
     \sum_{i} w^i f(\chi^i) \\
     \end{matrix},\begin{matrix}
-    \Sigma & \sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
-    \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T &  \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
-    \end{matrix}\right) $$
+    P_{t|t-1}                                                                                       &  \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)^T\\
+    \sum_{i} w^i\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T  &  \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T + R_t \\
+    \end{matrix}\right). $$
+
+We identify the following correspondences:
+
+$$
+\begin{align}
+C_t\hat x_{t|t-1} &\,\widehat{=}\, \sum_{i} w^i f(\chi^i) \\
+C_tP_{t|t-1}&\,\widehat{=}\, \sum_{i} w^i\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T \\
+P_{t|t-1}^TC_t^T&\,\widehat{=}\, \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)^T \\
+C_tP_{t|t-1}^TC_t^T&\,\widehat{=}\, \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T.
+\end{align}
+$$
+
+
+We can summarize our results as following.
+
+<div class="important_box" markdown="1">
+<h1>Equations of the unscented Kalman filter</h1>
+
+The recursive formula for the unscented Kalman filter consists of the **prediction step**
+
+$$ 
+\begin{align}
+\hat x_{t+1|t} &=  \sum_{i} w^i f(\chi^i) \\
+P_{t+1|t} &= \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + Q_t.
+\end{align}
+$$
+
+
+and the **update step**
+
+$$ \begin{align}
+z_t &= y_{t}-\sum_{i} w^i f(\chi^i)\\
+S_t &= R_t + \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T\\
+K_t &= \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)^TS_t^{-1} \\
+\hat x_{t|t} &= \hat x_{t|t-1} + K_t z_t\\
+P_{t|t} &= P_{t|t-1} -K_tS_tK_t^T.
+\end{align} $$
+
+</div>
+
+# Unscented Kalman filter
 
 
 
-To obtain the known equations of the UKF you are choosing specific values \\(a_i\\) and when you calculate the update function you are cheating by using the sigma points from the last time step instead from the current timestep. But you still take the covariance of the current timestep for the calculation.
+To obtain the usual equations of the unscented Kalman filter we have to adjust the result of our derivation in two aspects.
+The first aspect is, that we are choosing specific values for the parameters \\(a_i\\) corresponding to
+
+$$ a_i = \sqrt{n+\lambda}. $$
+
+The weights for \\(i=1,\ldots,2n \\) are set to
+
+$$ w^i =  \frac{\lambda}{2(n + \lambda)}. $$
+
+For the center sigma point \\(\chi^0\\) we will use a different weight \\(w_s^0\\) and \\(w_c^0\\) for the calculation of the mean and the variance respectively defined by
+
+$$
+\begin{align}
+w_s^0  &= \frac{\lambda}{n + \lambda} \\
+w_c^0  &= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta) 
+\end{align}.
+$$
+
+The parameter \\(\lambda\\) is defined as 
+
+$$ \lambda = \alpha^2(n+\kappa) - n $$. A typical recommendation is to use \\(\kappa = 0\\), \\(\alpha = 10^{-3}\\) and \\(\beta=2\\). We noted above, that the covariance of our surrogate prior \\(\hat{p}(x)\\) is not depending on the weight \\(w^0\\). But please be aware, that it will certainly impact the rest of the joint probability distribution.
+
+The second aspect we have to change (or at least could change), is that we don't have to recalculate our sigma points after the prediction step. We can simply use the transformed sigma points \\(f(\chi^i)\\) as our new sigma points.
+
+
+
+
+## Example
+
+Enough of the dry theory! Let's play around with the grid-based filter in our race track example. 
+
+
+
+
+<svg id="race_track_mar_loc" style="width:100%"  onclick="on_click()"></svg>
+<script>
+
+
+    n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}",1000);
+    n_scene.mode = 2;
+    n_scene.filter = "";
+    n_scene.dur=slow_dur;
+    // define particle filter 
+
+    n_scene.auto_start = false;
+
+    n_scene.t = 1;
+
+    n_scene.ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
+
+    n_scene.loaded = function(){
+
+        var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#006eff'), d3.rgb('#00028e')]);
+        var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
+
+        this.ekf = init_ekf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
+        this.ukf = init_ukf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
+        this.rt.init_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
+        this.rt.init_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt), outer_color, 60);
+
+
+
+        document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+        this.rt.hide_strip("inner");
+
+
+        this.restart = function(){
+            for (var i=0; i<this.ids.length;i++){
+
+                document.getElementById(this.ids[i]).style.display="none";
+            }
+            document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+            this.rc.reset();
+            this.t = 1;
+
+            
+
+            //this.bf.reset();
+            this.ekf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
+            this.ukf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
+            this.rt.hide_strip("inner");
+            this.rt.show_strip("outer");
+            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+        }
+
+
+        this.rt.set_restart_button(this.restart.bind(this))
+
+
+
+
+    }.bind(n_scene)
+
+
+    n_scene.step = function(){
+        this.t++;
+        for (var i=0; i<this.ids.length;i++){
+
+            document.getElementById(this.ids[i]).style.display="none";
+        }
+
+
+        if(this.t % 4 == 0){
+            //CHOOSE ACTION
+            this.rc.step(this.rc.current_input);
+            this.last_input = this.rc.current_input;
+            document.getElementById("race_track_mar_loc_predict").style.display="block";
+            this.rt.hide_strip("inner");
+        }else if(this.t % 4 == 1){
+            // PREDICT
+            this.ekf.predict(this.last_input);
+            this.ukf.predict(this.last_input);
+
+            // trim ekf posterior
+            if(this.ekf.posterior_mu<0){
+                this.ekf.posterior_mu+=this.rt.track_length;
+            }
+            this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
+
+            if(this.ukf.posterior_mu<0){
+                this.ukf.posterior_mu+=this.rt.track_length;
+            }
+            this.ukf.posterior_mu = this.ukf.posterior_mu % this.rt.track_length;
+
+            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+            document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+        }else if(this.t % 4 == 2){
+            // OBSERVE
+            this.rt.show_strip("inner");
+            this.output = scene.rc.output_dist_sample(0);
+            var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
+            this.rt.update_strip("inner", get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
+
+            document.getElementById("race_track_mar_loc_update").style.display="block";
+        }else if(this.t % 4 == 3){
+            // UPDATE
+
+            this.ekf.update(this.output);
+            this.ukf.update(this.output);
+
+            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+
+            document.getElementById("race_track_mar_loc_timestep").style.display="block";
+        }
+
+    }.bind(n_scene);
+
+    scenes_name["race_track_mar_loc"] = n_scene;
+    scenes.push(n_scene);
+
+</script>
+
+
+
+
+<div id="race_track_mar_loc_timestep" class="button_set">
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=0;scenes_name['race_track_mar_loc'].step();">Backward</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=1;scenes_name['race_track_mar_loc'].step();">No action</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_mar_loc'].rc.current_input=2;scenes_name['race_track_mar_loc'].step();">Forward</div>
+ <span class="stretch"></span>
+</div>
+
+<div id="race_track_mar_loc_predict" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_mar_loc'].step();">Predict step</div>
+  <span class="stretch"></span>
+</div>
+
+
+
+<div id="race_track_mar_loc_likelihood" class="button_set">
+<div class="bt1  bt" onclick="scenes_name['race_track_mar_loc'].step();">Observe</div>
+  <span class="stretch"></span>
+</div>
+
+<div id="race_track_mar_loc_update" class="button_set" onclick="scenes_name['race_track_mar_loc'].step();">
+<div class="bt1  bt">Update step</div>
+  <span class="stretch"></span>
+</div>
+
+
+
+On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the __OBSERVE__ button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the __UPDATE STEP__ button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the __PREDICT STEP__ button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.
+
+If you want to reset the environment, just press the reset button in the bottom left corner.
+As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
+
+We see, that it is actually working pretty well. But one thing seems particularly weird: At certain positions on the race track, the brownish inner strip (our likelihood) seems to be uniformly distributed. This is not a bug, but a shortcoming of the linearization. We will always experience this behavior, if the part of the road at our current posterior mean is pointing only in _tangential_ direction, with the tree as the center. In other words: A small change in position wouldn't change the distance. When we are linearizing, we assume this local behavior applies for the whole system and we won't get any new information out of our measurement. To get an intuitive understanding of this, you can imagine two parallel lines. Our car is driving along one of the parallel lines and we take the nearest distance to the other line as a measurement. This measurement would be uninformative because the distance to the parallel line is always the same.
+
+
+
+
+# Acknowledgement
+
+The vector graphics of the [car](https://www.freepik.com/free-photos-vectors/car) were created by [Freepik](https://www.freepik.com/).
+
+
+
+<a href='https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm'></a>
+
+
 
 
 
@@ -475,6 +737,13 @@ To obtain the known equations of the UKF you are choosing specific values \\(a_i
 <div id="div2"></div>
 <!-- <div id="system_dist_approx"  style="width: 600px; height: 600px;"></div> -->
 <!--<div id="output_dist_approx"  style="width: 600px; height: 600px;"></div>-->
+
+
+
+
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+
 
 
 

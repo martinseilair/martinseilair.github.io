@@ -411,10 +411,12 @@ $$ \int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + F
 
 By comparison with our expression, we see that
 
-$$ \hat x_{t+1|t} =  A_t \hat x_{t|t} + B_tu_t, $$
-
-
-$$ P_{t+1|t} = Q_t + A_t P_{t|t} A_t^T  .$$
+$$
+\begin{align}
+\hat x_{t+1|t} &=  A_t \hat x_{t|t} + B_tu_t \\
+P_{t+1|t} &= Q_t + A_t P_{t|t} A_t^T.
+\end{align}
+$$
 
 ### Update step
 

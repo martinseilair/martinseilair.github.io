@@ -125,7 +125,7 @@ Recently, I wrote an article about the [derivation of the Kalman filter]({% post
 The current plan is to write articles about the following methods:
 
 * [Grid-based filter]({% post_url 2018-10-29-nf-grid-based %})
-* [Éxtended Kalman filter]({% post_url 2018-10-31-nf-ekf %})
+* [Extended Kalman filter]({% post_url 2018-10-31-nf-ekf %})
 * Unscented Kalman filter
 * Particle filter
 

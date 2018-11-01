@@ -176,6 +176,14 @@ function init_ekf_1D(race_car, initial_mu, initial_sigma){
 
 }
 
+function init_ukf_1D(race_car, initial_mu, initial_sigma){
+	return new UnscentedKalmanFilter_1D(race_car.mu_s_no_cache.bind(race_car), 
+		race_car.sigma_s_no_cache.bind(race_car),race_car.mu_o_no_cache.bind(race_car),
+		race_car.sigma_o_no_cache.bind(race_car),
+		initial_mu, initial_sigma);
+
+}
+
 
 
 function get_system_dist_normalized(race_car, race_track, pos, input) {

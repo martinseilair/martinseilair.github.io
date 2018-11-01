@@ -37,39 +37,6 @@ A particle filter is a very helpful tool for tracking dynamic systems. This arti
 <script type="text/javascript">
 
 
-// mit keys oder button steuerbar
-// strips ein und ausblendbar
-// weights ein und ausblendbar
-// update resample predict manuell oder langsam automatisch (weiter button)
-// update resample predict button (hier macht input keinen sinn, außer man hat 3 button für predict)
-// mit maus car position festlegen (geringster abstand)
-
-
-// herangehensweise
-
-// 1. auto fährt 
-// 2. Vorstellung der system und beobachtungsfunktion (plot)
-// 3. mit maus car position festlegen, entsprechende verteilung innen und außen anzeigen
-// 3a. Bayes filter approximierung außen posterior innen beobachtung (update prediction weiter)
-// 4. standbild: particle anzeigen
-// 5. standbild: update step (5 sek vorher 5 sek nachher) (prob strip innen anzeigen)
-// 6. standbild: resampling (5 sek vorher 5 sek nachher)
-// 7. standbild: predict (5 sek vorher 5 sek nachher)
-// 8. update resample predict manuell (weiter button)
-// 9. update resample predict automatisch (geschwindigkeit einstellbar) (steuerung über pfeiltasten)
-// 10. zwei trees
-
-	// SITE NOT LOADED!!!
-
-	// input modes
-	// 0: Automatisch langsam; sequential
-	// 1: Set input per  A = backward, S = no movement, D = forward; one step
-	// 2: Set input per  A = backward, S = no movement, D = forward; sequential
-	// 3: Mouse exploring
-	// 4: No input
-
-	// scene_flags
-
 	scene = [];
 	scenes = [];
 	scenes_name = [];
@@ -173,12 +140,13 @@ Fall 2 ich kann es nicht
 
 		if(this.t % 5 == 0){
 			this.rc.step(scene.rc.current_input);
+			this.last_input = this.rc.current_input;
 			document.getElementById("race_track_particle_predict").style.display="block";
 		}if(this.t % 5 == 1){
 	    	
 			//this.rt.update_strip("outer", get_system_dist_normalized(scene.rc, scene.rt, scene.rc.state, scene.rc.current_input));
 
-			this.pf.predict(scene.rc.current_input);
+			this.pf.predict(this.last_input);
 			document.getElementById("race_track_particle_likelihood").style.display="block";
 		}else if(this.t % 5 == 2){
 			this.rt.show_strip("inner");
