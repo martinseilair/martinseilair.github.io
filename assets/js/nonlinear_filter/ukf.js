@@ -19,11 +19,6 @@ class UnscentedKalmanFilter_1D {
 
 	}
 
-	calculate_C(state){
-		var grad = this.finite_diff(this.output_mu, [state]);
-		return grad[0];
-	}
-
 	get_likelihood(y,x){
 		var joint = this.unscented_joint_probability(x, this.output_sigma(x), this.output_mu, this.output_sigma(this.posterior_mu))
 
@@ -57,44 +52,73 @@ class UnscentedKalmanFilter_1D {
 		this.posterior_sigma = joint.sigma[1][1];
 	}
 
+	dot_product(a,b){
+		var r = 0;
+		for (var i = 0; i < a.length; i++) r += a[i]*b[i];
+		return r;
+	}
+
 	unscented_joint_probability(mu, sigma, model_mu, model_sigma){
 
-		var spw = this.get_sigma_points_and_weights(this.alpha, this.kappa, this.beta, mu, sigma);
-		console.log(spw)
+		var spw = this.get_sigma_points_and_weights_joint(this.alpha, this.kappa, this.beta, mu, sigma);
 		var sigma_points = spw.sigma_points;
 		var weights_s = spw.weights_s;
 		var weights_c = spw.weights_c;
-
-		console.log(sigma_points)
-
-		console.log(model_mu(sigma_points[0]))
-		console.log(model_mu(sigma_points[1]))
-		console.log(model_mu(sigma_points[2]))
+		console.log(spw)
 		// transform sigma points
 		var sigma_points_transformed = sigma_points.map((e)=>{return model_mu(e)});
 
-		console.log(sigma_points_transformed)
-
 		// transformed mean
-		var mu_transformed = sigma_points_transformed.reduce((total, e, i)=>{return total+e*weights_s[i]})
+		var mu_transformed = 0;
 
-		console.log(weights_c)
+		for (var i = 0; i < sigma_points_transformed.length; i++) mu_transformed += sigma_points_transformed[i]*weights_s[i];
+		//for (var i = 0; i < sigma_points_transformed.length; i++) mu_transformed += sigma_points_transformed[i]*;
+
 
 		// variance
-		var auto = model_sigma + sigma_points_transformed.reduce((total, e, i)=>{console.log(i);return total+weights_c[i]*(e - mu_transformed)*(e - mu_transformed)})
-		var cross = sigma_points_transformed.reduce((total, e, i)=>{return total+weights_c[i]*(e - mu_transformed)*(sigma_points[i] - mu)})
 
-		return {mu: [mu, mu_transformed], sigma:[[sigma, cross],[cross, auto]]}
+		var auto = model_sigma;
+		for (var i = 0; i < sigma_points_transformed.length; i++) auto += weights_c[i]*(sigma_points_transformed[i] - mu_transformed)*(sigma_points_transformed[i] - mu_transformed);
+
+		var cross = 0;
+		for (var i = 0; i < sigma_points_transformed.length; i++) cross += weights_c[i]*(sigma_points_transformed[i] - mu_transformed)*(sigma_points[i] - mu);
+		var ret = {mu: [mu, mu_transformed], sigma:[[sigma, cross],[cross, auto]]}
+		console.log(ret)
+		return ret
+	}
+
+	get_sigma_points_and_weights_joint(alpha, kappa, beta, mean, sigma){
+		var n = 1;
+		//var lambda = alpha*alpha*(n+kappa) - n;
+		var a = 1.2;
+
+
+
+		// calculate weights
+		var weights_s = [];
+		var weights_c = [];
+
+		weights_s.push(1-1/(a*a));
+		weights_c.push(1-1/(a*a));
+
+		var sp = [...Array(2*n)].map(()=>{return 1/(2*a*a);})
+		weights_s.push(...sp);
+		weights_c.push(...sp);
+
+		// calculate sigma points
+		var sp = [];
+		sp.push(mean);
+		sp.push(mean + a*Math.sqrt(sigma));
+		sp.push(mean - a*Math.sqrt(sigma));
+
+		return {sigma_points:sp, weights_s:weights_s, weights_c:weights_c}
 	}
 
 	get_sigma_points_and_weights(alpha, kappa, beta, mean, sigma){
 		var n = 1;
-		//var lambda = alpha*alpha*(n+kappa) - n;
-		var lambda = 0.1;
+		var lambda = alpha*alpha*(n+kappa) - n;
+		//var lambda = 0.1;
 
-		console.log(lambda)
-		console.log(n)
-		console.log(lambda/(lambda + n))
 		// calculate weights
 		var weights_s = [];
 		var weights_c = [];
@@ -111,11 +135,10 @@ class UnscentedKalmanFilter_1D {
 
 		// calculate sigma points
 		var sp = [];
-		console.log("g",(n + lambda)*sigma);
 		sp.push(mean);
 		sp.push(mean + Math.sqrt((n + lambda)*sigma));
 		sp.push(mean - Math.sqrt((n + lambda)*sigma));
-		console.log(sp)
+
 
 		return {sigma_points:sp, weights_s:weights_s, weights_c:weights_c}
 	}

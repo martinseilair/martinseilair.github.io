@@ -193,13 +193,13 @@ $$ \Sigma = LL^T = \sum_{i=1}^{n} L_iL_i^T.  $$
 
 By a comparison of coefficients, we notice that the property
 
-$$ w^i a_i^2 = 1 $$
+$$ 2w^i a_i^2 = 1 $$
 
 has to be satisified. It follows that the weights should be \\(w^i = \frac{1}{2a_i^2} \\) for \\(i=1,\ldots,n\\).
 
 Furthemore, by knowing that all weights has to sum to \\(1\\) it follows that of the central sigma point \\(\chi^0\\) has to be
 
-$$ w^0  = 1 - \sum_{i=1}^{n}\frac{1}{2a_i^2}.$$
+$$ w^0  = 1 - 2\sum_{i=1}^{n}\frac{1}{2a_i^2}.$$
 
 
 We finally found our surrogate distributoin
@@ -361,7 +361,7 @@ $$
 \begin{align}
 w^i &= \frac{1}{2a_i^2} & i=1,\ldots,n \\
 w^i &= w^{i+n} & i=1,\ldots,n. \\
-w^0 &= 1 - \sum_{i=1}^{n}\frac{1}{2a_i^2}. &
+w^0 &= 1 - 2\sum_{i=1}^{n}\frac{1}{2a_i^2}. &
 \end{align}
 $$
 
