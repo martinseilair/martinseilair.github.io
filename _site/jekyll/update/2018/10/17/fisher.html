@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>The score-Fisher-information-KL connection | Ikigai</title>
+<meta name="generator" content="Jekyll v3.8.4" />
+<meta property="og:title" content="The score-Fisher-information-KL connection" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math." />
+<meta property="og:description" content="This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math." />
+<link rel="canonical" href="http://localhost:4000/jekyll/update/2018/10/17/fisher.html" />
+<meta property="og:url" content="http://localhost:4000/jekyll/update/2018/10/17/fisher.html" />
+<meta property="og:site_name" content="Ikigai" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-10-17T18:04:07+09:00" />
+<script type="application/ld+json">
+{"description":"This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/17/fisher.html","headline":"The score-Fisher-information-KL connection","dateModified":"2018-10-17T18:04:07+09:00","datePublished":"2018-10-17T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/17/fisher.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css?1541412464444583861"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">The score-Fisher-information-KL connection</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-10-17T18:04:07+09:00" itemprop="datePublished">Oct 17, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.
+<!--more--></p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_SVG" type="text/javascript"></script>
+
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" />
+
+<script type="text/javascript">
+
+function getPosition(el) {
+  var xPos = 0;
+  var yPos = 0;
+ 
+  while (el) {
+    if (el.tagName == "BODY") {
+      // deal with browser quirks with body/window/document and page scroll
+      var xScroll = el.scrollLeft || document.documentElement.scrollLeft;
+      var yScroll = el.scrollTop || document.documentElement.scrollTop;
+ 
+      xPos += (el.offsetLeft - xScroll + el.clientLeft);
+      yPos += (el.offsetTop - yScroll + el.clientTop);
+    } else {
+      // for all other non-BODY elements
+      xPos += (el.offsetLeft - el.scrollLeft + el.clientLeft);
+      yPos += (el.offsetTop - el.scrollTop + el.clientTop);
+    }
+ 
+    el = el.offsetParent;
+  }
+  return {
+    x: xPos,
+    y: yPos
+  };
+}
+
+function switch_tab(button){
+
+    var p1 = getPosition(button)
+
+	// get parent elements
+	var bar = button.parentElement;
+	var con = bar.parentElement;
+	var tab_id = con.getAttribute("class").split(" ")[1];
+
+
+	var c = bar.childNodes;
+	var ci = 0;
+
+	for (var i=0;i<c.length;i++){
+
+		if(c[i].tagName=="H3"){	
+			if (c[i]===button){
+				break;
+			}
+			ci++;
+		}
+	}
+	// get tab id
+	cons = document.querySelectorAll('.tab-container.' + tab_id);;
+
+	for (var j=0;j<cons.length;j++){
+
+		// change bar
+		var bar_j = cons[j].querySelector(".tab-bar");
+		var buttons = bar_j.childNodes;
+		var bi = 0;
+
+		for (var i=0;i<buttons.length;i++){
+			if(buttons[i].tagName=="H3"){	
+				if (bi == ci){
+					buttons[i].className = "tab-button-selected";
+				}else{
+					buttons[i].className = "tab-button";
+				}
+				bi++;
+			}
+		}
+
+		var bi = 0;
+
+		for (var i=0;i<cons[j].childNodes.length;i++){
+			if(cons[j].childNodes[i].tagName=="DIV" && cons[j].childNodes[i].className!="tab-bar"){	
+				if (bi == ci){
+					cons[j].childNodes[i].className = "tab-visible";
+				}else{
+					cons[j].childNodes[i].className = "tab-invisible";
+				}
+				bi++;
+			}
+		}
+
+	}
+
+	span_cons = document.querySelectorAll('.span-container.' + tab_id );
+	
+	for (var j=0;j<span_cons.length;j++){
+		var bi = 0;
+		for (var i=0;i<span_cons[j].childNodes.length;i++){
+			if(span_cons[j].childNodes[i].tagName=="SPAN"){	
+				if (bi == ci){
+					span_cons[j].childNodes[i].className = "span-visible";
+				}else{
+					span_cons[j].childNodes[i].className = "span-invisible";
+				}
+				bi++;
+			}
+		}
+	}
+
+	var p2 = getPosition(button)
+	window.scrollBy(0,-p1.y+p2.y+15);
+
+
+
+
+
+}
+
+</script>
+
+<style type="text/css">
+
+
+div.tab-container {
+
+	width:100%;
+
+	margin-bottom:15px;
+
+}
+
+
+div.tab-bar {
+	display:inline-block;
+	height:30px;
+
+	border-bottom:solid 1px #ebebeb;
+	border-left:solid 1px #ebebeb;
+	border-right:solid 1px #ebebeb;
+	padding:0;
+	padding-bottom:2px;
+	vertical-align: middle;
+}
+
+
+h3.tab-button-selected {
+	height:100%;
+	display:inline-block;
+	max-width: 200px;
+	padding-left:15px;
+	padding-right:15px;
+	border-top: 2px solid  #c90606;
+	color:#c90606;
+	border-bottom: 2px transparent;
+	text-align:center;
+	padding: 0 25px;
+    line-height:30px;
+    font-size:90%;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+h3.tab-button {
+
+	height:20px;
+	display:inline-block;
+	max-width: 200px;
+	padding-left:15px;
+	padding-right:15px;
+	border-bottom: 2px transparent;
+	border-top: 2px transparent;
+	color:#757575;
+	text-align:center;
+	padding: 0 25px;
+	line-height:0px;
+	font-size:90%;
+	font-weight: 500;
+	font-family: 'Roboto', sans-serif;
+	text-transform: uppercase;
+}
+
+
+div.tab-visible {
+
+	width:100%;
+	display:block;
+	overflow: auto;
+	background-color: #f7f7f7;
+	border:solid 1px #ebebeb;
+
+}
+
+div.tab-invisible {
+
+	width:100%;
+	display:none;
+	overflow: auto;
+}
+
+span.span-visible {
+	display:inline-block;
+}
+
+span.span-invisible {
+	display:none;
+}
+
+</style>
+
+<h2 id="log-likelihood">Log-likelihood</h2>
+<p>The log-likelihood is defined the logarithm of the likelihood</p>
+
+<script type="math/tex; mode=display">\ell(x;\theta')  =  \log p(x|\theta').</script>
+
+<p>Let’s perform a <strong>Taylor approximation</strong> of the log-likelihood \(\log p(x|\theta’)\) around the current estimate \(\theta\):</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+	$$\begin{align*}
+ \log p(x|\theta') =&amp; \log p(x|\theta')|_{\theta' =  \theta} +  \sum_i \left. \frac{\partial \log p(x|\theta')}{\partial \theta'_i} \right| _{\theta' = \theta}   (\theta'_i - \theta_i) \\ &amp;+ \frac{1}{2}\sum_i\sum_j \left. \frac{\partial^2 \log p(x|\theta')}{\partial \theta'_i\partial \theta'_j}\right| _{\theta' = \theta}   (\theta'_i - \theta_i)(\theta'_j - \theta_j) + ...
+\end{align*}$$
+</div><div class="tab-invisible">
+	$$\begin{align*}
+\log p(x|\theta') =&amp; \log p(x|\theta')|_{\theta' = \theta} + \left. \nabla_{\theta'} \log p(x|\theta')^T\right| _{\theta' = \theta} (\theta' - \theta) \\ &amp;+ \frac{1}{2}\left. (\theta' - \theta)^T\nabla^2_{\theta'} \log p(x|\theta')\right| _{\theta' = \theta}(\theta' - \theta) + ...
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>The <strong>linear</strong> term <span class="span-container scalar-vector"><span class="span-visible">\(\frac{\partial}{\partial \theta’_i} \log p(x|\theta’)\)</span><span class="span-invisible">\(\nabla_{\theta’} \log p(x|\theta’)\)</span></span> in this decomposition can be written as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$  \frac{\partial}{\partial \theta'_i} \log p(x|\theta') = \frac{1}{p(x|\theta')} \frac{\partial}{\partial \theta'_i} p(x|\theta') $$
+</div><div class="tab-invisible">
+$$ \nabla_{\theta'} \log p(x|\theta') = \frac{1}{p(x|\theta')}\nabla_{\theta'} p(x|\theta')  $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>by using the <em>log derivative trick</em>.</p>
+
+<p>Evaluated at \(  \theta’ = \theta \) you receive</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ \left. \frac{\partial}{\partial \theta'_i} \log p(x|\theta') \right|_{\theta' = \theta} = \frac{1}{p(x|\theta)} \frac{\partial}{\partial \theta_i} p(x|\theta). $$
+</div><div class="tab-invisible">
+$$ \left. \nabla_{\theta'} \log p(x|\theta') \right|_{\theta' = \theta} = \frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta).  $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>The <strong>quadratic</strong> term of the decomposition  <span class="span-container scalar-vector"><span class="span-visible">
+\(\frac{\partial^2 \log p(x|\theta’)}{\partial \theta’_i\partial \theta’_j}\)
+</span><span class="span-invisible">
+\(\nabla^2_{\theta’} \log p(x|\theta’)\)
+</span></span> 
+can be written as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+\frac{\partial^2 \log p(x|\theta')}{\partial \theta'_\partial \theta'_j} =&amp; \frac{\partial }{\partial \theta'_j} \left( \frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right) \\
+=&amp; \frac{\partial }{\partial \theta'_j} \left( \frac{1}{p(x|\theta')} \frac{\partial}{\partial \theta'_i} p(x|\theta')\right) \\
+=&amp; \frac{\partial }{\partial \theta'_j} \left( \frac{1}{p(x|\theta')}\right) \frac{\partial}{\partial \theta'_i} p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial }{\partial \theta'_j} \left(\frac{\partial}{\partial \theta'_i} p(x|\theta')\right)\\
+=&amp; \frac{\partial }{\partial \theta'_j} \left( \frac{1}{p(x|\theta')}\right) \frac{\partial}{\partial \theta'_i} p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial^2 p(x|\theta')}{\partial \theta'_\partial \theta'_j}  \\
+=&amp; - \frac{1}{p(x|\theta')^2} \frac{\partial}{\partial \theta'_j} p(x|\theta') \frac{\partial}{\partial \theta'_i} p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial^2 p(x|\theta')}{\partial \theta'_\partial \theta'_j}  \\
+=&amp; - \frac{\partial}{\partial \theta'_j} \log p(x|\theta') \frac{\partial}{\partial \theta'_i} \log p(x|\theta') +    \frac{1}{p(x|\theta')} \frac{\partial^2 p(x|\theta')}{\partial \theta'_\partial \theta'_j}  
+\end{align*}
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\nabla^2_{\theta'} \log p(x|\theta') =&amp; \nabla_{\theta'} \nabla_{\theta'}^T \log p(x|\theta') \\
+=&amp; \nabla_{\theta'} \left(\frac{1}{p(x|\theta')}\nabla_{\theta'}^T p(x|\theta')\right) \\
+=&amp; \nabla_{\theta'} p(x|\theta')  \nabla_{\theta'}^T \left(\frac{1}{p(x|\theta')}\right) +  \frac{1}{p(x|\theta')}\nabla_{\theta'}^T\nabla_{\theta'} p(x|\theta') \\
+=&amp;- \frac{1}{p(x|\theta')^2} \nabla_{\theta'} p(x|\theta') \nabla_{\theta'} p(x|\theta') ^T  +  \frac{1}{p(x|\theta')}\nabla_{\theta'}^2 p(x|\theta') \\
+=&amp;- \nabla_{\theta'} \log p(x|\theta') \nabla_{\theta'} \log p(x|\theta') ^T  +  \frac{1}{p(x|\theta')}\nabla_{\theta'}^2 p(x|\theta')
+\end{align*}
+$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>Evaluated at \(  \theta’ = \theta \) you receive</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+\left. \frac{\partial^2 \log p(x|\theta')}{\partial \theta'_\partial \theta'_j}\right|_{\theta' = \theta} =&amp; - \frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}  
+\end{align*}.
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\left. \nabla^2_{\theta'} \log p(x|\theta')\right|_{\theta' = \theta} =&amp;- \nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta) ^T  +  \frac{1}{p(x|\theta)}\nabla_{\theta}^2 p(x|\theta)
+\end{align*}.
+$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>Finally, you can express the <strong>Taylor approximation</strong> as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+	$$\begin{align*}
+ \log p(x|\theta') =&amp; \log p(x|\theta) +  \sum_i \frac{1}{p(x|\theta)} \frac{\partial}{\partial \theta_i} p(x|\theta)   (\theta'_i - \theta_i) \\ &amp;+ \frac{1}{2} \sum_i\sum_j \left(- \nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta) ^T  +  \frac{1}{p(x|\theta)}\nabla_{\theta}^2 p(x|\theta)\right) (\theta'_i - \theta_i)(\theta'_j - \theta_j) + ...
+\end{align*}$$
+</div><div class="tab-invisible">
+	$$\begin{align*}
+\log p(x|\theta') =&amp; \log p(x|\theta) + \left. \nabla_{\theta'} \log p(x|\theta')^T\right| _{\theta' = \theta} (\theta' - \theta) \\ &amp;+ \left. \frac{1}{2} (\theta' - \theta)^T\nabla^2_{\theta'} \log p(x|\theta')\right| _{\theta' = \theta}(\theta' - \theta) + ...
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h1 id="mean">Mean</h1>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align*} 
+ \mathbb{E}_{p(x|\theta^*)}[\log p(x|\theta')] &=  \int \limits_{-\infty}^{\infty} p(x|\theta^*) \log p(x|\theta')dx \\
+&= -H(\theta^*,\theta') \\
+ \end{align*} %]]></script>
+
+<h1 id="variance">Variance</h1>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align*} \text{Var}(\log p(x|\theta')) &=  \mathbb{E}_{p(x|\theta^*)}\left[\log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}[\log p(x|\theta')])^2\right] \\
+&=  \mathbb{E}_{p(x|\theta^*)}\left[(\log p(x|\theta'))^2\right]-\mathbb{E}_{p(x|\theta^*)}[\log p(x|\theta')]^2 \\
+&=  \mathbb{E}_{p(x|\theta^*)}\left[(\log p(x|\theta'))^2\right]+H(\theta^*,\theta')^2 \\
+
+\end{align*} %]]></script>
+
+<h2 id="score">Score</h2>
+
+<p>The score is defined as the derivative of the log-likelihood</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ V_i(x;\theta')  =  \frac{\partial}{\partial \theta'_i} \log p(x|\theta') $$
+</div><div class="tab-invisible">
+$$ V(x;\theta')  =  \nabla_{\theta'} \log p(x|\theta') $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h1 id="mean-1">Mean</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ \mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right] =  \int \limits_{-\infty}^{\infty} p(x|\theta^*) \frac{\partial}{\partial \theta'_i} \log p(x|\theta')dx$$
+
+</div><div class="tab-invisible">
+$$ \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right] =  \int \limits_{-\infty}^{\infty} p(x|\theta^*) \nabla_{\theta'} \log p(x|\theta')dx$$
+
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h1 id="variance-1">Variance</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+\begin{align*} \text{Var}\left(\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right) &amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\left(\frac{\partial}{\partial \theta'_i} \log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right]\right)^2\right] \\
+&amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right] +  \mathbb{E}_{p(x|\theta^*)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right]^2 \\
+\end{align*} 
+
+</div><div class="tab-invisible">
+\begin{align*} \text{Var}\left(\nabla_{\theta'} \log p(x|\theta')\right) &amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\left(\nabla_{\theta'}\log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\right)\left(\nabla_{\theta'}\log p(x|\theta')-\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\right)^T\right] \\
+&amp;=  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta^*)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
+\end{align*} 
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h2 id="kullback-leibler-divergence">Kullback-Leibler divergence</h2>
+
+<p>The Kullback-Leibler divergence is defined as</p>
+
+<script type="math/tex; mode=display">D_\textrm{KL}(\theta||\theta') = \int \limits_{-\infty}^{\infty} p(x|\theta) \log \frac{p(x|\theta)}{p(x|\theta')} dx .</script>
+
+<p>Let’s perform a <strong>Taylor approximation</strong> around the current estimate \(\theta\):</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp; D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} +  \sum_i \left.\frac{\partial D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i}\right|_{\theta' = \theta}   (\theta'_i - \theta_i)  \\ &amp;+  \frac{1}{2}\sum_i\sum_j \left.\frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i\partial \theta'_j}\right|_{\theta' = \theta}  (\theta'_i - \theta_i) (\theta'_j - \theta_j) + ...
+\end{align*}
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp; D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} + \left. \nabla_{\theta'}D_\textrm{KL}(\theta||\theta')^T\right|_{\theta' = \theta}(\theta' - \theta) \\
+&amp; +  \frac{1}{2}\left. (\theta' - \theta)^T\nabla^2_{\theta'}D_\textrm{KL}(\theta||\theta')\right|_{\theta' = \theta}(\theta' - \theta) + ...
+\end{align*}
+$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>The <strong>constant</strong> term can be written as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} =&amp; 0.
+\end{align*}
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta')|_{\theta' = \theta} =&amp;  0.
+\end{align*}
+$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>The <strong>linear</strong> term <span class="span-container scalar-vector"><span class="span-visible">
+\(\frac{\partial D_\textrm{KL}(\theta||\theta’)}{\partial \theta’_i}\)
+</span><span class="span-invisible">
+\(\nabla_{\theta’}D_\textrm{KL}(\theta||\theta’)\)
+</span></span> in this decomposition can be written as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+\frac{\partial D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i} =&amp; \frac{\partial}{\partial \theta'_i}\left(\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta) dx -\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta') dx\right) \\
+=&amp; -\int \limits_{-\infty}^{\infty} p(x|\theta) \frac{\partial}{\partial \theta'_i}\log p(x|\theta') dx\\
+=&amp;  -\int \limits_{-\infty}^{\infty} p(x|\theta)\frac{1}{p(x|\theta')}\frac{\partial}{\partial \theta'_i} p(x|\theta') dx \\
+=&amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta'_i} \log p(x|\theta')\right]\\
+=&amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta')}\frac{\partial}{\partial \theta'_i} p(x|\theta')\right].
+\end{align*}
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\nabla_{\theta'}D_\textrm{KL}(\theta||\theta') =&amp;  \nabla_{\theta'}\left(\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta) dx -\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta') dx\right) \\
+=&amp;  -\int \limits_{-\infty}^{\infty} p(x|\theta)\nabla_{\theta'} \log p(x|\theta') dx \\
+=&amp;  -\int \limits_{-\infty}^{\infty} p(x|\theta)\frac{1}{p(x|\theta')}\nabla_{\theta'} p(x|\theta') dx \\
+=&amp; - \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\\
+=&amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta')}\nabla_{\theta'} p(x|\theta')\right].
+\end{align*}
+$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>Evaluated at \(  \theta’ = \theta \) you receive</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+\left. \frac{\partial D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i} \right|_{\theta' = \theta} =&amp; - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i} p(x|\theta)\right] \\
+=&amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i}p(x|\theta) dx \\
+=&amp; \int \limits_{-\infty}^{\infty} \frac{\partial}{\partial \theta_i} p(x|\theta) dx \\
+=&amp;  \frac{\partial}{\partial \theta_i}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;  \frac{\partial}{\partial \theta_i} 1 \\
+=&amp; 0 
+\end{align*}
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\left. \nabla_{\theta'}D_\textrm{KL}(\theta||\theta') \right|_{\theta' = \theta} =&amp;   - \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta)\right] \\
+=&amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta) dx \\
+=&amp; \int \limits_{-\infty}^{\infty} \nabla_{\theta} p(x|\theta) dx \\
+=&amp;  \nabla_{\theta}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;  \nabla_{\theta} 1 \\
+=&amp; 0 
+\end{align*}
+$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>The <strong>quadratic</strong> term <span class="span-container scalar-vector"><span class="span-visible">
+\(\frac{\partial^2 D_\textrm{KL}(\theta||\theta’)}{\partial \theta’_i\partial \theta’_j}\)
+</span><span class="span-invisible">
+\(\nabla^2_ {\theta’}D_\textrm{KL}(\theta’||\theta’)\)
+</span></span> in this decomposition can be written as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+\frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i\partial \theta'_j} =&amp; \frac{\partial }{\partial \theta'_j} \left( \frac{\partial}{\partial \theta'_i} D_\textrm{KL}(\theta||\theta')\right) \\
+=&amp; -\frac{\partial }{\partial \theta'_j} \left( \int \limits_{-\infty}^{\infty} p(x|\theta)\frac{\partial}{\partial \theta'_i} \log p(x|\theta') dx \right) \\
+=&amp; - \int \limits_{-\infty}^{\infty} p(x|\theta)\frac{\partial^2  \log p(x|\theta')}{\partial \theta'_i  \partial \theta'_j}   dx \\
+=&amp; -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta')}{\partial \theta'_i  \partial \theta'_j}\right]
+\end{align*}$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\nabla^2_{\theta'}D_\textrm{KL}(\theta||\theta') =&amp; \nabla_{\theta'} \nabla_{\theta'}^T D_\textrm{KL}(\theta||\theta') \\
+=&amp; -\nabla_{\theta'} \left( \int \limits_{-\infty}^{\infty} p(x|\theta)\nabla_{\theta'}^T \log p(x|\theta') dx \right) \\
+=&amp; - \int \limits_{-\infty}^{\infty} p(x|\theta)\nabla_{\theta'}^2 \log p(x|\theta') dx \\
+=&amp; -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'}^2 \log p(x|\theta')\right]\\
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>Evaluated at \(  \theta’ = \theta \) you receive</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta'_i\partial \theta'_j} \right|_{\theta' = \theta} =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right]
+\end{align*}$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\left. \nabla^2_{\theta'}D_\textrm{KL}(\theta||\theta') \right|_{\theta' = \theta} =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>Finally, you can express the <strong>Taylor approximation</strong> as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp; -\frac{1}{2}\sum_i\sum_j  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j} \right]  (\theta'_i - \theta_i) (\theta'_j - \theta_j) + ...
+\end{align*}
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+D_\textrm{KL}(\theta||\theta') =&amp; -\frac{1}{2} (\theta' - \theta)^T\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right](\theta' - \theta) + ...
+\end{align*}
+$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h2 id="cross-entropy">Cross entropy</h2>
+
+<p>The cross entropy is defined as</p>
+
+<script type="math/tex; mode=display">H(\theta,\theta') = -\int \limits_{-\infty}^{\infty} p(x|\theta) \log p(x|\theta') dx .</script>
+
+<p>The cross entropy and the Kullback-Leibler differ only by the constant entropy \(H(\theta\). Therefore, the linear and quadratic terms of those are the same.</p>
+
+<h2 id="fisher-information">Fisher Information</h2>
+<h1 id="the-fisher-definition-can-be-defined-as-">The fisher definition can be defined as …</h1>
+
+<h1 id="-expectation-of-the-squared-score">… expectation of the squared score</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] $$
+</div><div class="tab-invisible">
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h1 id="-variance-of-the-score">… variance of the score</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+ \left[\mathcal{I(\theta)}\right]_{ij} &amp;=  \text{Var}\left(\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right) \\
+ &amp;=  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_i} \log p(x|\theta)\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] +  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right]^2 \\
+\end{align*} 
+ $$
+</div><div class="tab-invisible">
+$$ 
+\begin{align*}
+\mathcal{I(\theta)} &amp;=  \text{Var}\left(\nabla_{\theta'} \log p(x|\theta')\right) \\
+&amp;=  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\nabla_{\theta'} \log p(x|\theta')^T\right] +  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta'} \log p(x|\theta')\right]^T \\
+\end{align*} 
+ $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>With</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*} \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] =&amp; \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i} p(x|\theta)\right] \\
+=&amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\frac{\partial}{\partial \theta_i}p(x|\theta) dx \\
+=&amp; \int \limits_{-\infty}^{\infty} \frac{\partial}{\partial \theta_i} p(x|\theta) dx \\
+=&amp;  \frac{\partial}{\partial \theta_i}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;  \frac{\partial}{\partial \theta_i} 1 \\
+=&amp; 0 
+\end{align*}$$
+</div><div class="tab-invisible">
+$$
+\begin{align*} \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta)\right] =&amp; \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta)\right] \\
+=&amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)}\nabla_{\theta} p(x|\theta) dx \\
+=&amp; \int \limits_{-\infty}^{\infty} \nabla_{\theta} p(x|\theta) dx \\
+=&amp;  \nabla_{\theta}\int \limits_{-\infty}^{\infty} p(x|\theta) dx \\
+=&amp;  \nabla_{\theta} 1 \\
+=&amp; 0 
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>follows</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] $$
+</div><div class="tab-invisible">
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h1 id="-curvature-of-the-kl-divergence">… curvature of the KL-divergence</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+ \left[\mathcal{I(\theta)}\right]_{ij} =&amp;\left. \frac{\partial^2 D_\textrm{KL}(\theta||\theta')}{\partial \theta_i\partial \theta_j} \right|_{\theta' = \theta}\\
+ =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right] \\
+=&amp; - \mathbb{E}_{p(x|\theta)}\left[-\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta) +    \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j}\right] \\
+=&amp; \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] -    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]\\
+\end{align*}$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\mathcal{I(\theta)} =&amp;\left. \nabla^2_{\theta}D_\textrm{KL}(\theta||\theta) \right|_{\theta = \theta}\\
+ =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
+ =&amp; - \mathbb{E}_{p(x|\theta)}\left[-\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T +    \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right] \\
+=&amp; \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] -    \mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]\\
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>With</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+\mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_\partial \theta_j}\right]=&amp; \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)} \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j} dx  \\
+=&amp; \int \limits_{-\infty}^{\infty}  \frac{\partial^2 p(x|\theta)}{\partial \theta_i\partial \theta_j} dx  \\
+=&amp;  \frac{\partial^2 }{\partial \theta_i\partial \theta_j}\int \limits_{-\infty}^{\infty} p(x|\theta)  dx  \\
+=&amp;  \frac{\partial^2 }{\partial \theta_i\partial \theta_j}1  \\
+=&amp; 0 .
+\end{align*}
+$$
+</div><div class="tab-invisible">
+$$
+\begin{align*} 
+\mathbb{E}_{p(x|\theta)}\left[\frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta)\right]=&amp;  \int \limits_{-\infty}^{\infty} p(x|\theta) \frac{1}{p(x|\theta)} \nabla^2_{\theta} \log p(x|\theta) dx  \\
+=&amp;  \int \limits_{-\infty}^{\infty}  \nabla^2_{\theta} \log p(x|\theta) dx  \\
+=&amp;  \nabla^2_{\theta}\int \limits_{-\infty}^{\infty} p(x|\theta)  dx  \\
+=&amp;  \nabla^2_{\theta}1   \\
+=&amp;0
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>follows</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\frac{\partial}{\partial \theta_j} \log p(x|\theta) \frac{\partial}{\partial \theta_i} \log p(x|\theta)\right] $$
+</div><div class="tab-invisible">
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta} \log p(x|\theta) \nabla_{\theta} \log p(x|\theta)^T\right] $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<h1 id="-curvature-of-the-cross-entropy">… curvature of the cross entropy</h1>
+
+<p>Cross entropy and Kullback-Leibler divergence only differ by constant additive term. Therefore, curvature has to be identical.</p>
+
+<h1 id="-expected-negative-curvature-of-log-likelihood">… expected negative curvature of log-likelihood</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$
+\begin{align*}
+ \left[\mathcal{I(\theta)}\right]_{ij}  =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j}\right] \\
+\end{align*}$$
+</div><div class="tab-invisible">
+$$
+\begin{align*}
+\mathcal{I(\theta)} =&amp;  -\mathbb{E}_{p(x|\theta)}\left[\nabla_{\theta}^2 \log p(x|\theta)\right]\\
+\end{align*}$$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>See <em>curvature of the KL-divergence</em>.</p>
+
+<h1 id="-expected-value-of-the-observed-information">… expected value of the observed information</h1>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ \left[\mathcal{I(\theta)}\right]_{ij} =  \mathbb{E}_{p(x|\theta)}\left[\left[\mathcal{J(\theta)}\right]_{ij}\right] $$
+</div><div class="tab-invisible">
+$$ \mathcal{I(\theta)} =  \mathbb{E}_{p(x|\theta)}\left[\mathcal{J(\theta)}\right] $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>where the observed information \(\mathcal{J(\theta)}\) is defined as</p>
+
+<div class="tab-container scalar-vector"><div class="tab-visible">
+$$ \left[\mathcal{J(\theta)}\right]_{ij} =  -\frac{\partial^2  \log p(x|\theta)}{\partial \theta_i  \partial \theta_j} $$
+</div><div class="tab-invisible">
+$$ \mathcal{J(\theta)} =  -\nabla_{\theta}^2 \log p(x|\theta) $$
+</div><div class="tab-bar"><h3 class="tab-button-selected" onclick="switch_tab(this)">Scalar</h3><h3 class="tab-button" onclick="switch_tab(this)">Vector</h3></div></div>
+
+<p>We note that this case has the same form as the curvature of the KL-divergence.</p>
+
+
+  </div><a class="u-url" href="/jekyll/update/2018/10/17/fisher.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+  </body>
+
+</html>

@@ -1,0 +1,80 @@
+
+<html>
+<head>
+<style>
+#div {
+    width: 100%;
+    height: 100%;
+    position:absolute;
+    top:0px;
+    left:0px;
+}
+
+
+
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+
+
+</head>
+<body bgcolor="#AAAAAA">
+<div id="div"></div>
+<canvas id="canv"></canvas>
+<canvas id="bcanv"></canvas>
+<canvas id="ccanv"></canvas>
+
+<script>
+
+function update(){
+
+	//window.setTimeout(update, 1);
+}
+
+var foo=0
+
+var canvas = document.getElementById("canv");
+var bcanvas = document.getElementById("bcanv");
+var ccanvas = document.getElementById("ccanv");
+
+s=10
+canvas.width = s*2;
+canvas.height = s*2;
+
+bcanvas.width = s*4;
+bcanvas.height = s*4;
+
+ccanvas.width = s*2;
+ccanvas.height = s*2;
+
+
+var context = canvas.getContext("2d");
+var ccontext = ccanvas.getContext("2d");
+context.fillStyle = "rgba(0, 255, 0, 1)";
+context.fillRect(0, 0, s, s);
+context.fillRect(s, s, s, s);
+
+var destCtx = bcanvas.getContext('2d');
+
+//call its drawImage() function passing it the source canvas directly
+destCtx.translate(s*2,s*2)
+destCtx.rotate(45*Math.PI/180);
+destCtx.drawImage(canvas, 0, 0);
+destCtx.drawImage(canvas, -s*2, 0);
+destCtx.drawImage(canvas, 0, -s*2);
+destCtx.drawImage(canvas, -s*2, -s*2);
+
+ccontext.drawImage(bcanvas, -s, -s, s*4, s*4);
+
+
+$("#div").css ( {
+    "background": "url("+ccanvas.toDataURL()+")"
+});
+
+
+update()
+
+
+</script>
+</body>
+</html>

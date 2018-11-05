@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Optimal Control in MDP | Ikigai</title>
+<meta name="generator" content="Jekyll v3.8.4" />
+<meta property="og:title" content="Optimal Control in MDP" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A particle filter is a very helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding algorithm and play around with examples on the way. In order to follow the steps in this post you should bring some basic knowledge of math, probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let’s dive into it!" />
+<meta property="og:description" content="A particle filter is a very helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding algorithm and play around with examples on the way. In order to follow the steps in this post you should bring some basic knowledge of math, probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let’s dive into it!" />
+<link rel="canonical" href="http://localhost:4000/jekyll/update/2018/10/12/pomdp.html" />
+<meta property="og:url" content="http://localhost:4000/jekyll/update/2018/10/12/pomdp.html" />
+<meta property="og:site_name" content="Ikigai" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-10-12T18:04:07+09:00" />
+<script type="application/ld+json">
+{"description":"A particle filter is a very helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding algorithm and play around with examples on the way. In order to follow the steps in this post you should bring some basic knowledge of math, probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let’s dive into it!","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/12/pomdp.html","headline":"Optimal Control in MDP","dateModified":"2018-10-12T18:04:07+09:00","datePublished":"2018-10-12T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/12/pomdp.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css?1541412464444583861"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Optimal Control in MDP</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-10-12T18:04:07+09:00" itemprop="datePublished">Oct 12, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>A particle filter is a very helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding algorithm and play around with examples on the way. In order to follow the steps in this post you should bring some basic knowledge of math, probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let’s dive into it!
+<!--more-->
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async="" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script></p>
+
+
+  </div><a class="u-url" href="/jekyll/update/2018/10/12/pomdp.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+  </body>
+
+</html>

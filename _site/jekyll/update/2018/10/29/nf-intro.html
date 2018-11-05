@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Nonlinear filtering: Introduction | Ikigai</title>
+<meta name="generator" content="Jekyll v3.8.4" />
+<meta property="og:title" content="Nonlinear filtering: Introduction" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory." />
+<meta property="og:description" content="This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory." />
+<link rel="canonical" href="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html" />
+<meta property="og:url" content="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html" />
+<meta property="og:site_name" content="Ikigai" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-10-29T18:04:07+09:00" />
+<script type="application/ld+json">
+{"description":"This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html","headline":"Nonlinear filtering: Introduction","dateModified":"2018-10-29T18:04:07+09:00","datePublished":"2018-10-29T18:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css?1541412464444583861"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Nonlinear filtering: Introduction</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-10-29T18:04:07+09:00" itemprop="datePublished">Oct 29, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.</p>
+
+<!--more-->
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script src="http://localhost:4000/assets/js/nonlinear_filter/particle_filter.js"></script>
+
+<script src="http://localhost:4000/assets/js/nonlinear_filter/race_car.js"></script>
+
+<script src="http://localhost:4000/assets/js/nonlinear_filter/race_track.js"></script>
+
+<script src="http://localhost:4000/assets/js/nonlinear_filter/util.js"></script>
+
+<script src="http://localhost:4000/assets/js/nonlinear_filter/plot.js"></script>
+
+<script src="http://localhost:4000/assets/js/nonlinear_filter/scene.js"></script>
+
+<script src="http://localhost:4000/assets/js/nonlinear_filter/discrete_bayes_filter.js"></script>
+
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" />
+
+<link rel="stylesheet" type="text/css" href="http://localhost:4000/assets/css/nonlinear_filter/style.css" />
+
+<script type="text/javascript">
+
+
+
+
+
+function draw_ssm(svg){
+
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 120;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var input_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 4;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<T-1) ind+=(t-T+1)
+
+
+      	if (t<T-1) input_ns.push({title: "\\( u_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#e3e5feff"});
+
+      	statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+        output_ns.push({title: "\\( y_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y+ 2*dist_y, fill:"#e3e5feff"});
+
+
+
+        edges.push({source: state_ns[t], target: output_ns[t], dash:""})
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
+        	edges.push({source: input_ns[t-1], target: state_ns[t], dash:""})
+        }
+      }
+
+
+    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    binput_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+
+    edges.push({source: bstate_h, target: state_ns[0], dash:"5,5"})
+    edges.push({source: binput_h, target: state_ns[0], dash:"5,5"})
+
+
+  	nodes = input_ns.concat(state_ns).concat(output_ns);
+
+  	var svg_w = margin_x + dist_x*(T-1) + 50;
+    var svg_h = 2*margin_y + 2*dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+
+
+	// scene_flags
+
+	scene = [];
+	scenes = [];
+	scenes_name = [];
+	interval = null;
+	loaded = false;
+	var aa = 1;
+	var fast_dur = 300;
+	var slow_dur = 1000;
+	var ani_step = 3;
+
+
+	touch_id = null;
+
+
+
+
+
+</script>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Recently, I wrote an article about the <a href="/jekyll/update/2018/10/10/kalman_filter.html">derivation of the Kalman filter</a>. When we are using the Kalman filter we assume that our models are linear Gaussian state space models. In this scenario, we are lucky because we can compute everything analytically in closed form. But at some point in time, we have to face the cruel truth that the real world is normally anything but linear. With nonlinear models, it is not possible to compute the equation of the Bayes filter in closed form, anymore. Nonetheless, we are still lucky, because there are many methods that provide approximations of the Bayes filter. Unfortunately, learning about those methods can be quite frustrating, many resources simply state the corresponding equations and are not providing any further explanations and intuitions. This series of blog posts is an attempt to fix this and provide derivations of these methods directly from the equations of the Bayes filter. Furthermore, presenting merely concatenations of equations can be very frustrating and tiring as well. Thus, the derivations are enriched with figures and examples to obtain a better understanding of what we are actually doing.
+The current plan is to write articles about the following methods:</p>
+
+<ul>
+  <li><a href="/jekyll/update/2018/10/29/nf-grid-based.html">Grid-based filter</a></li>
+  <li><a href="/jekyll/update/2018/10/31/nf-ekf.html">Extended Kalman filter</a></li>
+  <li>Unscented Kalman filter</li>
+  <li>Particle filter</li>
+</ul>
+
+<p>In this first post, I will take the chance to introduce the concept of the Bayes filter and to present the running example for the rest of this series.
+Let’s get started!</p>
+
+<h2 id="bayes-filter">Bayes filter</h2>
+
+<p>Let’s try to state the main idea of the Bayes filter in a compact manner.</p>
+
+<div class="important_box">
+  <p>The <strong>Bayes filter</strong> is used to <strong>infer</strong> the current state of a probabilistic state space model given all observations and inputs up to the current timestep and a prior distribution of the initial state.</p>
+</div>
+
+<p>We define our probabilistic state space model by</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align}
+x_{t+1} &\sim p(x_{t+1}|x_{t}, u_{t}) \\
+
+y_t &\sim p(y_t|x_t) 
+\end{align} %]]></script>
+
+<p>and an initial state distribution \(p(x_0)\). In the figure below, our model is visualized as a probabilistic graphical model.</p>
+
+<svg class="pgm_centered" onload="draw_ssm(this);"></svg>
+
+<p>Knowledge about probabilistic graphical models is not required to be able to follow this series, but it can be quite helpful for understanding the dependencies between the state, input and output.</p>
+
+<p>Now that we have briefly introduced the state space model, we can formulate the objective of Bayes filters in a more rigorous way: We want to calculate \(p(x_t|y_{0:t},u_{0:t-1})\) given the prior initial distribution \(p(x_0)\), where the shorthand \(y_{n:m}\) stands for the set \(y_n,…,y_m\). With help of the basic rules of probability, we can find a way to calculate this expression in a recursive fashion. This recursion is composed of two distinct steps: the <strong>update</strong> and <strong>predict</strong> step.</p>
+
+<div class="important_box">
+  <h1>Recursive formula of the Bayes filter</h1>
+
+  <p>The recursive formula for the Bayes filter in state space models consists of the <strong>prediction step</strong></p>
+
+  <script type="math/tex; mode=display">p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}</script>
+
+  <p>and the <strong>update step</strong></p>
+
+  <script type="math/tex; mode=display">p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .</script>
+
+  <p>The recursion is initialized with a prior distribution over the initial state \(p(x_0)\).</p>
+
+</div>
+
+<p>We will use the definition above as our starting point for the derivations of the particular nonlinear filtering methods. But first, it’s time to introduce the example, that will stay with us for the rest of this series.</p>
+
+<h2 id="interactive-example-race-track">Interactive example: Race track</h2>
+
+<p>The example that will accompany us for the rest of this series, consists of a race car that can drive around a race track. The race car can be controlled by the discrete actions of <em>forward</em>, <em>backward</em> and <em>stop</em>. After the action is taken some process noise is added. Therefore, we won’t know exactly where the race car will be after we have taken this action. Inside the race course is a tree, which serves as a natural landmark. The race car has a distance meter on board, which obtains noisy measurements of the distance to this tree. The following graphic shows the race car in action. Please use your keyboard to set the input of the race car: <strong>A</strong> (Backward), <strong>S</strong> (Stop),  <strong>D</strong> (Forward). Alternatively, you can use the buttons below.</p>
+
+<svg id="race_track_intro" style="width:100%" onclick="on_click()"></svg>
+
+<script>
+	// defines scenes
+	n_scene = load_race_track("race_track_intro","http://localhost:4000");
+	n_scene.mode = 0;
+	n_scene.filter = null;
+	n_scene.dur=fast_dur;
+	n_scene.auto_start = true;
+
+	n_scene.loaded = function(){
+		document.getElementById("race_track_intro_input").style.display="block";
+	}.bind(n_scene)
+
+	n_scene.step= function(){
+		this.rc.step(this.rc.current_input);
+	}.bind(n_scene);
+
+	n_scene.key_down = function(key){
+		input = key_to_input(key);
+		if(input>=0 && input <=2){
+			this.rc.current_input = input;
+		}
+	}.bind(n_scene)
+
+
+	n_scene.on_click = function(key){
+		ani(this);
+	}.bind(n_scene)
+	scenes_name['race_track_intro'] = n_scene;
+	scenes.push(n_scene);
+</script>
+
+<div id="race_track_intro_input" class="button_set">
+<div class="bt3 bt" onclick="scenes_name['race_track_intro'].rc.current_input=0">Backward</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_intro'].rc.current_input=1">No action</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_intro'].rc.current_input=2">Forward</div>
+ <span class="stretch"></span>
+</div>
+
+<p>Now that we have a good idea how the model will behave, you have the choice of either going directly to the first post about the grid-based filter or to learn more about the model of the dynamic \(p(x_{t+1}|x_{t}, u_{t})\) and observation \(p(y_t|x_t)\) of the example in the following section.</p>
+
+<h2 id="simulation-model">Simulation model</h2>
+
+<p>If you want to apply Bayes filters to real-life scenarios, a mathematical model of your system is needed. In general, you will have to learn it from data or derive it directly from the laws of physics. In our case we are lucky, because we are the designer of the real model and simply will use this exact model. Let’s start by taking a closer look at the system dynamic.</p>
+
+<h1 id="system-dynamic">System dynamic</h1>
+
+<p>The state \(x_t\) of the system is the current position on the race track. It is defined as the path length from the start to the current position following the race track. Having only the position without the velocity as a state representation is not very realistic, because it is not possible to model momentum. But for the sake of simplicity and visualisation, we will go without it. The input \(u_t\) is either \(-1\), \(0\) or \(1\) for backward, stop and forward.</p>
+
+<p>Our system dynamics are defined by a Gaussian distribution</p>
+
+<script type="math/tex; mode=display">p(x_{t+1}|x_t,u_t) = \mathcal{N}(x_{t+1}|\mu_s(x_t, u_t) ,\sigma_s^2(x_t) )</script>
+
+<p>with nonlinear mean  \(\mu_s(x_t, u_t)\) and variance \(\sigma_s^2(x_t)\). To obtain the mean of the next state \(x_{t+1}\) the input \(u_t\), which is weighted by \(v\) and \(b(\kappa)\), is simply added to the current state \(x_t\):</p>
+
+<script type="math/tex; mode=display">\mu_s(x_t, u_t) = x_t + b(\kappa)vu_t.</script>
+
+<p>The factor \(v\) is the velocity of the car, we will call it the step size. Intuitively, by multiplying \(u_t\) with the step size \(v\) you map the input from action space to the race track space. The weighting factor \(b(\kappa) = e^{- c\kappa}\), with the hand-tweaked parameter \(c\), is used to model a more realistic driving behavior that depends on the curvature</p>
+
+<script type="math/tex; mode=display">\kappa(x_t) ={\frac {|L_x'(x_t)L_y''(x_t)-L_y'(x_t)L_x''(x_t)|}{\left(L_x'^2(x_t)+L_y'^2(x_t)\right)^{\frac {3}{2}}}}</script>
+
+<p>of the track at the current position \(x_t\). The function \(L(x_t)\) maps the current position of the car \(x_t\) to \((x,y)\) coordinates</p>
+
+<script type="math/tex; mode=display">L(x_t) =  \begin{pmatrix}
+    L_x(x_t) \\
+    L_y(x_t) \\
+    \end{pmatrix}.</script>
+
+<p>Intuitively, if we are in a sharp curve the curvature is low and we drive faster. If we are on a more straight part of the track, the curvature is high and we drive faster.</p>
+
+<p>The variance of the next state \(x_{t+1}\) is defined by</p>
+
+<script type="math/tex; mode=display">\sigma_s^2(x_t, u_t) = \left[db(\kappa)v\right]^2.</script>
+
+<p>The variance depends mainly on the curvature \(\kappa\) at the current position. If we have a low curvature, the mean of the next step will be larger. But if we take a larger step it is natural to assume, that we have a higher variance. The hand-tweaked parameter \(d\) and the step size \(v\) are fixed for the whole environment. Please be aware, that the variance is not depending on the input \(u_t\) itself, but only on the step size \(v\).</p>
+
+<p>If you move your mouse or your finger over the race track below, you will notice a small blue strip outside the race track. This is the probability density of our dynamic model \(p(x_{t+1}|x_t,u_t)\). Therefore, it shows the distribution over the next state \(x_{t+1}\) given the current state \(x_t\) and action \(u_t\). If you want to check out the distribution for other inputs, you can use again your keyboard or the buttons below the race track.</p>
+
+<svg id="race_track_sys_dist" style="width:100%" onclick="on_click()"></svg>
+
+<script>
+
+
+	// defines scenes
+	n_scene = load_race_track("race_track_sys_dist", "http://localhost:4000");
+	n_scene.mode = 3;
+	n_scene.me_show_system = true;
+
+	n_scene.me_show_observation_transposed = false;
+	n_scene.me_show_observation = false;
+	n_scene.filter = null;
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+	n_scene.rc.current_input = 0;
+
+	n_scene.loaded = function(){
+		document.getElementById("race_track_sys_dist_input").style.display="block";
+		this.nearest = []
+		this.nearest.pos = this.rc.state;
+	}.bind(n_scene)
+
+
+	n_scene.mouse_touch = function(coords){
+		var min_dist = 100.0;
+		this.nearest = this.rt.get_nearest_pos(coords);
+		if(this.nearest.distance < min_dist){
+			this.rt.update_car(this.nearest.pos,this.dur, 0);
+			this.rt.update_strip("outer", get_system_dist_normalized(this.rc, this.rt, this.nearest.pos, this.rc.current_input));
+			this.rt.show_strip("outer");	
+		}else{
+			this.rt.hide_strip("outer");
+		}
+
+	}.bind(n_scene)
+
+	n_scene.update_strip_sys = function(){
+		if(this.rt.is_strip_visible("outer")){
+			this.rt.update_strip("outer", get_system_dist_normalized(this.rc, this.rt, this.nearest.pos, this.rc.current_input));
+		}
+	}.bind(n_scene)
+
+
+	n_scene.key_down = function(key){
+		input = key_to_input(key);
+		if(input>=0 && input <=2){
+			this.rc.current_input = input;
+			this.update_strip_sys();
+		}
+		
+		
+	}.bind(n_scene)
+	
+	scenes_name['race_track_sys_dist'] = n_scene;
+	scenes.push(n_scene);
+</script>
+
+<div id="race_track_sys_dist_input" class="button_set">
+<div class="bt3 bt" onclick="scenes_name['race_track_sys_dist'].rc.current_input=0;scenes_name['race_track_sys_dist'].update_strip_sys()">Backward</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_sys_dist'].rc.current_input=1;scenes_name['race_track_sys_dist'].update_strip_sys()">No action</div>
+<div class="bt3 bt" onclick="scenes_name['race_track_sys_dist'].rc.current_input=2;scenes_name['race_track_sys_dist'].update_strip_sys()">Forward</div>
+ <span class="stretch"></span>
+</div>
+
+<h1 id="observation-model">Observation model</h1>
+
+<p>The race car has a distance meter on board, which will provide us with noisy measurements of the distance to the tree inside the race track, where the position of the tree in \((x,y)\) coordinates is defined as \(T = (T_x, T_y)\). As in the model of the system dynamics, we will model the uncertainty of the measurement with a Gaussian distribution</p>
+
+<script type="math/tex; mode=display">p(y_t|x_t) = \mathcal{N}(y_t| \mu_o(x_t), \sigma_o^2(x_t))</script>
+
+<p>with nonlinear mean  \(\mu_o(x_t)\) and variance \(\sigma_o^2(x_t)\).</p>
+
+<p>The mean of our observation is the exact distance to the tree</p>
+
+<script type="math/tex; mode=display">\mu_o(x_t) = d(L(x_t),T),</script>
+
+<p>where \(d(\cdot,\cdot)\) is defined as the Euclidean distance.</p>
+
+<p>The variance of our measuring device</p>
+
+<script type="math/tex; mode=display">\sigma_o^2(x_t) = \left[ad(L(x_t),T)\right]^2</script>
+
+<p>depends on the distance as well. The farther we are away from the tree, the more noise will be present in the signal. The parameter \(a\) is again hand-tweaked and constant.</p>
+
+<p>By moving with your mouse or finger over the race track below you will notice two things. Again, there appears a strip, this time inside the race track and in a brownish color. Furthermore, you will notice another light green strip at the trunk of the tree. Both strips are showing parts of our observation model \(p(y_t|x_t)\). The light green strip shows the probability of observing a distance measurement at our current position. Not surprisingly, we find the maximum probability density at the true distance of tree. Like stated above, the variance is varying depending on the distance to the tree. 
+The brownish strip answers another question: Given the true distance \(d\) at our current position, what is the probability of obtaining this measurement \(d\) from another position on the race track. It represents  \(p(y_t=d|x_t)\) and is, therefore, a function of the race track \(x\). Please be aware, that this is not a proper probability density, because it is not integrating to 1.</p>
+
+<svg id="race_track_obs_dist" style="width:100%" onclick="on_click()"></svg>
+
+<script>
+
+	// defines scenes
+	n_scene = load_race_track("race_track_obs_dist", "http://localhost:4000");
+	n_scene.mode = 3;
+	n_scene.me_show_system = false;
+	n_scene.me_show_observation_transposed = true;
+	n_scene.me_show_observation = true;
+	n_scene.filter = null;
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+	// define particle filter 
+
+
+	n_scene.mouse_touch = function(coords){
+		var min_dist = 100.0;
+		this.nearest = this.rt.get_nearest_pos(coords);
+		if(this.nearest.distance < min_dist){
+			this.rt.update_car(this.nearest.pos,this.dur, 0);
+			this.rt.update_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.nearest.pos));
+			this.rt.show_strip("inner");
+
+			this.rt.update_dist_strip(normalize_vector(this.rc.output_dist_array(this.rt.dist_strip_domain, this.nearest.pos, 0)), this.nearest.pos, 0);
+			this.rt.show_dist_strip();
+
+		}else{
+			this.rt.hide_strip("inner");
+			this.rt.hide_dist_strip();
+		}
+
+	}.bind(n_scene)
+
+	scenes.push(n_scene);
+</script>
+
+<p>Now that we know the inner workings of our model, we are well prepared to start the series with the <a href="/jekyll/update/2018/10/29/nf-grid-based.html">grid-based filter</a>.</p>
+
+<h1 id="acknowledgement">Acknowledgement</h1>
+
+<p>The vector graphics of the <a href="https://www.freepik.com/free-photos-vectors/car">car</a> were created by <a href="https://www.freepik.com/">Freepik</a>.</p>
+
+<script src="http://localhost:4000/assets/js/d3_graphical_model.js"></script>
+
+<script type="text/javascript" src="http://localhost:4000/assets/js/svg_mathjax.js"></script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+
+<script type="text/x-mathjax-config">
+
+var mq = window.matchMedia( "(max-width: 570px)" );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  "HTML-CSS": { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+</script>
+
+<script type="text/javascript">new Svg_MathJax().install();</script>
+
+
+  </div><a class="u-url" href="/jekyll/update/2018/10/29/nf-intro.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+  </body>
+
+</html>
