@@ -5,7 +5,7 @@ date:   2018-11-06 12:04:07 +0900
 categories: jekyll update
 excerpt_separator: <!--more-->
 ---
-[Linear algebra](https://en.wikipedia.org/wiki/Linear_algebra) is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of [Gaussian distributions](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) and [Bayes theorem](https://en.wikipedia.org/wiki/Bayes%27_theorem).
+[Linear algebra](https://en.wikipedia.org/wiki/Linear_algebra) is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of [Gaussian distributions](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) and [Bayes theorem](https://en.wikipedia.org/wiki/Bayes%27_theorem).
 <!--more-->
 <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
 <script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
@@ -63,7 +63,7 @@ We insert our Gaussian distributions and obtain
 
 $$ p(\hat{x}|b) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.  $$
 
-To simply this expression we can use equation 39 and 40 from the [Gaussian identities](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf) and obtain
+To simplify this expression we can use equation 39 and 40 from the [Gaussian identities](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf) and obtain
 
 
 
@@ -76,7 +76,7 @@ with
 $$ \begin{align} \mu &= x + \Sigma_xA^T(\Sigma_b + A\Sigma_xA^T)^{-1}(b-Ax) \\ 
 \Sigma &= \Sigma_x - \Sigma_xA^T (\Sigma_b + A\Sigma_xA^T)^{-1}A\Sigma_x. \end{align} $$
 
-In this context \\(x\\) and \\(\Sigma_x\\) are describing our prior belief about the set of points \\(x\\) that map to \\(b\\). We have no prior information about the inverse and could choose any prior that has probability mass at every point in the space.
+In this context, \\(x\\) and \\(\Sigma_x\\) are describing our prior belief about the set of points \\(x\\) that map to \\(b\\). We have no prior information about the inverse and could choose any prior that has probability mass at every point in the space.
 We will set \\(x=0\\) and \\(\Sigma_x = I\\). Our equations will simplify to 
 
 $$ \begin{align} \mu &= A^T(\Sigma_b + AA^T)^{-1}b \\ 
@@ -107,20 +107,20 @@ $$ I - A^+A. $$
 
 Ok, nice! But what does it mean? The mean \\(\mu\\) and covariance \\(\Sigma\\) together are describing an affine linear space. The mean \\(\mu\\) can be interpreted as a translation vector to the linear subspace described by the covariance \\(\Sigma\\).
 
-The beautiful thing is, that we don't have to trust our imagination, but we can simply plot 
+The beautiful thing is, that we don't have to trust the equations. We can simply plot 
 
 $$ \mathcal{N}(\hat{x}|A^+b, I - A^+A) $$
 
 with a very small \\(\delta\\) and _see_ the resulting subspace.
 
-But the niceness doesn't stop here. We can imagine a setting, where we not getting the whole vector \\(b\\) at once, but each dimension \\(b_i\\) separately. In this case, Bayes theorem tells us quite clearly what to do. We can update our belief of the inverse sequentially
+But the niceness doesn't stop here. We can imagine a setting, where we are not getting the whole vector \\(b\\) at once, but each dimension \\(b_i\\) separately. In this case, Bayes theorem tells us quite clearly what to do. We can update our belief of the inverse sequentially
 
 
 $$ p(\hat{x}|b) =  \frac{\mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}},  $$
 
 where we assume that \\(\Sigma_b\\) is a diagonal matrix.
 
-We have found a general representation of arbitrary affine linear subspaces
+We did not only obtain a nice way to describe inverses, but have found a general representation of arbitrary affine linear subspaces
 
 $$ \mathcal{N}(x|a, A(\delta)), $$
 
@@ -128,7 +128,7 @@ with translation vector \\(a\\) and covariance matrix \\(A(\delta)\\), where \\(
 
 # Intersection of subspaces
 
-Now, we can ask what the intersection of two affine linear subspaces is. An intuitive example for this are two planes intersecting in a line. With our representation of affine linear subspaces, asking for the intersection is easy! We just have to multiply the Gaussian distributions and we are done. In the [Gaussian identities](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf), we find a formula for the product
+Now, we can ask what the intersection of two affine linear subspaces is. An intuitive example for this are two planes intersecting in a line. With our representation of affine linear subspaces, asking for the intersection is easy! We just have to multiply the Gaussian distributions and we are done. In the [Gaussian identities](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf), we find the formula for the product
 
 $$ \mathcal{N}(x|a, A) \mathcal{N}(x|b, B) = \mathcal{N}(x|B(A+B)^{-1}a + A(A+B)^{-1}b, A(A+B)^{-1}B)\mathcal{N}(a|b, A+B). $$
 

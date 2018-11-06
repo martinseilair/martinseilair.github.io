@@ -1,53 +1,7 @@
----
-layout: post
-title:  "Observability: A Bayesian perspective"
-date:   2018-10-12 18:04:07 +0900
-categories: jekyll update
-excerpt_separator: <!--more-->
----
-A particle filter is a very helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding algorithm and play around with examples on the way. In order to follow the steps in this post you should bring some basic knowledge of math, probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let's dive into it!
-<!--more-->
-<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
-<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-<div class="important_box">
-  Formally, a system is said to be observable if, for any possible sequence of state and control vectors (the latter being variables whose values one can choose), the current state (the values of the underlying dynamically evolving variables) can be determined in finite time using only the outputs.
-</div>
-
-We can formulate this help of Bayesian inference:
-
-<div class="important_box">
-  A system is said to be observable if, for any possible sequence of state and control vectors, the probability mass of the posterior of the current state will collapse into a single point in finite time using only the outputs.
-</div>
-
-
-A deterministic linear Gaussian state space model is defined by
-
-
-$$ \begin{align}x_{t+1} &= A_tx_t + B_t u_t \\ 
-y_t &= C_tx_t  \end{align} $$
-
-with state \\(x_t\\), output \\(y_t\\), input \\(u_t\\), system matrix \\(A_t\\), input matrix \\(B_t\\) and output matrix \\(C_t\\).
 
 
 
-From the Kalman filter we know how to do inference in linear Gaussian state space models. The equation of the
 
-**prediction step**
-
-$$ \begin{align}\hat x_{t+1|t} &=  A_t \hat x_{t|t} + B_tu_t \\ 
-P_{t+1|t} &= Q_t + A_t P_{t|t} A_t^T  \end{align} $$
-
-
-and the **update step**
-
-
-$$ \begin{align}\hat x_{t|t} &= \hat x_{t|t-1} + P_{t|t-1}C_t^T(R_t + C_tP_{t|t-1}C_t^T)^{-1}(y_{t}-C_t\hat x_{t|t-1}) \\ 
-P_{t|t} &= P_{t|t-1} - P_{t|t-1}C_t^T (R_t + C_tP_{t|t-1}C_t^T)^{-1}C_tP_{t|t-1} \end{align} $$
-
-
-contain Gaussian process noise \\( w_t \sim \mathcal{N}(w_t\|0, Q_t) \\) and Gaussian observation noise \\( v_t \sim \mathcal{N}(v_t\|0, R_t) \\).
 
 In a deterministic model, as the name suggests is no noise. Conceptually we set \\(Q_t=0\\) and \\(R_t=0\\). It is also quite easy to imagine, that the probability mass will be concentrated on a single value. But mathematically it gets problematic. We would have to enter the strange world of distributions/measure theory. For our purpose it is much safer to imagine, that \\(Q_t\\) and \\(R_t\\) will go to zero and we are interested in the limiting case.
 

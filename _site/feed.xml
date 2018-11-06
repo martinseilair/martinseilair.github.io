@@ -1,4 +1,121 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-06T13:24:48+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Linear algebra with Gauss and Bayes</title><link href="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html" rel="alternate" type="text/html" title="Linear algebra with Gauss and Bayes" /><published>2018-11-06T12:04:07+09:00</published><updated>2018-11-06T12:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html">&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Linear_algebra&quot;&gt;Linear algebra&lt;/a&gt; is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of &lt;a href=&quot;https://en.wikipedia.org/wiki/Multivariate_normal_distribution&quot;&gt;Gaussian distributions&lt;/a&gt; and &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes theorem&lt;/a&gt;.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-07T01:10:28+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Observability: A Bayesian perspective</title><link href="http://localhost:4000/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
+&lt;!--more--&gt;
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;Let’s begin by stating the definition of &lt;a href=&quot;https://en.wikipedia.org/wiki/Observability&quot;&gt;observability&lt;/a&gt; from classical control theory.&lt;/p&gt;
+&lt;div class=&quot;important_box&quot;&gt;
+  Formally, a system is said to be observable, if for any possible sequence of state and control vectors (the latter being variables whose values one can choose), the current state (the values of the underlying dynamically evolving variables) can be determined in finite time using only the outputs.
+&lt;/div&gt;
+
+&lt;p&gt;We can easily translate this definition into the language of Bayesian inference:&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  A system is said to be observable if for any possible initial state and sequence of control vectors, the probability mass of the posterior of the current state will collapse into a single point in finite time.
+&lt;/div&gt;
+
+&lt;p&gt;Normally, we are using the idea of observability in the setting of deterministic time-invariant linear state space models, which are defined by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}x_{t+1} &amp;= Ax_t + B u_t \\ 
+y_t &amp;= Cx_t  \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;with state \(x_t\), output \(y_t\), input \(u_t\), system matrix \(A\), input matrix \(B\) and output matrix \(C\).&lt;/p&gt;
+
+&lt;p&gt;Based on the methods shown in the last post about &lt;a href=&quot;/jekyll/update/2018/11/06/linalg-gaussian.html&quot;&gt;linear algebra with Gauss and Bayes&lt;/a&gt;, we can reformulate these deterministic equations with Gaussian distributions&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x_{t+1}|Ax_t + Bu_t, \delta I)&lt;/script&gt;
+
+&lt;p&gt;and&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(y_t|Cx_t, \delta I)&lt;/script&gt;
+
+&lt;p&gt;where \(\delta \to 0\).&lt;/p&gt;
+
+&lt;p&gt;Now that we arrived at a probabilistic description, we can use Bayesian inference to infer the current state \(x_t\). In particular, we are interested in the uncertainty of our estimate of the current state: Our system will be observable if the covariance of the estimate will go to zero.&lt;/p&gt;
+
+&lt;h1 id=&quot;derivation&quot;&gt;Derivation&lt;/h1&gt;
+
+&lt;p&gt;First of all, we are defining a Gaussian prior distribution of the initial state \(x_0\)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_0) = \mathcal{N}(x_0|0,I).&lt;/script&gt;
+
+&lt;p&gt;The choice of the mean and covariance are actually arbitrary, as long as the covariance is positive definite.&lt;/p&gt;
+
+&lt;p&gt;Now let’s plug our distributions into the equations of the Bayes filter, which are described by the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .&lt;/script&gt;
+
+&lt;p&gt;Fortunately, we already know how to do inference in linear Gaussian state space models. We can simply use the equations of the Kalman filter and obtain the following equations for the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t+1|t} &amp;=  A \hat x_{t|t} + Bu_t \\ 
+P_{t+1|t} &amp;= \delta I + A P_{t|t} A^T  \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}\hat x_{t|t} &amp;= \hat x_{t|t-1} + P_{t|t-1}C^T(\delta I + CP_{t|t-1}C^T)^{-1}(y_{t}-C\hat x_{t|t-1}) \\ 
+P_{t|t} &amp;= P_{t|t-1} - P_{t|t-1}C^T (\delta I + CP_{t|t-1}C^T)^{-1}CP_{t|t-1} .\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;If this was too fast, please check out the earlier blog post on &lt;a href=&quot;/jekyll/update/2018/10/10/kalman_filter.html&quot;&gt;Kalman filtering&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Observability depends only on the covariance of the estimates \( P \). Therefore, the question of observability of a linear state space model is reduced to the question, if the equations&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+P_{t+1|t} &amp;= \delta I + A P_{t|t} A^T \\ 
+P_{t|t} &amp;=(I-P_{t|t-1}C^T(\delta I + CP_{t|t-1}C^T)^{-1}C)P_{t|t-1}  
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;are going to transform an arbitrary positive definite initial covariance matrix \(P_0\) to 0.&lt;/p&gt;
+&lt;div class=&quot;extra_box&quot;&gt;
+  &lt;p&gt;When we combine the prediction and update to a single equation&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1} = \delta I + A (I-P_{t}C^T(\delta I + CP_{t}C^T)^{-1}C)P_{t} A^T&lt;/script&gt;
+
+  &lt;p&gt;and look very closely we can identify the &lt;a href=&quot;https://en.wikipedia.org/wiki/Algebraic_Riccati_equation#Context_of_the_discrete-time_algebraic_Riccati_equation&quot;&gt;discrete-time algebraic Ricatti equation&lt;/a&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t+1} = \delta I + AP_{t} A^T  - AP_{t}C^T(\delta I + CP_{t}C^T)^{-1}CP_{t} A^T.&lt;/script&gt;
+
+&lt;/div&gt;
+&lt;p&gt;Let’s try to interpret what our two equations are doing with the covariance estimate \(P\). As a mental model, it is helpful to imagine the particular covariance matrices as subspaces.
+We begin with our prior variance \(P_0\). We have selected our prior variance in such a way, that it describes the entire state space.&lt;/p&gt;
+
+&lt;p&gt;We are starting by taking an update step. The update step can be interpreted as calculating the intersection of the prior subspace and the subspace defined by all points \(x\) that map to the observed output \(y_0\). We will call this last subspace the &lt;em&gt;inverse subspace&lt;/em&gt;.
+We took the intersection of the whole state space and &lt;em&gt;inverse subspace&lt;/em&gt;. As a result, our posterior will be simply the inverse subspace.
+Let’s see what happens, if we take the prediction step. If we assume that \(A\) has full rank, the dimensionality of the subspace will remain the same. Depending on the matrix \(A\) two things can happen:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;The transformation won’t change the subspace, but only the representation of the subspace.&lt;/li&gt;
+  &lt;li&gt;The transformation is changing the subspace.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Depending on these two cases we will have two cases for the next update step:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;The transformation didn’t change the subspace.&lt;/strong&gt; In this case, the update step would have no effect, because we are intersecting again with the &lt;em&gt;same&lt;/em&gt; inverse subspace. Formally, after the prediction step our posterior would still be the orthogonal &lt;a href=&quot;https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse#Projectors&quot;&gt;projector&lt;/a&gt; onto the kernel of \(C\)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{0|0} = I - C^+C.&lt;/script&gt;
+
+&lt;p&gt;We know that \(C(I - C^+C) = 0\) and \((I - C^+C)C^T = 0\), therefore, our update step simplifies to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;P_{t|t} =P_{t|t-1}-\underbrace{P_{t|t-1}C^T}_{0}(\delta I + \underbrace{CP_{t|t-1}}_{0}C^T)^{-1}\underbrace{CP_{t|t-1}}_{0} =  P_{t|t-1}.&lt;/script&gt;
+
+&lt;p&gt;It seems, that we can’t rid of this &lt;em&gt;unobservable&lt;/em&gt; subspace. Therefore, we have &lt;strong&gt;no&lt;/strong&gt; observability.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;The transformation did change the subspace.&lt;/strong&gt; In this case, the intersection with the inverse subspace will again have an effect. The dimensionality of the posterior subspace will get smaller.&lt;/p&gt;
+
+&lt;p&gt;We have to repeat the process of prediction and updating until the subspace of our posterior has either dimension zero or the prediction step is again not changing our subspace.
+In the first case, we have no uncertainty: The system is observable. In the second case, the system is not observable.&lt;/p&gt;
+
+&lt;h1 id=&quot;summary&quot;&gt;Summary&lt;/h1&gt;
+
+&lt;p&gt;In this post, we looked at the concept of observability from a Bayesian standpoint. We found an intuitive way to reason about the effect of the update step and prediction step in terms of subspaces, described by covariance matrices.&lt;/p&gt;</content><author><name></name></author><summary type="html">Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.</summary></entry><entry><title type="html">Linear algebra with Gauss and Bayes</title><link href="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html" rel="alternate" type="text/html" title="Linear algebra with Gauss and Bayes" /><published>2018-11-06T12:04:07+09:00</published><updated>2018-11-06T12:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html">&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Linear_algebra&quot;&gt;Linear algebra&lt;/a&gt; is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of &lt;a href=&quot;https://en.wikipedia.org/wiki/Multivariate_normal_distribution&quot;&gt;Gaussian distributions&lt;/a&gt; and &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes theorem&lt;/a&gt;.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
@@ -53,7 +170,7 @@ Up until now, there is nothing fancy about this result. It’s just a weird way 
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(\hat{x}|b) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.&lt;/script&gt;
 
-&lt;p&gt;To simply this expression we can use equation 39 and 40 from the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt; and obtain&lt;/p&gt;
+&lt;p&gt;To simplify this expression we can use equation 39 and 40 from the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt; and obtain&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(\hat{x}|\mu, \Sigma) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.&lt;/script&gt;
 
@@ -63,7 +180,7 @@ Up until now, there is nothing fancy about this result. It’s just a weird way 
 \begin{align} \mu &amp;= x + \Sigma_xA^T(\Sigma_b + A\Sigma_xA^T)^{-1}(b-Ax) \\ 
 \Sigma &amp;= \Sigma_x - \Sigma_xA^T (\Sigma_b + A\Sigma_xA^T)^{-1}A\Sigma_x. \end{align} %]]&gt;&lt;/script&gt;
 
-&lt;p&gt;In this context \(x\) and \(\Sigma_x\) are describing our prior belief about the set of points \(x\) that map to \(b\). We have no prior information about the inverse and could choose any prior that has probability mass at every point in the space.
+&lt;p&gt;In this context, \(x\) and \(\Sigma_x\) are describing our prior belief about the set of points \(x\) that map to \(b\). We have no prior information about the inverse and could choose any prior that has probability mass at every point in the space.
 We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
@@ -96,19 +213,19 @@ We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to&lt;/p&g
 
 &lt;p&gt;Ok, nice! But what does it mean? The mean \(\mu\) and covariance \(\Sigma\) together are describing an affine linear space. The mean \(\mu\) can be interpreted as a translation vector to the linear subspace described by the covariance \(\Sigma\).&lt;/p&gt;
 
-&lt;p&gt;The beautiful thing is, that we don’t have to trust our imagination, but we can simply plot&lt;/p&gt;
+&lt;p&gt;The beautiful thing is, that we don’t have to trust the equations. We can simply plot&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(\hat{x}|A^+b, I - A^+A)&lt;/script&gt;
 
 &lt;p&gt;with a very small \(\delta\) and &lt;em&gt;see&lt;/em&gt; the resulting subspace.&lt;/p&gt;
 
-&lt;p&gt;But the niceness doesn’t stop here. We can imagine a setting, where we not getting the whole vector \(b\) at once, but each dimension \(b_i\) separately. In this case, Bayes theorem tells us quite clearly what to do. We can update our belief of the inverse sequentially&lt;/p&gt;
+&lt;p&gt;But the niceness doesn’t stop here. We can imagine a setting, where we are not getting the whole vector \(b\) at once, but each dimension \(b_i\) separately. In this case, Bayes theorem tells us quite clearly what to do. We can update our belief of the inverse sequentially&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(\hat{x}|b) =  \frac{\mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}},&lt;/script&gt;
 
 &lt;p&gt;where we assume that \(\Sigma_b\) is a diagonal matrix.&lt;/p&gt;
 
-&lt;p&gt;We have found a general representation of arbitrary affine linear subspaces&lt;/p&gt;
+&lt;p&gt;We did not only obtain a nice way to describe inverses, but have found a general representation of arbitrary affine linear subspaces&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a, A(\delta)),&lt;/script&gt;
 
@@ -116,7 +233,7 @@ We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to&lt;/p&g
 
 &lt;h1 id=&quot;intersection-of-subspaces&quot;&gt;Intersection of subspaces&lt;/h1&gt;
 
-&lt;p&gt;Now, we can ask what the intersection of two affine linear subspaces is. An intuitive example for this are two planes intersecting in a line. With our representation of affine linear subspaces, asking for the intersection is easy! We just have to multiply the Gaussian distributions and we are done. In the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt;, we find a formula for the product&lt;/p&gt;
+&lt;p&gt;Now, we can ask what the intersection of two affine linear subspaces is. An intuitive example for this are two planes intersecting in a line. With our representation of affine linear subspaces, asking for the intersection is easy! We just have to multiply the Gaussian distributions and we are done. In the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt;, we find the formula for the product&lt;/p&gt;
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a, A) \mathcal{N}(x|b, B) = \mathcal{N}(x|B(A+B)^{-1}a + A(A+B)^{-1}b, A(A+B)^{-1}B)\mathcal{N}(a|b, A+B).&lt;/script&gt;
 
@@ -147,7 +264,7 @@ if (!mq.matches) {
 	}); 
 } 
 
-&lt;/script&gt;</content><author><name></name></author><summary type="html">Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.</summary></entry><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
+&lt;/script&gt;</content><author><name></name></author><summary type="html">Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.</summary></entry><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;&lt;/p&gt;
 
