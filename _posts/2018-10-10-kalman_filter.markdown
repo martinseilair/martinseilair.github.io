@@ -407,7 +407,7 @@ $$ \mathcal{N}(x_{t+1}|\hat x_{t+1|t}, P_{t+1|t})  = \int_{x_t}\mathcal{N}(x_{t+
 
 In order to find a closed form solution of this integral, we could simply plug in the corresponding expressions of the Gaussian distributions and solve the integral. Fortunately, Marc Toussaint already gathered the most important [Gaussian identities](https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf), which will lighten our workload a lot.  To find an expression for our prediction step we can simply use the *propagation* formula (Formula 37, Toussaint)
 
-$$ \int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T ). $$
+$$ \int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dy = \mathcal{N}(x|a + Fb, A + FBF^T ). $$
 
 By comparison with our expression, we see that
 

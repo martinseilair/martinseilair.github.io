@@ -1,4 +1,153 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-05T19:07:44+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-06T13:24:48+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Linear algebra with Gauss and Bayes</title><link href="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html" rel="alternate" type="text/html" title="Linear algebra with Gauss and Bayes" /><published>2018-11-06T12:04:07+09:00</published><updated>2018-11-06T12:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html">&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Linear_algebra&quot;&gt;Linear algebra&lt;/a&gt; is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of &lt;a href=&quot;https://en.wikipedia.org/wiki/Multivariate_normal_distribution&quot;&gt;Gaussian distributions&lt;/a&gt; and &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes theorem&lt;/a&gt;.
+&lt;!--more--&gt;
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script type=&quot;text/javascript&quot; src=&quot;http://localhost:4000/assets/js/math.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;This post is about the very basic equation&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;Ax = b,&lt;/script&gt;
+
+&lt;p&gt;where \(A \in \mathbb{R}^{m\times n}\), \(x \in \mathbb{R}^{n}\) and \(b \in \mathbb{R}^{m}\). With the help of the Gaussian distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|\mu, \Sigma),&lt;/script&gt;
+
+&lt;p&gt;we can restate this equation in the language of probability theory.&lt;/p&gt;
+
+&lt;h1 id=&quot;matrix-transformation&quot;&gt;Matrix transformation&lt;/h1&gt;
+&lt;p&gt;The transformation of our vector \(x\) with matrix \(A\) becomes a marginalization&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}.&lt;/script&gt;
+
+&lt;p&gt;Please be aware, that this formula is &lt;strong&gt;not&lt;/strong&gt; equivalent to our matrix product above. We introduced two new variables \(\Sigma_x\) and \(\Sigma_b\), which represents the covariance matrix of the corresponding Gaussian distributions.
+The two formulations will become equivalent if the covariance matrices will go to zero.
+Let’s check if this is true!&lt;/p&gt;
+
+&lt;p&gt;We can use the propagation formula&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T ).&lt;/script&gt;
+
+&lt;p&gt;from the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt; by Marc Toussaint to reformulate our marginalization.&lt;/p&gt;
+
+&lt;p&gt;In our case, we will end up with&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x} = \mathcal{N}(b|Ax, \Sigma_b + A\Sigma_xA^T ).&lt;/script&gt;
+
+&lt;p&gt;If we let \(\Sigma_x\) and \(\Sigma_b\) go to zero, the resulting covariance will go to zero as well. In the limit, the entire probability mass will be concentrated at our mean \(Ax\), which is exactly what we wanted to show.
+Up until now, there is nothing fancy about this result. It’s just a weird way to write the matrix multiplication. But when we think about the inverse of the transformation \(Ax = b\), things will become more interesting.&lt;/p&gt;
+
+&lt;h1 id=&quot;inverse&quot;&gt;Inverse&lt;/h1&gt;
+
+&lt;p&gt;What does it mean to take the inverse transformation? What is the desired result? By taking the inverse operation, we are simply asking for the set of points \(x\) which would be transformed to \(b\). We normally express the inverse transformation as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;x = A^{-1}b.&lt;/script&gt;
+
+&lt;p&gt;But you have to be careful: This equations only hold, if the matrix \(A\) has full rank. In this case, there is exactly one point \(x\) that maps to \(b\). But we shouldn’t waste our time on special cases. Let’s directly look at the general case for an arbitrary matrix \(A\).&lt;/p&gt;
+
+&lt;p&gt;We come back to our old friends Gauss and Bayes and try to formulate the inverse operation in terms of Gaussian distributions and Bayes theorem&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x|y) = \frac{p(y|x)p(x)}{\int_x p(y|x)p(x) \,dx}.&lt;/script&gt;
+
+&lt;p&gt;We insert our Gaussian distributions and obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(\hat{x}|b) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.&lt;/script&gt;
+
+&lt;p&gt;To simply this expression we can use equation 39 and 40 from the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt; and obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(\hat{x}|\mu, \Sigma) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.&lt;/script&gt;
+
+&lt;p&gt;with&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align} \mu &amp;= x + \Sigma_xA^T(\Sigma_b + A\Sigma_xA^T)^{-1}(b-Ax) \\ 
+\Sigma &amp;= \Sigma_x - \Sigma_xA^T (\Sigma_b + A\Sigma_xA^T)^{-1}A\Sigma_x. \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;In this context \(x\) and \(\Sigma_x\) are describing our prior belief about the set of points \(x\) that map to \(b\). We have no prior information about the inverse and could choose any prior that has probability mass at every point in the space.
+We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align} \mu &amp;= A^T(\Sigma_b + AA^T)^{-1}b \\ 
+\Sigma &amp;= I - A^T (\Sigma_b + AA^T)^{-1}A. \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;But what is with \(\Sigma_b\)? We want to calculate the inverse of the deterministic linear transformation. Therefore, \(\Sigma_b\) has to go to zero. We are doing this in a fancy way by defining&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\Sigma_b = \delta I&lt;/script&gt;
+
+&lt;p&gt;and letting \(\delta\) go to zero.&lt;/p&gt;
+
+&lt;p&gt;The resulting formula will be&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align} \mu &amp;= A^T(\delta I + AA^T)^{-1}b \\ 
+\Sigma &amp;= I - A^T (\delta I + AA^T)^{-1}A \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;with \(\delta \to 0 \).&lt;/p&gt;
+
+&lt;p&gt;If we look closely we can identify the exact definition of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse&quot;&gt;pseudoinverse&lt;/a&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;A^+ = A^T(\delta I + AA^T)^{-1},&lt;/script&gt;
+
+&lt;p&gt;where \(\delta \to 0\). In this particular form, we don’t we have to think about rank or invertibility: It is valid for any matrix!&lt;/p&gt;
+
+&lt;p&gt;Ok, but what’s going with the covariance matrix \(\Sigma\)? It can be identified as the orthogonal &lt;a href=&quot;https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse#Projectors&quot;&gt;projector&lt;/a&gt; onto the kernel of \(A\)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;I - A^+A.&lt;/script&gt;
+
+&lt;p&gt;Ok, nice! But what does it mean? The mean \(\mu\) and covariance \(\Sigma\) together are describing an affine linear space. The mean \(\mu\) can be interpreted as a translation vector to the linear subspace described by the covariance \(\Sigma\).&lt;/p&gt;
+
+&lt;p&gt;The beautiful thing is, that we don’t have to trust our imagination, but we can simply plot&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(\hat{x}|A^+b, I - A^+A)&lt;/script&gt;
+
+&lt;p&gt;with a very small \(\delta\) and &lt;em&gt;see&lt;/em&gt; the resulting subspace.&lt;/p&gt;
+
+&lt;p&gt;But the niceness doesn’t stop here. We can imagine a setting, where we not getting the whole vector \(b\) at once, but each dimension \(b_i\) separately. In this case, Bayes theorem tells us quite clearly what to do. We can update our belief of the inverse sequentially&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(\hat{x}|b) =  \frac{\mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}},&lt;/script&gt;
+
+&lt;p&gt;where we assume that \(\Sigma_b\) is a diagonal matrix.&lt;/p&gt;
+
+&lt;p&gt;We have found a general representation of arbitrary affine linear subspaces&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a, A(\delta)),&lt;/script&gt;
+
+&lt;p&gt;with translation vector \(a\) and covariance matrix \(A(\delta)\), where \(\delta \to 0\).&lt;/p&gt;
+
+&lt;h1 id=&quot;intersection-of-subspaces&quot;&gt;Intersection of subspaces&lt;/h1&gt;
+
+&lt;p&gt;Now, we can ask what the intersection of two affine linear subspaces is. An intuitive example for this are two planes intersecting in a line. With our representation of affine linear subspaces, asking for the intersection is easy! We just have to multiply the Gaussian distributions and we are done. In the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt;, we find a formula for the product&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|a, A) \mathcal{N}(x|b, B) = \mathcal{N}(x|B(A+B)^{-1}a + A(A+B)^{-1}b, A(A+B)^{-1}B)\mathcal{N}(a|b, A+B).&lt;/script&gt;
+
+&lt;p&gt;Therefore, the subspace of the intersection can be described by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\mu &amp;= B(\delta)(A(\delta)+B(\delta))^{-1}a + A(\delta)(A(\delta)+B(\delta))^{-1}b \\
+\Sigma &amp;=  A(\delta)(A(\delta)+B(\delta))^{-1}B(\delta)
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;for \(\delta\to 0\).&lt;/p&gt;
+
+&lt;p&gt;Please be aware, that things will break if there is no intersection at all. In the case of two parallel lines and before you take the limit, the resulting mean \(\mu\) will lie directly in the middle of the connecting line of the two means \(a\) and \(b\) and \(\Sigma\) will be the same as \(A(\delta)=B(\delta)\).&lt;/p&gt;
+
+&lt;h1 id=&quot;summary&quot;&gt;Summary&lt;/h1&gt;
+
+&lt;p&gt;In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \(A\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Furthermore, we learned that the word natural comes naturally with Bayes.&lt;/p&gt;
+
+&lt;script type=&quot;text/x-mathjax-config&quot;&gt;
+
+var mq = window.matchMedia( &quot;(max-width: 570px)&quot; );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  &quot;HTML-CSS&quot;: { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+&lt;/script&gt;</content><author><name></name></author><summary type="html">Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.</summary></entry><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;&lt;/p&gt;
 
@@ -2366,7 +2515,7 @@ The expression \(\hat x_{t|t}\) is called the &lt;em&gt;updated&lt;/em&gt; state
 
 &lt;p&gt;In order to find a closed form solution of this integral, we could simply plug in the corresponding expressions of the Gaussian distributions and solve the integral. Fortunately, Marc Toussaint already gathered the most important &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt;, which will lighten our workload a lot.  To find an expression for our prediction step we can simply use the &lt;em&gt;propagation&lt;/em&gt; formula (Formula 37, Toussaint)&lt;/p&gt;
 
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T ).&lt;/script&gt;
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dy = \mathcal{N}(x|a + Fb, A + FBF^T ).&lt;/script&gt;
 
 &lt;p&gt;By comparison with our expression, we see that&lt;/p&gt;
 

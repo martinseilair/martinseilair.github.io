@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Linear algebra with Gauss and Bayes | Ikigai</title>
+<meta name="generator" content="Jekyll v3.8.4" />
+<meta property="og:title" content="Linear algebra with Gauss and Bayes" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem." />
+<meta property="og:description" content="Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem." />
+<link rel="canonical" href="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html" />
+<meta property="og:url" content="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html" />
+<meta property="og:site_name" content="Ikigai" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-11-06T12:04:07+09:00" />
+<script type="application/ld+json">
+{"description":"Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.","@type":"BlogPosting","url":"http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html","headline":"Linear algebra with Gauss and Bayes","dateModified":"2018-11-06T12:04:07+09:00","datePublished":"2018-11-06T12:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css?1541478288426615231"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Ikigai" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Ikigai</a><a class="git-header" href="https://github.com/martinseilair"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">martinseilair</span></a></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Linear algebra with Gauss and Bayes</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-11-06T12:04:07+09:00" itemprop="datePublished">Nov 6, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><a href="https://en.wikipedia.org/wiki/Linear_algebra">Linear algebra</a> is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and so on. In this article, I want to present a different view on some aspects of linear algebra with the help of <a href="https://en.wikipedia.org/wiki/Multivariate_normal_distribution">Gaussian distributions</a> and <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem">Bayes theorem</a>.
+<!--more-->
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async="" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script type="text/javascript" src="http://localhost:4000/assets/js/math.min.js"></script></p>
+
+<p>This post is about the very basic equation</p>
+
+<script type="math/tex; mode=display">Ax = b,</script>
+
+<p>where \(A \in \mathbb{R}^{m\times n}\), \(x \in \mathbb{R}^{n}\) and \(b \in \mathbb{R}^{m}\). With the help of the Gaussian distribution</p>
+
+<script type="math/tex; mode=display">\mathcal{N}(x|\mu, \Sigma),</script>
+
+<p>we can restate this equation in the language of probability theory.</p>
+
+<h1 id="matrix-transformation">Matrix transformation</h1>
+<p>The transformation of our vector \(x\) with matrix \(A\) becomes a marginalization</p>
+
+<script type="math/tex; mode=display">\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}.</script>
+
+<p>Please be aware, that this formula is <strong>not</strong> equivalent to our matrix product above. We introduced two new variables \(\Sigma_x\) and \(\Sigma_b\), which represents the covariance matrix of the corresponding Gaussian distributions.
+The two formulations will become equivalent if the covariance matrices will go to zero.
+Let’s check if this is true!</p>
+
+<p>We can use the propagation formula</p>
+
+<script type="math/tex; mode=display">\int_{y}\mathcal{N}(x|a + Fy, A)\mathcal{N}(y|b,B) dx_t = \mathcal{N}(x|a + Fb, A + FBF^T ).</script>
+
+<p>from the <a href="https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf">Gaussian identities</a> by Marc Toussaint to reformulate our marginalization.</p>
+
+<p>In our case, we will end up with</p>
+
+<script type="math/tex; mode=display">\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x} = \mathcal{N}(b|Ax, \Sigma_b + A\Sigma_xA^T ).</script>
+
+<p>If we let \(\Sigma_x\) and \(\Sigma_b\) go to zero, the resulting covariance will go to zero as well. In the limit, the entire probability mass will be concentrated at our mean \(Ax\), which is exactly what we wanted to show.
+Up until now, there is nothing fancy about this result. It’s just a weird way to write the matrix multiplication. But when we think about the inverse of the transformation \(Ax = b\), things will become more interesting.</p>
+
+<h1 id="inverse">Inverse</h1>
+
+<p>What does it mean to take the inverse transformation? What is the desired result? By taking the inverse operation, we are simply asking for the set of points \(x\) which would be transformed to \(b\). We normally express the inverse transformation as</p>
+
+<script type="math/tex; mode=display">x = A^{-1}b.</script>
+
+<p>But you have to be careful: This equations only hold, if the matrix \(A\) has full rank. In this case, there is exactly one point \(x\) that maps to \(b\). But we shouldn’t waste our time on special cases. Let’s directly look at the general case for an arbitrary matrix \(A\).</p>
+
+<p>We come back to our old friends Gauss and Bayes and try to formulate the inverse operation in terms of Gaussian distributions and Bayes theorem</p>
+
+<script type="math/tex; mode=display">p(x|y) = \frac{p(y|x)p(x)}{\int_x p(y|x)p(x) \,dx}.</script>
+
+<p>We insert our Gaussian distributions and obtain</p>
+
+<script type="math/tex; mode=display">p(\hat{x}|b) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.</script>
+
+<p>To simply this expression we can use equation 39 and 40 from the <a href="https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf">Gaussian identities</a> and obtain</p>
+
+<script type="math/tex; mode=display">\mathcal{N}(\hat{x}|\mu, \Sigma) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.</script>
+
+<p>with</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align} \mu &= x + \Sigma_xA^T(\Sigma_b + A\Sigma_xA^T)^{-1}(b-Ax) \\ 
+\Sigma &= \Sigma_x - \Sigma_xA^T (\Sigma_b + A\Sigma_xA^T)^{-1}A\Sigma_x. \end{align} %]]></script>
+
+<p>In this context \(x\) and \(\Sigma_x\) are describing our prior belief about the set of points \(x\) that map to \(b\). We have no prior information about the inverse and could choose any prior that has probability mass at every point in the space.
+We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align} \mu &= A^T(\Sigma_b + AA^T)^{-1}b \\ 
+\Sigma &= I - A^T (\Sigma_b + AA^T)^{-1}A. \end{align} %]]></script>
+
+<p>But what is with \(\Sigma_b\)? We want to calculate the inverse of the deterministic linear transformation. Therefore, \(\Sigma_b\) has to go to zero. We are doing this in a fancy way by defining</p>
+
+<script type="math/tex; mode=display">\Sigma_b = \delta I</script>
+
+<p>and letting \(\delta\) go to zero.</p>
+
+<p>The resulting formula will be</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align} \mu &= A^T(\delta I + AA^T)^{-1}b \\ 
+\Sigma &= I - A^T (\delta I + AA^T)^{-1}A \end{align} %]]></script>
+
+<p>with \(\delta \to 0 \).</p>
+
+<p>If we look closely we can identify the exact definition of the <a href="https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse">pseudoinverse</a></p>
+
+<script type="math/tex; mode=display">A^+ = A^T(\delta I + AA^T)^{-1},</script>
+
+<p>where \(\delta \to 0\). In this particular form, we don’t we have to think about rank or invertibility: It is valid for any matrix!</p>
+
+<p>Ok, but what’s going with the covariance matrix \(\Sigma\)? It can be identified as the orthogonal <a href="https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse#Projectors">projector</a> onto the kernel of \(A\)</p>
+
+<script type="math/tex; mode=display">I - A^+A.</script>
+
+<p>Ok, nice! But what does it mean? The mean \(\mu\) and covariance \(\Sigma\) together are describing an affine linear space. The mean \(\mu\) can be interpreted as a translation vector to the linear subspace described by the covariance \(\Sigma\).</p>
+
+<p>The beautiful thing is, that we don’t have to trust our imagination, but we can simply plot</p>
+
+<script type="math/tex; mode=display">\mathcal{N}(\hat{x}|A^+b, I - A^+A)</script>
+
+<p>with a very small \(\delta\) and <em>see</em> the resulting subspace.</p>
+
+<p>But the niceness doesn’t stop here. We can imagine a setting, where we not getting the whole vector \(b\) at once, but each dimension \(b_i\) separately. In this case, Bayes theorem tells us quite clearly what to do. We can update our belief of the inverse sequentially</p>
+
+<script type="math/tex; mode=display">p(\hat{x}|b) =  \frac{\mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b_1|A_1\hat{x}, \Sigma_{b_1})\,\ldots\,\mathcal{N}(b_m|A_m\hat{x}, \Sigma_{b_m})\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}},</script>
+
+<p>where we assume that \(\Sigma_b\) is a diagonal matrix.</p>
+
+<p>We have found a general representation of arbitrary affine linear subspaces</p>
+
+<script type="math/tex; mode=display">\mathcal{N}(x|a, A(\delta)),</script>
+
+<p>with translation vector \(a\) and covariance matrix \(A(\delta)\), where \(\delta \to 0\).</p>
+
+<h1 id="intersection-of-subspaces">Intersection of subspaces</h1>
+
+<p>Now, we can ask what the intersection of two affine linear subspaces is. An intuitive example for this are two planes intersecting in a line. With our representation of affine linear subspaces, asking for the intersection is easy! We just have to multiply the Gaussian distributions and we are done. In the <a href="https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf">Gaussian identities</a>, we find a formula for the product</p>
+
+<script type="math/tex; mode=display">\mathcal{N}(x|a, A) \mathcal{N}(x|b, B) = \mathcal{N}(x|B(A+B)^{-1}a + A(A+B)^{-1}b, A(A+B)^{-1}B)\mathcal{N}(a|b, A+B).</script>
+
+<p>Therefore, the subspace of the intersection can be described by</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align}
+\mu &= B(\delta)(A(\delta)+B(\delta))^{-1}a + A(\delta)(A(\delta)+B(\delta))^{-1}b \\
+\Sigma &=  A(\delta)(A(\delta)+B(\delta))^{-1}B(\delta)
+\end{align} %]]></script>
+
+<p>for \(\delta\to 0\).</p>
+
+<p>Please be aware, that things will break if there is no intersection at all. In the case of two parallel lines and before you take the limit, the resulting mean \(\mu\) will lie directly in the middle of the connecting line of the two means \(a\) and \(b\) and \(\Sigma\) will be the same as \(A(\delta)=B(\delta)\).</p>
+
+<h1 id="summary">Summary</h1>
+
+<p>In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \(A\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Furthermore, we learned that the word natural comes naturally with Bayes.</p>
+
+<script type="text/x-mathjax-config">
+
+var mq = window.matchMedia( "(max-width: 570px)" );
+if (!mq.matches) {
+    MathJax.Hub.Config({
+	  CommonHTML: { linebreaks: { automatic: true } },
+	  "HTML-CSS": { linebreaks: { automatic: true } },
+	         SVG: { linebreaks: { automatic: true } }
+	}); 
+} 
+
+</script>
+
+
+  </div><a class="u-url" href="/jekyll/update/2018/11/06/linalg-gaussian.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+  </body>
+
+</html>
