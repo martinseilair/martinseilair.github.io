@@ -3,6 +3,7 @@ layout: post
 title:  "Derivation of the Kalman filter"
 date:   2018-10-10 19:35:07 +0900
 categories: jekyll update
+comments: true
 excerpt_separator: <!--more-->
 ---
 The concept and the equations of the [Kalman filter](https://en.wikipedia.org/wiki/Kalman_filter) can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using [Bayesian inference](https://en.wikipedia.org/wiki/Bayesian_inference). It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
