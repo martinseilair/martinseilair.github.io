@@ -17,7 +17,7 @@ title: Ikigai
 description: A dump for random thoughts and observations
 github_username:  martinseilair
 vartest: FooFoos
-
+url: https://martinseilair.github.io
 google_analytics: UA-128910439-1
 
 # Build settings
@@ -25,6 +25,7 @@ markdown: kramdown
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
+  - jekyll-sitemap
 
 collections:
   foo:

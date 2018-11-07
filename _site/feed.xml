@@ -1,30 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2018-11-07T19:05:34+09:00</updated><id>/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Unscented Kalman filter</title><link href="/jekyll/update/2018/11/07/nf-ukf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Unscented Kalman filter" /><published>2018-11-07T17:04:07+09:00</published><updated>2018-11-07T17:04:07+09:00</updated><id>/jekyll/update/2018/11/07/nf-ukf</id><content type="html" xml:base="/jekyll/update/2018/11/07/nf-ukf.html">&lt;p&gt;The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the unscented Kalman filter.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-07T19:19:43+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Unscented Kalman filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Unscented Kalman filter" /><published>2018-11-07T17:04:07+09:00</published><updated>2018-11-07T17:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html">&lt;p&gt;The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the unscented Kalman filter.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
 &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
 
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
-&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;https://martinseilair.github.io/assets/css/nonlinear_filter/style.css&quot; /&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/ukf.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/ukf.js&quot;&gt;&lt;/script&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
 
@@ -511,7 +511,7 @@ w_c^0  &amp;= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
 &lt;script&gt;
 
 
-    n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;&quot;,1000);
+    n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;https://martinseilair.github.io&quot;,1000);
     n_scene.mode = 2;
     n_scene.filter = &quot;&quot;;
     n_scene.dur=slow_dur;
@@ -666,7 +666,7 @@ As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/st
 &lt;!-- &lt;div id=&quot;system_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt; --&gt;
 &lt;!--&lt;div id=&quot;output_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt;--&gt;
 
-&lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;</content><author><name></name></author><summary type="html">The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.</summary></entry><entry><title type="html">Observability: A Bayesian perspective</title><link href="/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
+&lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;</content><author><name></name></author><summary type="html">The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.</summary></entry><entry><title type="html">Observability: A Bayesian perspective</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
@@ -783,12 +783,12 @@ In the first case, we have no uncertainty: The system is observable. In the seco
 
 &lt;h1 id=&quot;summary&quot;&gt;Summary&lt;/h1&gt;
 
-&lt;p&gt;In this post, we looked at the concept of observability from a Bayesian standpoint. We found an intuitive way to reason about the effect of the update step and prediction step in terms of subspaces, described by covariance matrices.&lt;/p&gt;</content><author><name></name></author><summary type="html">Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.</summary></entry><entry><title type="html">Linear algebra with Gauss and Bayes</title><link href="/jekyll/update/2018/11/06/linalg-gaussian.html" rel="alternate" type="text/html" title="Linear algebra with Gauss and Bayes" /><published>2018-11-06T12:04:07+09:00</published><updated>2018-11-06T12:04:07+09:00</updated><id>/jekyll/update/2018/11/06/linalg-gaussian</id><content type="html" xml:base="/jekyll/update/2018/11/06/linalg-gaussian.html">&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Linear_algebra&quot;&gt;Linear algebra&lt;/a&gt; is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of &lt;a href=&quot;https://en.wikipedia.org/wiki/Multivariate_normal_distribution&quot;&gt;Gaussian distributions&lt;/a&gt; and &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes theorem&lt;/a&gt;.
+&lt;p&gt;In this post, we looked at the concept of observability from a Bayesian standpoint. We found an intuitive way to reason about the effect of the update step and prediction step in terms of subspaces, described by covariance matrices.&lt;/p&gt;</content><author><name></name></author><summary type="html">Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.</summary></entry><entry><title type="html">Linear algebra with Gauss and Bayes</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/06/linalg-gaussian.html" rel="alternate" type="text/html" title="Linear algebra with Gauss and Bayes" /><published>2018-11-06T12:04:07+09:00</published><updated>2018-11-06T12:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/06/linalg-gaussian</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/06/linalg-gaussian.html">&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Linear_algebra&quot;&gt;Linear algebra&lt;/a&gt; is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of &lt;a href=&quot;https://en.wikipedia.org/wiki/Multivariate_normal_distribution&quot;&gt;Gaussian distributions&lt;/a&gt; and &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes theorem&lt;/a&gt;.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
   &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
-  &lt;script type=&quot;text/javascript&quot; src=&quot;/assets/js/math.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
+  &lt;script type=&quot;text/javascript&quot; src=&quot;https://martinseilair.github.io/assets/js/math.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
 
 &lt;p&gt;This post is about the very basic equation&lt;/p&gt;
 
@@ -932,31 +932,31 @@ if (!mq.matches) {
 	}); 
 } 
 
-&lt;/script&gt;</content><author><name></name></author><summary type="html">Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.</summary></entry><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
+&lt;/script&gt;</content><author><name></name></author><summary type="html">Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.</summary></entry><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;&lt;/p&gt;
 
 &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
 
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
-&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;https://martinseilair.github.io/assets/css/nonlinear_filter/style.css&quot; /&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
 
@@ -1289,7 +1289,7 @@ C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 &lt;script&gt;
 
 
-	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;&quot;,1000);
+	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;https://martinseilair.github.io&quot;,1000);
 	n_scene.mode = 2;
 	n_scene.filter = &quot;&quot;;
 	n_scene.dur=slow_dur;
@@ -1448,7 +1448,7 @@ if (!mq.matches) {
 	}); 
 } 
 
-&lt;/script&gt;</content><author><name></name></author><summary type="html">This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
+&lt;/script&gt;</content><author><name></name></author><summary type="html">This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
@@ -1456,23 +1456,23 @@ if (!mq.matches) {
 
 &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
 
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
-&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;https://martinseilair.github.io/assets/css/nonlinear_filter/style.css&quot; /&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
 
@@ -1690,7 +1690,7 @@ Therefore, the posterior will have the form&lt;/p&gt;
 &lt;script&gt;
 
 
-	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;&quot;,400);
+	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;https://martinseilair.github.io&quot;,400);
 	n_scene.mode = 2;
 	n_scene.filter = &quot;bayes&quot;;
 	n_scene.dur=slow_dur;
@@ -1858,30 +1858,30 @@ var np = 101;
 gauss = [...Array(np)].map((e,i)=&gt;{return {x:(i - (np-1)/2)/(1.5*np), w:0.1*gaussian((i - (np-1)/2)/(1.5*np),0,0.15), t:&quot;&quot;};})
 
 dirac_plot(&quot;#dirac_wcomb&quot;,wcomb, true, gauss);
-&lt;/script&gt;</content><author><name></name></author><summary type="html">The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Introduction</title><link href="/jekyll/update/2018/10/29/nf-intro.html" rel="alternate" type="text/html" title="Nonlinear filtering: Introduction" /><published>2018-10-29T18:04:07+09:00</published><updated>2018-10-29T18:04:07+09:00</updated><id>/jekyll/update/2018/10/29/nf-intro</id><content type="html" xml:base="/jekyll/update/2018/10/29/nf-intro.html">&lt;p&gt;This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.&lt;/p&gt;
+&lt;/script&gt;</content><author><name></name></author><summary type="html">The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Introduction</title><link href="https://martinseilair.github.io/jekyll/update/2018/10/29/nf-intro.html" rel="alternate" type="text/html" title="Nonlinear filtering: Introduction" /><published>2018-10-29T18:04:07+09:00</published><updated>2018-10-29T18:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/10/29/nf-intro</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/10/29/nf-intro.html">&lt;p&gt;This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.&lt;/p&gt;
 
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
 &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
 
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
-&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;https://martinseilair.github.io/assets/css/nonlinear_filter/style.css&quot; /&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
 
@@ -2032,7 +2032,7 @@ y_t &amp;\sim p(y_t|x_t)
 
 &lt;script&gt;
 	// defines scenes
-	n_scene = load_race_track(&quot;race_track_intro&quot;,&quot;&quot;);
+	n_scene = load_race_track(&quot;race_track_intro&quot;,&quot;https://martinseilair.github.io&quot;);
 	n_scene.mode = 0;
 	n_scene.filter = null;
 	n_scene.dur=fast_dur;
@@ -2113,7 +2113,7 @@ y_t &amp;\sim p(y_t|x_t)
 
 
 	// defines scenes
-	n_scene = load_race_track(&quot;race_track_sys_dist&quot;, &quot;&quot;);
+	n_scene = load_race_track(&quot;race_track_sys_dist&quot;, &quot;https://martinseilair.github.io&quot;);
 	n_scene.mode = 3;
 	n_scene.me_show_system = true;
 
@@ -2200,7 +2200,7 @@ The brownish strip answers another question: Given the true distance \(d\) at ou
 &lt;script&gt;
 
 	// defines scenes
-	n_scene = load_race_track(&quot;race_track_obs_dist&quot;, &quot;&quot;);
+	n_scene = load_race_track(&quot;race_track_obs_dist&quot;, &quot;https://martinseilair.github.io&quot;);
 	n_scene.mode = 3;
 	n_scene.me_show_system = false;
 	n_scene.me_show_observation_transposed = true;
@@ -2238,9 +2238,9 @@ The brownish strip answers another question: Given the true distance \(d\) at ou
 
 &lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
 
-&lt;script src=&quot;/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
 
-&lt;script type=&quot;text/javascript&quot; src=&quot;/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; src=&quot;https://martinseilair.github.io/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
 
 &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
 
@@ -2257,7 +2257,7 @@ if (!mq.matches) {
 
 &lt;/script&gt;
 
-&lt;script type=&quot;text/javascript&quot;&gt;new Svg_MathJax().install();&lt;/script&gt;</content><author><name></name></author><summary type="html">This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.</summary></entry><entry><title type="html">The score-Fisher-information-KL connection</title><link href="/jekyll/update/2018/10/17/fisher.html" rel="alternate" type="text/html" title="The score-Fisher-information-KL connection" /><published>2018-10-17T18:04:07+09:00</published><updated>2018-10-17T18:04:07+09:00</updated><id>/jekyll/update/2018/10/17/fisher</id><content type="html" xml:base="/jekyll/update/2018/10/17/fisher.html">&lt;p&gt;This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.
+&lt;script type=&quot;text/javascript&quot;&gt;new Svg_MathJax().install();&lt;/script&gt;</content><author><name></name></author><summary type="html">This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.</summary></entry><entry><title type="html">The score-Fisher-information-KL connection</title><link href="https://martinseilair.github.io/jekyll/update/2018/10/17/fisher.html" rel="alternate" type="text/html" title="The score-Fisher-information-KL connection" /><published>2018-10-17T18:04:07+09:00</published><updated>2018-10-17T18:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/10/17/fisher</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/10/17/fisher.html">&lt;p&gt;This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_SVG&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
@@ -2910,7 +2910,7 @@ $$ \left[\mathcal{J(\theta)}\right]_{ij} =  -\frac{\partial^2  \log p(x|\theta)}
 $$ \mathcal{J(\theta)} =  -\nabla_{\theta}^2 \log p(x|\theta) $$
 &lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;We note that this case has the same form as the curvature of the KL-divergence.&lt;/p&gt;</content><author><name></name></author><summary type="html">This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.</summary></entry><entry><title type="html">Derivation of the Kalman filter</title><link href="/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
+&lt;p&gt;We note that this case has the same form as the curvature of the KL-divergence.&lt;/p&gt;</content><author><name></name></author><summary type="html">This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.</summary></entry><entry><title type="html">Derivation of the Kalman filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
@@ -3454,9 +3454,9 @@ P_{t|t} &amp;= (I - K_tC_t)P_{t|t-1}.
   &lt;li&gt;Added some “sugar” to obtain the usual equations of the Kalman filter.&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;script src=&quot;/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
 
-&lt;script type=&quot;text/javascript&quot; src=&quot;/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; src=&quot;https://martinseilair.github.io/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
 
 &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
 
