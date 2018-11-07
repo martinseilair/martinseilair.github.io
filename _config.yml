@@ -18,6 +18,8 @@ description: A dump for random thoughts and observations
 github_username:  martinseilair
 vartest: FooFoos
 
+google_analytics: UA-128910439-1
+
 # Build settings
 markdown: kramdown
 plugins:
