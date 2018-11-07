@@ -1,4 +1,672 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-07T17:20:42+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Observability: A Bayesian perspective</title><link href="http://localhost:4000/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" /><updated>2018-11-07T17:45:42+09:00</updated><id>/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Unscented Kalman filter</title><link href="/jekyll/update/2018/11/07/nf-ukf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Unscented Kalman filter" /><published>2018-11-07T17:04:07+09:00</published><updated>2018-11-07T17:04:07+09:00</updated><id>/jekyll/update/2018/11/07/nf-ukf</id><content type="html" xml:base="/jekyll/update/2018/11/07/nf-ukf.html">&lt;p&gt;The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the unscented Kalman filter.&lt;/p&gt;
+
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
+
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;/assets/js/nonlinear_filter/ukf.js&quot;&gt;&lt;/script&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+	// scene_flags
+
+	scene = [];
+	scenes = [];
+	scenes_name = [];
+	interval = null;
+	loaded = false;
+	var aa = 1;
+	var fast_dur = 300;
+	var slow_dur = 1000;
+	var ani_step = 3;
+
+
+	touch_id = null;
+
+
+
+
+
+&lt;/script&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;p&gt;The &lt;strong&gt;unscented Kalman filter&lt;/strong&gt; approximates the Bayes filter by approximating the system and observation equations locally. A set of probe points is used to infer the local behavior of the function around the current estimate.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;When I first learned about the unscented Kalman filter, it seemed that it was not derived from the general Bayes filter&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\text{Bayes filter} \to \text{nonlinear models} \to \text{unscented Kalman filter,}&lt;/script&gt;
+
+&lt;p&gt;but rather directly from the Kalman filter&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\text{Kalman filter} \to \text{nonlinear models} \to \text{unscented Kalman filter}.&lt;/script&gt;
+
+&lt;p&gt;In this post, I want to explore how to derive the unscented Kalman filter from general Bayes filter directly. But there is one catch, to obtain the equations of the unscented Kalman filter, you have to do some steps that seem hard to justify. It is totally possible, that there are deep thoughts behind it, but my limited scope is preventing me to identify them. Nonetheless, I will start to derive a different version of the unscented Kalman filter that is in some regards more principled. In the end, I will adjust this version to match the &lt;em&gt;normal&lt;/em&gt; unscented Kalman filter.&lt;/p&gt;
+
+&lt;p&gt;Let’s start with the derivation!&lt;/p&gt;
+
+&lt;h2 id=&quot;derivation&quot;&gt;Derivation&lt;/h2&gt;
+&lt;p&gt;First of all, if we want to apply the unscented Kalman filter, we assume that we have nonlinear models with additive noise&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+p(x_{t+1}|x_{t}, u_{t})  &amp;= \mathcal{N}(x_{t+1}|f(x_t, u_t), Q_t) \\
+p(y_t|x_t) &amp;=  \mathcal{N}(y_t|h(x_t), R_t).
+ \end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Unlike the extended Kalman filter, which is based on linearization, the unscented Kalman filter is based around the &lt;a href=&quot;https://en.wikipedia.org/wiki/Unscented_transform&quot;&gt;unscented transform&lt;/a&gt;. In simplest terms, if you want to transform a Gaussian distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x) = \mathcal{N}(y|\mu, \Sigma)&lt;/script&gt;
+
+&lt;p&gt;through a nonlinear function, it will give you an estimate of the resulting mean and covariance.&lt;/p&gt;
+
+&lt;p&gt;For the derivation of the equations of unscented Kalman filter, I will state the unscented transform in a slightly different form, which I will call the joint probability interpretation of the unscented transform.&lt;/p&gt;
+
+&lt;div class=&quot;extra_box&quot;&gt;
+
+  &lt;h1 id=&quot;joint-probability-interpretation-of-the-unscented-transform&quot;&gt;Joint probability interpretation of the unscented transform&lt;/h1&gt;
+
+  &lt;p&gt;In this section, we explore an interpretation of the unscented transform in terms of the joint probability. We are in a setting with a Gaussian conditional distribution with nonlinear mean and constant variance&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y|x) = \mathcal{N}(y|f(x),B)&lt;/script&gt;
+
+  &lt;p&gt;and a Gaussian prior \(p(x) = \mathcal{N}(y|\mu, \Sigma) \).&lt;/p&gt;
+
+  &lt;p&gt;Conceptually, we will first replace the prior with a surrogate distribution \(\hat{p}(x)\). Subsequently, we will approximate the joint distribution of the true conditional distribution \(p(y|x)\) and the surrogate distribution \(\hat{p}(x)\) with a Gaussian distribution \( \hat{p}(x,y) = \mathcal{N}(x,y|\hat{\mu},\hat{\Sigma}).\)&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;Surrogate distribution&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;The first step is to replace the Gaussian distribution \( p(x)  \) with a surrogate distribution  \(\hat{p}(x)\) that has the same mean and variance. For this surrogate distribution, we choose a mix of weighted &lt;a href=&quot;https://en.wikipedia.org/wiki/Dirac_delta_function&quot;&gt;Dirac delta functions&lt;/a&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x),&lt;/script&gt;
+
+  &lt;p&gt;where \(\delta_{\chi^i}(x)\) is a shorthand for \(\delta(x-\chi^i)\) and the weights are summing to 1:&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\sum_{i} w^i = 1.&lt;/script&gt;
+
+  &lt;p&gt;The shifting parameter of the Dirac delta functions \(\chi^i\) are called &lt;em&gt;sigma points&lt;/em&gt; and are chosen to correspond to&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\chi^0 &amp;= \mu \\
+\chi^i &amp;= \mu + a_iL_i  &amp;i=1,\ldots,n \\
+\chi^i &amp;= \mu - a_{i-n}L_{i-n}  &amp;i=n+1, \ldots, 2n
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;where \(L_i\) describes the \(i\)th column of the Cholesky decomposition \(\Sigma = LL^T\) and \(n\) is the dimension of the multivariate Gaussian distribution \(p(x)\). The parameters \(a_i\) are arbitrary and can be chosen by the designer. Because of the symmetry of the sigma points, the weights will be symmetric as well&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+ w^i &amp;= w^{i+n} &amp; i=1,\ldots,n. \\
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;Let’s answer the question of how we have to choose the weights \(w^i\), to obtain the desired property&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\mu &amp;\stackrel{!}{=}\sum_{i} w^i \chi^i \\
+\Sigma &amp;\stackrel{!}{=} \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T.\\
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;We start by plugging our sigma points \(\chi^i\) into the mean&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\sum_{i} w^i \chi^i &amp;= w^0 \mu + \sum_{i=1}^{n}w^i(\mu + a_iL_i) + \sum_{i=n+1}^{2n} w^i(\mu + a_{i-n}L_{i-n}) \\
+&amp;= \mu\sum_{i=0}^{2n}w^i + \sum_{i=1}^{n}w^ia_iL_i - \sum_{i=1}^{n} w^ia_iL_i \\
+&amp;=\mu
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and notice, that this property is independent of the weights \(w^i\).&lt;/p&gt;
+
+  &lt;p&gt;Let’s move to the variance and see how we have to choose the weights \(w^i\) to match&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\Sigma \stackrel{!}{=} \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T .&lt;/script&gt;
+
+  &lt;p&gt;We start by plugging the corresponding sigma points \(\chi^i\) into the variance&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+ \Sigma &amp;\stackrel{!}{=} \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T \\
+&amp;= w^0 (\chi^0-\mu)(\chi^0-\mu)^T + \sum_{i=1}^{n} w^i (\chi^i-\mu)(\chi^i-\mu)^T + \sum_{i=n+1}^{2n} w^i (\chi^i-\mu)(\chi^i-\mu)^T \\
+ &amp;= w^0 (\mu-\mu)(\mu-\mu)^T + \sum_{i=1}^{n} w^i (\mu + a_iL_i-\mu)(\mu + a_iL_i-\mu)^T + \sum_{i=n+1}^{2n} w^i (\mu - a_{i-n}L_{i-n}-\mu)(\mu - a_{i-n}L_{i-n}-\mu)^T .\\
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;We note, that all occurences of the mean are canceled out. In particular, the first term corresponding to the central sigma point \(\chi^0\) is vanishing completely. Therefore, the corresponding weight plays no direct role for the mean &lt;em&gt;and&lt;/em&gt; variance. By using the symmetry properties we finally arrive at&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+&amp;= \sum_{i=1}^{n} w^i (a_iL_i)(a_iL_i)^T + \sum_{i=n+1}^{2n} w^i (- a_{i-n}L_{i-n})(- a_{i-n}L_{i-n})^T \\
+&amp;= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=n+1}^{2n} w^i a_i^2 L_{i-n}L_{i-n}^T \\
+&amp;= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=1}^{n} w^{i+n} a_{i+n}^2 L_{i}L_{i}^T \\
+&amp;= \sum_{i=1}^{n} w^i a_i^2 L_iL_i^T + \sum_{i=1}^{n} w^i a_i^2 L_{i}L_{i}^T \\
+&amp;= \sum_{i=1}^{n} 2w^i a_i^2 L_iL_i^T. \\
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;We know, that the variance can be expressed by&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\Sigma = LL^T = \sum_{i=1}^{n} L_iL_i^T.&lt;/script&gt;
+
+  &lt;p&gt;By a comparison of coefficients, we notice that the property&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;2w^i a_i^2 = 1&lt;/script&gt;
+
+  &lt;p&gt;has to be satisfied. It follows that the weights should be \(w^i = \frac{1}{2a_i^2} \) for \(i=1,\ldots,n\).&lt;/p&gt;
+
+  &lt;p&gt;Furthermore, by knowing that all weights have to sum to \(1\), it follows that the weight of the central sigma point \(\chi^0\) has to be&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;w^0  = 1 - 2\sum_{i=1}^{n}\frac{1}{2a_i^2}.&lt;/script&gt;
+
+  &lt;p&gt;We finally found our surrogate distribution&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x)&lt;/script&gt;
+
+  &lt;p&gt;with the correct mean \(\mu\) and variance \(\Sigma\).&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;Gaussian approximation of the joint probability&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;Let’s look at the second part: We want to approximate the joint distribution of the true conditional distribution \(p(y|x)\) and the surrogate distribution \(\hat{p}(x)\) with a Gaussian distribution \( \hat{p}(x,y) = \mathcal{N}(x,y|\hat{\mu},\hat{\Sigma}).\)&lt;/p&gt;
+
+  &lt;p&gt;We can write the joint probability of \(p(y|x)\) and \(\hat{p}(x)\) as&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x,y) = p(y|x)\hat{p}(x) = \mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x).&lt;/script&gt;
+
+  &lt;p&gt;This joint probability will look like weighted slices of the conditional probability \(p(y|x) \).&lt;/p&gt;
+
+  &lt;p&gt;The next step is to approximate this weird looking distribution with a Gaussian distribution. But how should we choose the parameter of this Gaussian joint distribution? The answer is simple: We are calculating the mean and the variance of the joint probability, which will define the mean and variance of our joint Gaussian distribution. Fair enough! So, let’s dive directly into the calculation of the mean. We are starting directly from the definition of the expectation&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{\mu} = \iint\limits_{x\,y}\hat{p}(x,y) \begin{pmatrix}
+    x  \\
+    y \\
+    \end{pmatrix} \,dx\,dy&lt;/script&gt;
+
+  &lt;p&gt;and plug in the corresponding distributions to obtain&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{\mu} = \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x)\begin{pmatrix}
+    x  \\
+    y \\
+    \end{pmatrix} \,dx\,dy.&lt;/script&gt;
+
+  &lt;p&gt;We interchange the sum with the integrals&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{\mu} = \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\begin{pmatrix}
+    x  \\
+    y \\
+    \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy&lt;/script&gt;
+
+  &lt;p&gt;and use the &lt;a href=&quot;https://en.wikipedia.org/wiki/Dirac_delta_function#Translation&quot;&gt;sifting property&lt;/a&gt; of the Dirac delta function to obtain&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{\mu}= \sum_{i} w^i \int\limits_{x}\mathcal{N}(y|f(\chi^i),B)\begin{pmatrix}
+    \chi^i \\
+    y \\
+    \end{pmatrix} \,dy.&lt;/script&gt;
+
+  &lt;p&gt;We can simplify this expression even further to&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\hat{\mu}&amp;= \sum_{i} w^i \begin{pmatrix}
+    \chi^i \\
+    f(\chi^i) \\
+    \end{pmatrix} =  \begin{pmatrix}
+    \sum_{i} w^i \chi^i \\
+    \sum_{i} w^i f(\chi^i) \\
+    \end{pmatrix}\\
+&amp;=  \begin{pmatrix}
+    \mu \\
+    \sum_{i} w^i f(\chi^i) \\
+    \end{pmatrix}. 
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;We are done! To finish our approximation we have to calculate the covariance of the joint probability. Let’s start again from the definition of the variance&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\hat{\Sigma} &amp;= \iint\limits_{x\,y}\hat{p}(x,y) \begin{pmatrix}
+    x-\hat{\mu}_x  \\
+    y-\hat{\mu}_y \\
+    \end{pmatrix}\begin{pmatrix}
+    x-\mu  \\
+    y-\hat{\mu} \\
+    \end{pmatrix}^T \,dx\,dy \\ 
+&amp;= \iint\limits_{x\,y}\hat{p}(x,y) \begin{pmatrix}
+    (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T &amp; (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
+    (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T &amp; (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
+    \end{pmatrix} \,dx\,dy \\ 
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and plug in our distributions to obtain&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\hat{\Sigma}&amp;= \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x) \begin{pmatrix}
+    (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T &amp; (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
+    (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T &amp; (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
+    \end{pmatrix} \,dx\,dy. \\ 
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;Again we are rearranging sum and integrals&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\hat{\Sigma}&amp;= \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B) \begin{pmatrix}
+    (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T &amp; (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
+    (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T &amp; (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
+    \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy. \\ 
+
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and use the sifting property to finally obtain&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\hat{\Sigma}&amp;= \sum_{i} w^i \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) \begin{pmatrix}
+    (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T &amp; (\chi^i-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
+    (y-\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T &amp; (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
+    \end{pmatrix} \,dy \\ 
+&amp;= \sum_{i} w^i \begin{pmatrix}
+    \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T \,dy&amp; \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (\chi^i-\hat{\mu}_x)(y-\hat{\mu}_y)^T\,dy\\
+    \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (y-\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\,dy &amp; \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T\,dy \\
+    \end{pmatrix}  \\ 
+&amp;= \sum_{i} w^i \begin{pmatrix}
+    (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T&amp; (\chi^i-\hat{\mu}_x)\left[\int\limits_{y}\mathcal{N}(y|f(\chi^i),B)y\,dy -\hat{\mu}_y\right]^T\\
+    \left[\int\limits_{y}\mathcal{N}(y|f(\chi^i),B)y\,dy -\hat{\mu}_y\right](\chi^i-\hat{\mu}_x)^T &amp;  (f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
+    \end{pmatrix}  \\ 
+&amp;= \sum_{i} w^i \begin{pmatrix}
+    (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T&amp; (\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
+    (f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T &amp;  (f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
+    \end{pmatrix}  \\ 
+&amp;=  \begin{pmatrix}
+    \sum_{i} w^i(\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T&amp; \sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
+    \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T &amp;  \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
+    \end{pmatrix}  \\ 
+&amp;=  \begin{pmatrix}
+    \Sigma &amp; \sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
+    \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T &amp;  \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
+    \end{pmatrix}  .\\ 
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;Now we have also a nice expression for the variance of the approximated joint probability \(\hat{p}(x,y)\).&lt;/p&gt;
+
+  &lt;p&gt;Let’s summarize our result&lt;/p&gt;
+  &lt;div class=&quot;important_box&quot;&gt;
+    &lt;h1&gt;Joint probability interpretation of the unscented transform&lt;/h1&gt;
+
+    &lt;p&gt;Given the Gaussian conditional distribution with nonlinear mean and constant variance&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;p(y|x) = \mathcal{N}(y|f(x),B)&lt;/script&gt;
+
+    &lt;p&gt;and a Gaussian prior \(p(x) = \mathcal{N}(y|\mu, \Sigma) \). We can approximate the joint probability \(p(x,y)\) by a Gaussian joint probability \(\hat{p}(x,y)\), where the prior \(p(x)\) is replaced by&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x),&lt;/script&gt;
+
+    &lt;p&gt;with the weights \(w^i\) are defined by&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+w^i &amp;= \frac{1}{2a_i^2} &amp; i=1,\ldots,n \\
+w^i &amp;= w^{i+n} &amp; i=1,\ldots,n. \\
+w^0 &amp;= 1 - 2\sum_{i=1}^{n}\frac{1}{2a_i^2}. &amp;
+\end{align} %]]&gt;&lt;/script&gt;
+
+    &lt;p&gt;and the with sigma points \(\chi^i\) by&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\chi^0 &amp;= \mu \\
+\chi^i &amp;= \mu + a_iL_i  &amp;i=1,\ldots,n \\
+\chi^i &amp;= \mu - a_{i-n}L_{i-n}  &amp;i=n+1, \ldots, 2n.
+\end{align} %]]&gt;&lt;/script&gt;
+
+    &lt;p&gt;The resulting Gaussian approximation has the following form&lt;/p&gt;
+
+    &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\hat{p}(x,y) = \mathcal{N}\left(\begin{matrix}
+    x  \\
+    y \\
+    \end{matrix}\middle|\begin{matrix}
+    \mu \\
+    \sum_{i} w^i f(\chi^i) \\
+    \end{matrix},\begin{matrix}
+    \Sigma                                                          &amp;   \sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T\\
+    \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T      &amp;   \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B \\
+    \end{matrix}\right). %]]&gt;&lt;/script&gt;
+
+  &lt;/div&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;Please be aware, that this is &lt;strong&gt;not&lt;/strong&gt; the definition of the unscented transform. But it will be easier to work with this form for now and identify the normal unscented transform as a special case.&lt;/p&gt;
+
+&lt;p&gt;Ok, now we know how to approximate the joint probability of Gaussian distributions with nonlinear mean and a Gaussian prior. But what can we do with it?&lt;/p&gt;
+
+&lt;p&gt;If we look closely at the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t}&lt;/script&gt;
+
+&lt;p&gt;of the general Bayes filter, we can find the joint probability of the form we just discussed. For the prediction step we have&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_x p(y|x)p(x)\,dx \to \int_x p(x,y)\,dx&lt;/script&gt;
+
+&lt;p&gt;and for the update step&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{p(y|x)p(x)}{\int_x p(y|x)p(x)\,dx} \to \frac{p(x,y)}{\int_x p(x,y)\,dx}.&lt;/script&gt;
+
+&lt;p&gt;That is pretty nice! We can approximate joint probabilities and the equations of the Bayes filter can take joint probabilities as input. So don’t waste time and start directly with the prediction step.&lt;/p&gt;
+
+&lt;h1 id=&quot;prediction-step&quot;&gt;Prediction step&lt;/h1&gt;
+
+&lt;p&gt;We want to calculate 
+&lt;script type=&quot;math/tex&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}.&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;But instead of using the true joint probability \(p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1})\) we will use our approximation \(\hat{p}(x_{t+1},x_{t}|y_{0:t},u_{0:t})\)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} \hat{p}(x_{t+1},x_{t}|y_{0:t},u_{0:t}) dx_{t}.&lt;/script&gt;
+
+&lt;p&gt;Fortunately, marginalizing over a joint Gaussian distribution is very simple. You just have to discard the dimensions you are marginalizing over:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\int\limits_{x}\mathcal{N}\left(\begin{matrix}
+    x  \\
+    y \\
+    \end{matrix}\middle|\begin{matrix}
+    a  \\
+    b \\
+    \end{matrix}, \begin{matrix}
+    A &amp; C \\
+    C^T &amp; B\\
+    \end{matrix} \right) \,dx = \mathcal{N}(y|b,B). %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Therefore, we only have to calculate the mean and covariance of the remaining part. Our predicted state estimate will be a Gaussian distribution with parameters&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\hat x_{t+1|t} &amp;=  \sum_{i} w^i f(\chi^i,u_t) \\
+P_{t+1|t} &amp;= \sum_{i} w^i\left(f(\chi^i,u_t)-\sum_{i} w^i f(\chi^i,u_t)\right)\left(f(\chi^i,u_t)-\sum_{i} w^i f(\chi^i,u_t)\right)^T + Q_t.
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;h1 id=&quot;update-step&quot;&gt;Update step&lt;/h1&gt;
+
+&lt;p&gt;Now we will look at the update step&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t} p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})\,dx_t}&lt;/script&gt;
+
+&lt;p&gt;and replace the true joint probability \(p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})\) with our approximation \(\hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1})\) and obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{\hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t} \hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1})\,dx_t}.&lt;/script&gt;
+
+&lt;p&gt;Now we have to options: Either we just simplify these equations to obtain the final update equation of the unscented Kalman filter or we can be smart and note, that we would compute nothing else, but the update step of the Kalman filter. Let’s take that second option.&lt;/p&gt;
+
+&lt;p&gt;The joint probability in the linear Gaussian case (where we already have the equations of the Kalman filter) can be expressed as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}\left(\begin{matrix}x_t \\y_t\end{matrix}\middle|\begin{matrix}\hat x_{t|t-1}\\C_t\hat x_{t|t-1} \end{matrix},\begin{matrix}P_{t|t-1} &amp; P_{t|t-1}^TC_t^T\\C_tP_{t|t-1} &amp; R_t + C_tP_{t|t-1}^TC_t^T\end{matrix}\right) . %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;The only thing we have to do is a coefficient comparison with the joint Gaussian of our estimate:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1}) = \mathcal{N}\left(\begin{matrix}
+    x_t  \\
+    y_t \\
+    \end{matrix}\middle|\begin{matrix}
+    \hat x_{t|t-1} \\
+    \sum_{i} w^i h(\chi^i) \\
+    \end{matrix},\begin{matrix}
+    P_{t|t-1}                                                                                       &amp;  \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)^T\\
+    \sum_{i} w^i\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T  &amp;  \sum_{i} w^i\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)^T + R_t \\
+    \end{matrix}\right). %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;We identify the following correspondences:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+C_t\hat x_{t|t-1} &amp;\,\widehat{=}\, \sum_{i} w^i h(\chi^i) \\
+C_tP_{t|t-1}&amp;\,\widehat{=}\, \sum_{i} w^i\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T \\
+P_{t|t-1}^TC_t^T&amp;\,\widehat{=}\, \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)^T \\
+C_tP_{t|t-1}^TC_t^T&amp;\,\widehat{=}\, \sum_{i} w^i\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)^T.
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;We are done and summarize our results as follows.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Equations of the unscented Kalman filter&lt;/h1&gt;
+
+  &lt;p&gt;The recursive formula for the unscented Kalman filter consists of the &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+\hat x_{t+1|t} &amp;=  \sum_{i} w^i f(\chi^i,u_t) \\
+P_{t+1|t} &amp;= \sum_{i} w^i(f(\chi^i,u_t)-\hat{\mu}_y)(f(\chi^i,u_t)-\hat{\mu}_y)^T + Q_t.
+\end{align} %]]&gt;&lt;/script&gt;
+
+  &lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+z_t &amp;= y_{t}-\sum_{i} w^i h(\chi^i)\\
+S_t &amp;= R_t + \sum_{i} w^i\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)^T\\
+K_t &amp;= \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)^TS_t^{-1} \\
+\hat x_{t|t} &amp;= \hat x_{t|t-1} + K_t z_t\\
+P_{t|t} &amp;= P_{t|t-1} -K_tS_tK_t^T.
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;/div&gt;
+
+&lt;h1 id=&quot;unscented-kalman-filter&quot;&gt;Unscented Kalman filter&lt;/h1&gt;
+
+&lt;p&gt;To obtain the equations of the unscented Kalman filter that are normally used, we have to adjust the result of our derivation in two aspects.
+The first aspect is, that we are choosing specific values for the parameters \(a_i\) corresponding to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;a_i = \sqrt{n+\lambda}.&lt;/script&gt;
+
+&lt;p&gt;The weights for \(i=1,\ldots,2n \) are set to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;w^i =  \frac{\lambda}{2(n + \lambda)}.&lt;/script&gt;
+
+&lt;p&gt;For the center sigma point \(\chi^0\), we will use a different weight \(w_s^0\) and \(w_c^0\) for the calculation of the mean and the variance respectively defined by&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align}
+w_s^0  &amp;= \frac{\lambda}{n + \lambda} \\
+w_c^0  &amp;= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;where the parameter \(\lambda\) is defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\lambda = \alpha^2(n+\kappa) - n.&lt;/script&gt;
+
+&lt;p&gt;A typical recommendation is to use \(\kappa = 0\), \(\alpha = 10^{-3}\) and \(\beta=2\). We noted above, that the covariance of our surrogate prior \(\hat{p}(x)\) is not depending on the weight \(w^0\). But please be aware, that it will certainly impact the rest of the joint probability distribution.&lt;/p&gt;
+
+&lt;p&gt;The second aspect we have to change (or at least could change), is that we don’t have to recalculate our sigma points after the prediction step. We can simply use the transformed sigma points \(f(\chi^i)\) as our new sigma points.&lt;/p&gt;
+
+&lt;p&gt;Enough of the dry theory! Let’s play around with the grid-based filter in our race track example.&lt;/p&gt;
+
+&lt;h2 id=&quot;example&quot;&gt;Example&lt;/h2&gt;
+
+&lt;svg id=&quot;race_track_mar_loc&quot; style=&quot;width:100%&quot; onclick=&quot;on_click()&quot;&gt;&lt;/svg&gt;
+&lt;script&gt;
+
+
+    n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;&quot;,1000);
+    n_scene.mode = 2;
+    n_scene.filter = &quot;&quot;;
+    n_scene.dur=slow_dur;
+    // define particle filter 
+
+    n_scene.auto_start = false;
+
+    n_scene.t = 1;
+
+    n_scene.ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
+
+    n_scene.loaded = function(){
+
+        var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style(&quot;background-color&quot;)), d3.rgb('#006eff'), d3.rgb('#00028e')]);
+        var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style(&quot;background-color&quot;)), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
+
+        this.ekf = init_ekf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
+        this.ukf = init_ukf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
+        this.rt.init_strip(&quot;inner&quot;, get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
+        this.rt.init_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt), outer_color, 60);
+
+
+
+        document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+        this.rt.hide_strip(&quot;inner&quot;);
+
+
+        this.restart = function(){
+            for (var i=0; i&lt;this.ids.length;i++){
+
+                document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+            }
+            document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+            this.rc.reset();
+            this.t = 1;
+
+            
+
+            //this.bf.reset();
+            this.ekf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
+            this.ukf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
+            this.rt.hide_strip(&quot;inner&quot;);
+            this.rt.show_strip(&quot;outer&quot;);
+            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+        }
+
+
+        this.rt.set_restart_button(this.restart.bind(this))
+
+
+
+
+    }.bind(n_scene)
+
+
+    n_scene.step = function(){
+        this.t++;
+        for (var i=0; i&lt;this.ids.length;i++){
+
+            document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+        }
+
+
+        if(this.t % 4 == 0){
+            //CHOOSE ACTION
+            this.rc.step(this.rc.current_input);
+            this.last_input = this.rc.current_input;
+            document.getElementById(&quot;race_track_mar_loc_predict&quot;).style.display=&quot;block&quot;;
+            this.rt.hide_strip(&quot;inner&quot;);
+        }else if(this.t % 4 == 1){
+            // PREDICT
+            this.ekf.predict(this.last_input);
+            this.ukf.predict(this.last_input);
+
+            // trim ekf posterior
+            if(this.ekf.posterior_mu&lt;0){
+                this.ekf.posterior_mu+=this.rt.track_length;
+            }
+            this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
+
+            if(this.ukf.posterior_mu&lt;0){
+                this.ukf.posterior_mu+=this.rt.track_length;
+            }
+            this.ukf.posterior_mu = this.ukf.posterior_mu % this.rt.track_length;
+
+            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+            document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+        }else if(this.t % 4 == 2){
+            // OBSERVE
+            this.rt.show_strip(&quot;inner&quot;);
+            this.output = scene.rc.output_dist_sample(0);
+            var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
+            this.rt.update_strip(&quot;inner&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
+
+            document.getElementById(&quot;race_track_mar_loc_update&quot;).style.display=&quot;block&quot;;
+        }else if(this.t % 4 == 3){
+            // UPDATE
+
+            this.ekf.update(this.output);
+            this.ukf.update(this.output);
+
+            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+
+            document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+        }
+
+    }.bind(n_scene);
+
+    scenes_name[&quot;race_track_mar_loc&quot;] = n_scene;
+    scenes.push(n_scene);
+
+&lt;/script&gt;
+
+&lt;div id=&quot;race_track_mar_loc_timestep&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=0;scenes_name['race_track_mar_loc'].step();&quot;&gt;Backward&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=1;scenes_name['race_track_mar_loc'].step();&quot;&gt;No action&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].rc.current_input=2;scenes_name['race_track_mar_loc'].step();&quot;&gt;Forward&lt;/div&gt;
+ &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_predict&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;Predict step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_likelihood&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;Observe&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_mar_loc_update&quot; class=&quot;button_set&quot; onclick=&quot;scenes_name['race_track_mar_loc'].step();&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot;&gt;Update step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;p&gt;On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
+
+&lt;p&gt;If you want to reset the environment, just press the reset button in the bottom left corner.
+As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
+
+&lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
+
+&lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;div id=&quot;rad_to_s&quot; style=&quot;width:100px&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;div1&quot;&gt;&lt;/div&gt;
+&lt;div id=&quot;div2&quot;&gt;&lt;/div&gt;
+&lt;!-- &lt;div id=&quot;system_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt; --&gt;
+&lt;!--&lt;div id=&quot;output_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt;--&gt;
+
+&lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;</content><author><name></name></author><summary type="html">The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.</summary></entry><entry><title type="html">Observability: A Bayesian perspective</title><link href="/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
@@ -115,12 +783,12 @@ In the first case, we have no uncertainty: The system is observable. In the seco
 
 &lt;h1 id=&quot;summary&quot;&gt;Summary&lt;/h1&gt;
 
-&lt;p&gt;In this post, we looked at the concept of observability from a Bayesian standpoint. We found an intuitive way to reason about the effect of the update step and prediction step in terms of subspaces, described by covariance matrices.&lt;/p&gt;</content><author><name></name></author><summary type="html">Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.</summary></entry><entry><title type="html">Linear algebra with Gauss and Bayes</title><link href="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html" rel="alternate" type="text/html" title="Linear algebra with Gauss and Bayes" /><published>2018-11-06T12:04:07+09:00</published><updated>2018-11-06T12:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/06/linalg-gaussian.html">&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Linear_algebra&quot;&gt;Linear algebra&lt;/a&gt; is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of &lt;a href=&quot;https://en.wikipedia.org/wiki/Multivariate_normal_distribution&quot;&gt;Gaussian distributions&lt;/a&gt; and &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes theorem&lt;/a&gt;.
+&lt;p&gt;In this post, we looked at the concept of observability from a Bayesian standpoint. We found an intuitive way to reason about the effect of the update step and prediction step in terms of subspaces, described by covariance matrices.&lt;/p&gt;</content><author><name></name></author><summary type="html">Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.</summary></entry><entry><title type="html">Linear algebra with Gauss and Bayes</title><link href="/jekyll/update/2018/11/06/linalg-gaussian.html" rel="alternate" type="text/html" title="Linear algebra with Gauss and Bayes" /><published>2018-11-06T12:04:07+09:00</published><updated>2018-11-06T12:04:07+09:00</updated><id>/jekyll/update/2018/11/06/linalg-gaussian</id><content type="html" xml:base="/jekyll/update/2018/11/06/linalg-gaussian.html">&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Linear_algebra&quot;&gt;Linear algebra&lt;/a&gt; is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of &lt;a href=&quot;https://en.wikipedia.org/wiki/Multivariate_normal_distribution&quot;&gt;Gaussian distributions&lt;/a&gt; and &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayes%27_theorem&quot;&gt;Bayes theorem&lt;/a&gt;.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
   &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
-  &lt;script type=&quot;text/javascript&quot; src=&quot;http://localhost:4000/assets/js/math.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
+  &lt;script type=&quot;text/javascript&quot; src=&quot;/assets/js/math.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
 
 &lt;p&gt;This post is about the very basic equation&lt;/p&gt;
 
@@ -264,31 +932,31 @@ if (!mq.matches) {
 	}); 
 } 
 
-&lt;/script&gt;</content><author><name></name></author><summary type="html">Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.</summary></entry><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
+&lt;/script&gt;</content><author><name></name></author><summary type="html">Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.</summary></entry><entry><title type="html">Nonlinear filtering: Extended Kalman filter</title><link href="/jekyll/update/2018/10/31/nf-ekf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Extended Kalman filter" /><published>2018-10-31T23:04:07+09:00</published><updated>2018-10-31T23:04:07+09:00</updated><id>/jekyll/update/2018/10/31/nf-ekf</id><content type="html" xml:base="/jekyll/update/2018/10/31/nf-ekf.html">&lt;p&gt;This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind extended Kalman filter.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;&lt;/p&gt;
 
 &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
 
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
-&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://localhost:4000/assets/css/nonlinear_filter/style.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
 
@@ -621,7 +1289,7 @@ C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 &lt;script&gt;
 
 
-	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;http://localhost:4000&quot;,1000);
+	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;&quot;,1000);
 	n_scene.mode = 2;
 	n_scene.filter = &quot;&quot;;
 	n_scene.dur=slow_dur;
@@ -778,7 +1446,7 @@ if (!mq.matches) {
 	}); 
 } 
 
-&lt;/script&gt;</content><author><name></name></author><summary type="html">This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
+&lt;/script&gt;</content><author><name></name></author><summary type="html">This article is the second part of the nonlinear filtering series, where we will derive the extended Kalman filter with non-additive and additive noise directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Grid-based filter</title><link href="/jekyll/update/2018/10/29/nf-grid-based.html" rel="alternate" type="text/html" title="Nonlinear filtering: Grid-based filter" /><published>2018-10-29T18:05:07+09:00</published><updated>2018-10-29T18:05:07+09:00</updated><id>/jekyll/update/2018/10/29/nf-grid-based</id><content type="html" xml:base="/jekyll/update/2018/10/29/nf-grid-based.html">&lt;p&gt;The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  &lt;!--more--&gt;This marks the first part of the nonlinear filtering series. If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind grid-based filtering.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
@@ -786,23 +1454,23 @@ if (!mq.matches) {
 
 &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
 
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
-&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://localhost:4000/assets/css/nonlinear_filter/style.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
 
@@ -1020,7 +1688,7 @@ Therefore, the posterior will have the form&lt;/p&gt;
 &lt;script&gt;
 
 
-	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;http://localhost:4000&quot;,400);
+	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;&quot;,400);
 	n_scene.mode = 2;
 	n_scene.filter = &quot;bayes&quot;;
 	n_scene.dur=slow_dur;
@@ -1188,30 +1856,30 @@ var np = 101;
 gauss = [...Array(np)].map((e,i)=&gt;{return {x:(i - (np-1)/2)/(1.5*np), w:0.1*gaussian((i - (np-1)/2)/(1.5*np),0,0.15), t:&quot;&quot;};})
 
 dirac_plot(&quot;#dirac_wcomb&quot;,wcomb, true, gauss);
-&lt;/script&gt;</content><author><name></name></author><summary type="html">The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Introduction</title><link href="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html" rel="alternate" type="text/html" title="Nonlinear filtering: Introduction" /><published>2018-10-29T18:04:07+09:00</published><updated>2018-10-29T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/29/nf-intro</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/29/nf-intro.html">&lt;p&gt;This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.&lt;/p&gt;
+&lt;/script&gt;</content><author><name></name></author><summary type="html">The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.</summary></entry><entry><title type="html">Nonlinear filtering: Introduction</title><link href="/jekyll/update/2018/10/29/nf-intro.html" rel="alternate" type="text/html" title="Nonlinear filtering: Introduction" /><published>2018-10-29T18:04:07+09:00</published><updated>2018-10-29T18:04:07+09:00</updated><id>/jekyll/update/2018/10/29/nf-intro</id><content type="html" xml:base="/jekyll/update/2018/10/29/nf-intro.html">&lt;p&gt;This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.&lt;/p&gt;
 
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
 &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
 
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
-&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://localhost:4000/assets/css/nonlinear_filter/style.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;/assets/css/nonlinear_filter/style.css&quot; /&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
 
@@ -1362,7 +2030,7 @@ y_t &amp;\sim p(y_t|x_t)
 
 &lt;script&gt;
 	// defines scenes
-	n_scene = load_race_track(&quot;race_track_intro&quot;,&quot;http://localhost:4000&quot;);
+	n_scene = load_race_track(&quot;race_track_intro&quot;,&quot;&quot;);
 	n_scene.mode = 0;
 	n_scene.filter = null;
 	n_scene.dur=fast_dur;
@@ -1443,7 +2111,7 @@ y_t &amp;\sim p(y_t|x_t)
 
 
 	// defines scenes
-	n_scene = load_race_track(&quot;race_track_sys_dist&quot;, &quot;http://localhost:4000&quot;);
+	n_scene = load_race_track(&quot;race_track_sys_dist&quot;, &quot;&quot;);
 	n_scene.mode = 3;
 	n_scene.me_show_system = true;
 
@@ -1530,7 +2198,7 @@ The brownish strip answers another question: Given the true distance \(d\) at ou
 &lt;script&gt;
 
 	// defines scenes
-	n_scene = load_race_track(&quot;race_track_obs_dist&quot;, &quot;http://localhost:4000&quot;);
+	n_scene = load_race_track(&quot;race_track_obs_dist&quot;, &quot;&quot;);
 	n_scene.mode = 3;
 	n_scene.me_show_system = false;
 	n_scene.me_show_observation_transposed = true;
@@ -1568,9 +2236,9 @@ The brownish strip answers another question: Given the true distance \(d\) at ou
 
 &lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
 
-&lt;script type=&quot;text/javascript&quot; src=&quot;http://localhost:4000/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; src=&quot;/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
 
 &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
 
@@ -1587,7 +2255,7 @@ if (!mq.matches) {
 
 &lt;/script&gt;
 
-&lt;script type=&quot;text/javascript&quot;&gt;new Svg_MathJax().install();&lt;/script&gt;</content><author><name></name></author><summary type="html">This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.</summary></entry><entry><title type="html">The score-Fisher-information-KL connection</title><link href="http://localhost:4000/jekyll/update/2018/10/17/fisher.html" rel="alternate" type="text/html" title="The score-Fisher-information-KL connection" /><published>2018-10-17T18:04:07+09:00</published><updated>2018-10-17T18:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/17/fisher</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/17/fisher.html">&lt;p&gt;This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.
+&lt;script type=&quot;text/javascript&quot;&gt;new Svg_MathJax().install();&lt;/script&gt;</content><author><name></name></author><summary type="html">This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory.</summary></entry><entry><title type="html">The score-Fisher-information-KL connection</title><link href="/jekyll/update/2018/10/17/fisher.html" rel="alternate" type="text/html" title="The score-Fisher-information-KL connection" /><published>2018-10-17T18:04:07+09:00</published><updated>2018-10-17T18:04:07+09:00</updated><id>/jekyll/update/2018/10/17/fisher</id><content type="html" xml:base="/jekyll/update/2018/10/17/fisher.html">&lt;p&gt;This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_SVG&quot; type=&quot;text/javascript&quot;&gt;&lt;/script&gt;
@@ -2240,7 +2908,7 @@ $$ \left[\mathcal{J(\theta)}\right]_{ij} =  -\frac{\partial^2  \log p(x|\theta)}
 $$ \mathcal{J(\theta)} =  -\nabla_{\theta}^2 \log p(x|\theta) $$
 &lt;/div&gt;&lt;div class=&quot;tab-bar&quot;&gt;&lt;h3 class=&quot;tab-button-selected&quot; onclick=&quot;switch_tab(this)&quot;&gt;Scalar&lt;/h3&gt;&lt;h3 class=&quot;tab-button&quot; onclick=&quot;switch_tab(this)&quot;&gt;Vector&lt;/h3&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;We note that this case has the same form as the curvature of the KL-divergence.&lt;/p&gt;</content><author><name></name></author><summary type="html">This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.</summary></entry><entry><title type="html">Derivation of the Kalman filter</title><link href="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
+&lt;p&gt;We note that this case has the same form as the curvature of the KL-divergence.&lt;/p&gt;</content><author><name></name></author><summary type="html">This article is a brief summary of some relationships between the log-likelihood, score, Kullback-Leibler divergence and Fisher information. No explanations, just pure math.</summary></entry><entry><title type="html">Derivation of the Kalman filter</title><link href="/jekyll/update/2018/10/10/kalman_filter.html" rel="alternate" type="text/html" title="Derivation of the Kalman filter" /><published>2018-10-10T19:35:07+09:00</published><updated>2018-10-10T19:35:07+09:00</updated><id>/jekyll/update/2018/10/10/kalman_filter</id><content type="html" xml:base="/jekyll/update/2018/10/10/kalman_filter.html">&lt;p&gt;The concept and the equations of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Kalman_filter&quot;&gt;Kalman filter&lt;/a&gt; can be quite confusing at the beginning. Often the assumptions are not stated clearly and the equations are just falling from the sky. This post is an attempt to derive the equations of the Kalman filter in a systematic and hopefully understandable way using &lt;a href=&quot;https://en.wikipedia.org/wiki/Bayesian_inference&quot;&gt;Bayesian inference&lt;/a&gt;. It addresses everyone, who wants to get a deeper understanding of the Kalman filter and is equipped with basic knowledge of linear algebra and probability theory.
 &lt;!--more--&gt;&lt;/p&gt;
 
 &lt;script type=&quot;text/javascript&quot;&gt;
@@ -2784,9 +3452,9 @@ P_{t|t} &amp;= (I - K_tC_t)P_{t|t-1}.
   &lt;li&gt;Added some “sugar” to obtain the usual equations of the Kalman filter.&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;script src=&quot;http://localhost:4000/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;/assets/js/d3_graphical_model.js&quot;&gt;&lt;/script&gt;
 
-&lt;script type=&quot;text/javascript&quot; src=&quot;http://localhost:4000/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; src=&quot;/assets/js/svg_mathjax.js&quot;&gt;&lt;/script&gt;
 
 &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
 
