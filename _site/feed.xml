@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-07T01:10:28+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Observability: A Bayesian perspective</title><link href="http://localhost:4000/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-07T17:20:42+09:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Observability: A Bayesian perspective</title><link href="http://localhost:4000/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>http://localhost:4000/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="http://localhost:4000/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
 &lt;!--more--&gt;
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
@@ -92,7 +92,7 @@ We took the intersection of the whole state space and &lt;em&gt;inverse subspace
 Let’s see what happens, if we take the prediction step. If we assume that \(A\) has full rank, the dimensionality of the subspace will remain the same. Depending on the matrix \(A\) two things can happen:&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;The transformation won’t change the subspace, but only the representation of the subspace.&lt;/li&gt;
+  &lt;li&gt;The transformation won’t change the subspace, but only the representation of the subspace. It is an &lt;a href=&quot;https://en.wikipedia.org/wiki/Invariant_subspace&quot;&gt;invariant subspace&lt;/a&gt; with respect to transformation \(A\).&lt;/li&gt;
   &lt;li&gt;The transformation is changing the subspace.&lt;/li&gt;
 &lt;/ol&gt;
 
@@ -111,7 +111,7 @@ Let’s see what happens, if we take the prediction step. If we assume that \(A\
 &lt;p&gt;&lt;strong&gt;The transformation did change the subspace.&lt;/strong&gt; In this case, the intersection with the inverse subspace will again have an effect. The dimensionality of the posterior subspace will get smaller.&lt;/p&gt;
 
 &lt;p&gt;We have to repeat the process of prediction and updating until the subspace of our posterior has either dimension zero or the prediction step is again not changing our subspace.
-In the first case, we have no uncertainty: The system is observable. In the second case, the system is not observable.&lt;/p&gt;
+In the first case, we have no uncertainty: The system is observable. In the second case, we identified a invariant subspace. Therefore, the system is not observable.&lt;/p&gt;
 
 &lt;h1 id=&quot;summary&quot;&gt;Summary&lt;/h1&gt;
 

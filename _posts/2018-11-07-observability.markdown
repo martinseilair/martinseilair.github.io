@@ -100,7 +100,7 @@ We are starting by taking an update step. The update step can be interpreted as 
 We took the intersection of the whole state space and _inverse subspace_. As a result, our posterior will be simply the inverse subspace.
 Let's see what happens, if we take the prediction step. If we assume that \\(A\\) has full rank, the dimensionality of the subspace will remain the same. Depending on the matrix \\(A\\) two things can happen:
 
-1. The transformation won't change the subspace, but only the representation of the subspace.
+1. The transformation won't change the subspace, but only the representation of the subspace. It is an [invariant subspace](https://en.wikipedia.org/wiki/Invariant_subspace) with respect to transformation \\(A\\).
 2. The transformation is changing the subspace.
 
 Depending on these two cases we will have two cases for the next update step:
@@ -109,8 +109,7 @@ Depending on these two cases we will have two cases for the next update step:
 
 $$ P_{0|0} = I - C^+C. $$
 
- We know that \\(C(I - C^+C) = 0\\) and \\((I - C^+C)C^T = 0\\), therefore, our update step simplifies to
-
+We know that \\(C(I - C^+C) = 0\\) and \\((I - C^+C)C^T = 0\\), therefore, our update step simplifies to
 
 $$ P_{t|t} =P_{t|t-1}-\underbrace{P_{t|t-1}C^T}_{0}(\delta I + \underbrace{CP_{t|t-1}}_{0}C^T)^{-1}\underbrace{CP_{t|t-1}}_{0} =  P_{t|t-1}.  $$
 
@@ -119,7 +118,7 @@ It seems, that we can't rid of this _unobservable_ subspace. Therefore, we have 
 **The transformation did change the subspace.** In this case, the intersection with the inverse subspace will again have an effect. The dimensionality of the posterior subspace will get smaller. 
 
 We have to repeat the process of prediction and updating until the subspace of our posterior has either dimension zero or the prediction step is again not changing our subspace.
-In the first case, we have no uncertainty: The system is observable. In the second case, the system is not observable. 
+In the first case, we have no uncertainty: The system is observable. In the second case, we identified a invariant subspace. Therefore, the system is not observable. 
 
 # Summary
 

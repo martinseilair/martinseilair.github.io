@@ -1,12 +1,14 @@
 ---
 layout: post
 title:  "Nonlinear filtering: Unscented Kalman filter"
-date:   2018-10-12 18:04:07 +0900
+date:   2018-11-07 17:04:07 +0900
 categories: jekyll update
 excerpt_separator: <!--more-->
 ---
-Intro
-<!--more-->
+The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  <!--more--> If you haven't read the [introduction]({% post_url 2018-10-29-nf-intro %}), I would recommend to read it first. Before we dive into the derivation, let's try to state the main idea behind the unscented Kalman filter.
+
+
+
 <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
@@ -56,57 +58,56 @@ Intro
 
 
 </script>
+
+
+<div class="important_box"  markdown="1">
+The **unscented Kalman filter** approximates the Bayes filter by approximating the system and observation equations locally. A set of probe points is used to infer the local behavior of the function around the current estimate.
+</div>
+
+When I first learned about the unscented Kalman filter, it seemed that it was not derived from the general Bayes filter
+
+$$ \text{Bayes filter} \to \text{nonlinear models} \to \text{unscented Kalman filter,} $$ 
+
+but rather directly from the Kalman filter
+
+$$ \text{Kalman filter} \to \text{nonlinear models} \to \text{unscented Kalman filter}. $$
+
+In this post, I want to explore how to derive the unscented Kalman filter from general Bayes filter directly. But there is one catch, to obtain the equations of the unscented Kalman filter, you have to do some steps that seem hard to justify. It is totally possible, that there are deep thoughts behind it, but my limited scope is preventing me to identify them. Nonetheless, I will start to derive a different version of the unscented Kalman filter that is in some regards more principled. In the end, I will adjust this version to match the _normal_ unscented Kalman filter.
+
+Let's start with the derivation!
+
 ## Derivation
-
-We will start the derivation directly from the recursive equations of the Bayes filter with the **prediction step**
-
-$$ p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t} $$
-
-and the **update step**
-
-$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} .$$
-
-If we want to apply the unscented Kalman filter, we assume that we have nonlinear models with additive noise
+First of all, if we want to apply the unscented Kalman filter, we assume that we have nonlinear models with additive noise
 
 $$  \begin{align}
 p(x_{t+1}|x_{t}, u_{t})  &= \mathcal{N}(x_{t+1}|f(x_t, u_t), Q_t) \\
-p(y_t|x_t) &=  \mathcal{N}(y_t|C_tx_t, R_t),
+p(y_t|x_t) &=  \mathcal{N}(y_t|h(x_t), R_t).
  \end{align}$$
 
-The unscented Kalman filter was born by intuition. It seems that it is not derived from the general Bayes filter but from the Kalman filter
-
-Bayes filter -> Linear Gaussian models -> Kalman filter
-
-Kalman filter -> Non-linear models -> Unscented Kalman filter
-
-In this post I will try to derive the UKF from first principles. There is one catch, to obtain the true UKF you have to do some very nasty approximations, will incorporate in the derivation afterwards.
-
-The UKF is based around the unscented transform. If you want to transform a Gaussian distribution
+Unlike the extended Kalman filter, which is based on linearization, the unscented Kalman filter is based around the [unscented transform](https://en.wikipedia.org/wiki/Unscented_transform). In simplest terms, if you want to transform a Gaussian distribution
 
 $$ p(x) = \mathcal{N}(y|\mu, \Sigma) $$
 
- thorugh a nonlinear function, it will give you an estimate of the resulting mean and covariance.
+through a nonlinear function, it will give you an estimate of the resulting mean and covariance.
 
-For developing the equations I would state the UT in another form. The nonlinear equations is in our case a Gaussian distribution with constant variance and nonlinear mean:
-
-like in the case of the extended Kalman filter with additive noise. 
+For the derivation of the equations of unscented Kalman filter, I will state the unscented transform in a slightly different form, which I will call the joint probability interpretation of the unscented transform. 
 
 <div class="extra_box" markdown="1">
 
 # Joint probability interpretation of the unscented transform
 
-In this section we explore an interpretation of the unscented transform in terms of the joint probability. We are in a setting with a Gaussian conditional distribution with nonlinear mean and constant variance
+In this section, we explore an interpretation of the unscented transform in terms of the joint probability. We are in a setting with a Gaussian conditional distribution with nonlinear mean and constant variance
 
 
 $$ p(y|x) = \mathcal{N}(y|f(x),B) $$
 
 and a Gaussian prior \\(p(x) = \mathcal{N}(y\|\mu, \Sigma) \\).
 
-Conceptually, we will first replace the prior with a surrogate distribution \\(\hat{p}(x)\\). Subsequently we will approximate the joint distribution of the true conditional distribution \\(p(y\|x)\\) and the surrogate distribution \\(\hat{p}(x)\\) with a Gaussian distribution \\( \hat{p}(x,y) = \mathcal{N}(x,y\|\hat{\mu},\hat{\Sigma}).\\)
+Conceptually, we will first replace the prior with a surrogate distribution \\(\hat{p}(x)\\). Subsequently, we will approximate the joint distribution of the true conditional distribution \\(p(y\|x)\\) and the surrogate distribution \\(\hat{p}(x)\\) with a Gaussian distribution \\( \hat{p}(x,y) = \mathcal{N}(x,y\|\hat{\mu},\hat{\Sigma}).\\)
 
 **Surrogate distribution**
 
-The first step is to replace the Gaussian distribution \\( p(x)  \\) with a surrogate distribution  \\(\hat{p}(x)\\), that has the same mean and variance. For this surrogate distribution we choose a mix of weighted Dirac delta functions
+The first step is to replace the Gaussian distribution \\( p(x)  \\) with a surrogate distribution  \\(\hat{p}(x)\\) that has the same mean and variance. For this surrogate distribution, we choose a mix of weighted [Dirac delta functions](https://en.wikipedia.org/wiki/Dirac_delta_function)
 
 $$ \hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x), $$
 
@@ -114,7 +115,7 @@ where \\(\delta_{\chi^i}(x)\\) is a shorthand for \\(\delta(x-\chi^i)\\) and the
 
 $$ \sum_{i} w^i = 1. $$
 
-The shifting parameter of the Dirac delta functions \\(\chi^i\\) are called _sigma points_ and are chosen corresponding to
+The shifting parameter of the Dirac delta functions \\(\chi^i\\) are called _sigma points_ and are chosen to correspond to
 
 
 $$
@@ -126,7 +127,7 @@ $$
 $$
 
 
-where \\(L_i\\) describes the \\(i\\)th column of the Cholesky decompositoin \\(\Sigma = LL^T\\) and \\(n\\) is the dimension of the multivariate Gaussian distribution \\(p(x)\\). The parameters \\(a_i\\) are arbitrary and can be chosen by the designer. Because of the symmetry of the sigma points, the weights will be symmetric as well
+where \\(L_i\\) describes the \\(i\\)th column of the Cholesky decomposition \\(\Sigma = LL^T\\) and \\(n\\) is the dimension of the multivariate Gaussian distribution \\(p(x)\\). The parameters \\(a_i\\) are arbitrary and can be chosen by the designer. Because of the symmetry of the sigma points, the weights will be symmetric as well
 
 
 $$
@@ -159,7 +160,7 @@ $$
 
 and notice, that this property is independent of the weights \\(w^i\\). 
 
-Let's move ob to the variance and see how we have to choose the weights \\(w^i\\) to match it
+Let's move to the variance and see how we have to choose the weights \\(w^i\\) to match
 
  $$\Sigma \stackrel{!}{=} \sum_{i} w^i (\chi^i-\mu)(\chi^i-\mu)^T .$$
 
@@ -175,7 +176,7 @@ $$
 \end{align}
 $$
 
-We note, that the all occurences of the mean are cancelled out. In particular, the first term corresponding to the central sigma point \\(\chi^0\\) is vanishing completely. Therefore, the corresponding weight plays no direct role for the mean _and_ variance. By using the symmetry properties we arrive finally at
+We note, that all occurences of the mean are canceled out. In particular, the first term corresponding to the central sigma point \\(\chi^0\\) is vanishing completely. Therefore, the corresponding weight plays no direct role for the mean _and_ variance. By using the symmetry properties we finally arrive at
 
 $$
  \begin{align}
@@ -195,20 +196,20 @@ By a comparison of coefficients, we notice that the property
 
 $$ 2w^i a_i^2 = 1 $$
 
-has to be satisified. It follows that the weights should be \\(w^i = \frac{1}{2a_i^2} \\) for \\(i=1,\ldots,n\\).
+has to be satisfied. It follows that the weights should be \\(w^i = \frac{1}{2a_i^2} \\) for \\(i=1,\ldots,n\\).
 
-Furthemore, by knowing that all weights has to sum to \\(1\\) it follows that of the central sigma point \\(\chi^0\\) has to be
+Furthermore, by knowing that all weights have to sum to \\(1\\), it follows that the weight of the central sigma point \\(\chi^0\\) has to be
 
 $$ w^0  = 1 - 2\sum_{i=1}^{n}\frac{1}{2a_i^2}.$$
 
 
-We finally found our surrogate distributoin
+We finally found our surrogate distribution
 
 $$ \hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x) $$
 
 with the correct mean \\(\mu\\) and variance \\(\Sigma\\). 
 
-**Gaussian approximation of joint probability**
+**Gaussian approximation of the joint probability**
 
 Let's look at the second part: We want to approximate the joint distribution of the true conditional distribution \\(p(y\|x)\\) and the surrogate distribution \\(\hat{p}(x)\\) with a Gaussian distribution \\( \hat{p}(x,y) = \mathcal{N}(x,y\|\hat{\mu},\hat{\Sigma}).\\)
 
@@ -217,9 +218,9 @@ We can write the joint probability of \\(p(y\|x)\\) and \\(\hat{p}(x)\\) as
 
 $$ \hat{p}(x,y) = p(y|x)\hat{p}(x) = \mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x). $$
 
-This joint probability will look like slices of the \\(p(y\|x) \\).
+This joint probability will look like weighted slices of the conditional probability \\(p(y\|x) \\).
 
-Now we want to approximate this weird looking distribution with a Gaussian distribution. But how should we choose this Gaussian joint distribution? The answer is simple. We are simply calculating the mean and the variance of the joint probability, which will define the Gaussian distribution. Fair enough! So, let's dive directly into the calculation of the mean. We are starting directly from the definition of the expectation
+The next step is to approximate this weird looking distribution with a Gaussian distribution. But how should we choose the parameter of this Gaussian joint distribution? The answer is simple: We are calculating the mean and the variance of the joint probability, which will define the mean and variance of our joint Gaussian distribution. Fair enough! So, let's dive directly into the calculation of the mean. We are starting directly from the definition of the expectation
 
 $$ 
 \hat{\mu} = \iint\limits_{x\,y}\hat{p}(x,y) \begin{pmatrix}
@@ -242,12 +243,12 @@ $$ \hat{\mu} = \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\begin{pmatr
     y \\
     \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy $$
 
-and use the sifting property of the Dirac delta function to obtain
+and use the [sifting property](https://en.wikipedia.org/wiki/Dirac_delta_function#Translation) of the Dirac delta function to obtain
 
 $$ \hat{\mu}= \sum_{i} w^i \int\limits_{x}\mathcal{N}(y|f(\chi^i),B)\begin{pmatrix}
     \chi^i \\
     y \\
-    \end{pmatrix} \,dy \\. $$
+    \end{pmatrix} \,dy. $$
 
 We can simplify this expression even further to 
 
@@ -289,18 +290,18 @@ and plug in our distributions to obtain
 
 $$
 \begin{align}
-&= \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x) \begin{pmatrix}
+\hat{\Sigma}&= \iint\limits_{x\,y}\mathcal{N}(y|f(x),B)\sum_{i} w^i \delta_{\chi^i}(x) \begin{pmatrix}
     (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T & (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
     (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T & (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
     \end{pmatrix} \,dx\,dy. \\ 
 \end{align}
 $$    
 
-Again we are rearranging sum and integrals and use the sifting property
+Again we are rearranging sum and integrals 
 
 $$
 \begin{align}
-&= \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B) \begin{pmatrix}
+\hat{\Sigma}&= \sum_{i} w^i \iint\limits_{x\,y}\mathcal{N}(y|f(x),B) \begin{pmatrix}
     (x-\hat{\mu}_x)(x-\hat{\mu}_x)^T & (x-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
     (y-\hat{\mu}_y)(x-\hat{\mu}_x)^T & (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
     \end{pmatrix} \delta_{\chi^i}(x) \,dx\,dy. \\ 
@@ -308,11 +309,11 @@ $$
 \end{align}
 $$    
 
-and finally obtain
+and use the sifting property to finally obtain
 
 $$
 \begin{align}
-&= \sum_{i} w^i \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) \begin{pmatrix}
+\hat{\Sigma}&= \sum_{i} w^i \int\limits_{y}\mathcal{N}(y|f(\chi^i),B) \begin{pmatrix}
     (\chi^i-\hat{\mu}_x)(\chi^i-\hat{\mu}_x)^T & (\chi^i-\hat{\mu}_x)(y-\hat{\mu}_y)^T \\
     (y-\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T & (y-\hat{\mu}_y)(y-\hat{\mu}_y)^T \\
     \end{pmatrix} \,dy \\ 
@@ -339,7 +340,7 @@ $$
 \end{align}
 $$    
 
-Now we have also a nice expression for the mean of the approximated joint probability \\(\hat{p}(x,y)\\).
+Now we have also a nice expression for the variance of the approximated joint probability \\(\hat{p}(x,y)\\).
 
 
 Let's summarize our result 
@@ -355,7 +356,7 @@ and a Gaussian prior \\(p(x) = \mathcal{N}(y\|\mu, \Sigma) \\). We can approxima
 
 $$ \hat{p}(x) = \sum_{i} w^i \delta_{\chi^i}(x), $$
 
-where the weights \\(w^i\\) are defined by 
+with the weights \\(w^i\\) are defined by 
 
 $$
 \begin{align}
@@ -390,30 +391,36 @@ $$ \hat{p}(x,y) = \mathcal{N}\left(\begin{matrix}
     \end{matrix}\right). $$
 
 
-$$ \hat{p}(x,y) = \mathcal{N}\left(x\middle|\mu,\Sigma\right) \mathcal{N}\left(y\middle|\sum_{i} w^i f(\chi^i) + \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}(x-\mu),\sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B - \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}\sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T \right) $$
-
-$$ \hat{p}(y|x) = \mathcal{N}\left(y\middle|\sum_{i} w^i f(\chi^i) + \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}(x-\mu),\sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + B - \sum_{i} w^i(f(\chi^i) -\hat{\mu}_y)(\chi^i-\hat{\mu}_x)^T\Sigma^{-1}\sum_{i} w^i(\chi^i-\hat{\mu}_x)(f(\chi^i) -\hat{\mu}_y)^T \right) $$
-
 
 </div>
 
 </div>
 
 
-Please be aware, that this is **not** the definition of the unscented transform. But it will be easier to work with this pure form for now and identify the vanilla unscented transform as a special case.
+
+
+Please be aware, that this is **not** the definition of the unscented transform. But it will be easier to work with this form for now and identify the normal unscented transform as a special case.
 
 Ok, now we know how to approximate the joint probability of Gaussian distributions with nonlinear mean and a Gaussian prior. But what can we do with it? 
 
-If we look closely at the equations of the general Bayes filter we can find joint probability of the form we just discussed. For the prediction step we have 
+If we look closely at the **prediction step**
+
+$$ p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t} $$
+
+and the **update step**
+
+$$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1}) \,dx_t} $$
+
+of the general Bayes filter, we can find the joint probability of the form we just discussed. For the prediction step we have 
 
 
 $$ \int_x p(y|x)p(x)\,dx \to \int_x p(x,y)\,dx $$
 
-and for the update 
+and for the update step
 
 $$ \frac{p(y|x)p(x)}{\int_x p(y|x)p(x)\,dx} \to \frac{p(x,y)}{\int_x p(x,y)\,dx}. $$
 
-That is pretty nice! We can approximate our joint probabilities and our equations of the Bayes filter can take joint probabilities as input. The only thing that is left over is to actually do it. So let's start with the prediction step.
+That is pretty nice! We can approximate joint probabilities and the equations of the Bayes filter can take joint probabilities as input. So don't waste time and start directly with the prediction step.
 
 
 # Prediction step
@@ -427,7 +434,7 @@ $$ p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} \hat{p}(x_{t+1},x_{t}|y_{0:t},u_{0:
 
 
 
-Marginalizing over a joint Gaussian ditribution is very simple. You just have to discard the dimensions you marginalize over: 
+Fortunately, marginalizing over a joint Gaussian distribution is very simple. You just have to discard the dimensions you are marginalizing over: 
 
 $$ \int\limits_{x}\mathcal{N}\left(\begin{matrix}
     x  \\
@@ -441,14 +448,14 @@ $$ \int\limits_{x}\mathcal{N}\left(\begin{matrix}
     \end{matrix} \right) \,dx = \mathcal{N}(y|b,B). $$
 
 
-Because we have a marginalization over a joint distribution we just have to look at mean and variance of the remainning dimensions. Finally, our predicted state estimate will be a Gaussian with parameters
+Therefore, we only have to calculate the mean and covariance of the remaining part. Our predicted state estimate will be a Gaussian distribution with parameters
 
 
 
 $$ 
 \begin{align}
-\hat x_{t+1|t} &=  \sum_{i} w^i f(\chi^i) \\
-P_{t+1|t} &= \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T + Q_t.
+\hat x_{t+1|t} &=  \sum_{i} w^i f(\chi^i,u_t) \\
+P_{t+1|t} &= \sum_{i} w^i\left(f(\chi^i,u_t)-\sum_{i} w^i f(\chi^i,u_t)\right)\left(f(\chi^i,u_t)-\sum_{i} w^i f(\chi^i,u_t)\right)^T + Q_t.
 \end{align}
 $$
 
@@ -464,9 +471,9 @@ and replace the true joint probability \\(p(y_t\|x_t)p(x_t\|y_{0:t-1},u_{0:t-1})
 
 $$ p(x_t|y_{0:t},u_{0:t-1}) = \frac{\hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t} \hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1})\,dx_t}.$$
 
-Now we have to options to go on. Either we just simplify these equations to obtain the final update equation of the unscented Kalman filter or we can be smart and note, that would compute nothing else, but the update step of the Kalman filter. Let's try the second way.
+Now we have to options: Either we just simplify these equations to obtain the final update equation of the unscented Kalman filter or we can be smart and note, that we would compute nothing else, but the update step of the Kalman filter. Let's take that second option.
 
-The joint probability in the Linear Gaussian case (where we already have the equations of the Kalman filter) can be expressed as
+The joint probability in the linear Gaussian case (where we already have the equations of the Kalman filter) can be expressed as
 
 $$ \mathcal{N}(y_{t}|C_tx_{t}, R_t )\mathcal{N}(x_{t}|\hat x_{t|t-1}, P_{t|t-1}) = \mathcal{N}\left(\begin{matrix}x_t \\y_t\end{matrix}\middle|\begin{matrix}\hat x_{t|t-1}\\C_t\hat x_{t|t-1} \end{matrix},\begin{matrix}P_{t|t-1} & P_{t|t-1}^TC_t^T\\C_tP_{t|t-1} & R_t + C_tP_{t|t-1}^TC_t^T\end{matrix}\right) .$$
 
@@ -477,25 +484,25 @@ $$ \hat{p}(y_t,x_t|y_{0:t-1},u_{0:t-1}) = \mathcal{N}\left(\begin{matrix}
     y_t \\
     \end{matrix}\middle|\begin{matrix}
     \hat x_{t|t-1} \\
-    \sum_{i} w^i f(\chi^i) \\
+    \sum_{i} w^i h(\chi^i) \\
     \end{matrix},\begin{matrix}
-    P_{t|t-1}                                                                                       &  \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)^T\\
-    \sum_{i} w^i\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T  &  \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T + R_t \\
+    P_{t|t-1}                                                                                       &  \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)^T\\
+    \sum_{i} w^i\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T  &  \sum_{i} w^i\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)^T + R_t \\
     \end{matrix}\right). $$
 
 We identify the following correspondences:
 
 $$
 \begin{align}
-C_t\hat x_{t|t-1} &\,\widehat{=}\, \sum_{i} w^i f(\chi^i) \\
-C_tP_{t|t-1}&\,\widehat{=}\, \sum_{i} w^i\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T \\
-P_{t|t-1}^TC_t^T&\,\widehat{=}\, \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)^T \\
-C_tP_{t|t-1}^TC_t^T&\,\widehat{=}\, \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T.
+C_t\hat x_{t|t-1} &\,\widehat{=}\, \sum_{i} w^i h(\chi^i) \\
+C_tP_{t|t-1}&\,\widehat{=}\, \sum_{i} w^i\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)\left(\chi^i-\hat x_{t|t-1}\right)^T \\
+P_{t|t-1}^TC_t^T&\,\widehat{=}\, \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)^T \\
+C_tP_{t|t-1}^TC_t^T&\,\widehat{=}\, \sum_{i} w^i\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)^T.
 \end{align}
 $$
 
 
-We can summarize our results as following.
+We are done and summarize our results as follows.
 
 <div class="important_box" markdown="1">
 <h1>Equations of the unscented Kalman filter</h1>
@@ -504,8 +511,8 @@ The recursive formula for the unscented Kalman filter consists of the **predicti
 
 $$ 
 \begin{align}
-\hat x_{t+1|t} &=  \sum_{i} w^i f(\chi^i) \\
-P_{t+1|t} &= \sum_{i} w^i(f(\chi^i)-\hat{\mu}_y)(f(\chi^i)-\hat{\mu}_y)^T + Q_t.
+\hat x_{t+1|t} &=  \sum_{i} w^i f(\chi^i,u_t) \\
+P_{t+1|t} &= \sum_{i} w^i(f(\chi^i,u_t)-\hat{\mu}_y)(f(\chi^i,u_t)-\hat{\mu}_y)^T + Q_t.
 \end{align}
 $$
 
@@ -513,9 +520,9 @@ $$
 and the **update step**
 
 $$ \begin{align}
-z_t &= y_{t}-\sum_{i} w^i f(\chi^i)\\
-S_t &= R_t + \sum_{i} w^i\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)\left(f(\chi^i)-\sum_{i} w^i f(\chi^i)\right)^T\\
-K_t &= \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(f(\chi^i) -\sum_{i} w^i f(\chi^i)\right)^TS_t^{-1} \\
+z_t &= y_{t}-\sum_{i} w^i h(\chi^i)\\
+S_t &= R_t + \sum_{i} w^i\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)\left(h(\chi^i)-\sum_{i} w^i h(\chi^i)\right)^T\\
+K_t &= \sum_{i} w^i\left(\chi^i-\hat x_{t|t-1}\right)\left(h(\chi^i) -\sum_{i} w^i h(\chi^i)\right)^TS_t^{-1} \\
 \hat x_{t|t} &= \hat x_{t|t-1} + K_t z_t\\
 P_{t|t} &= P_{t|t-1} -K_tS_tK_t^T.
 \end{align} $$
@@ -526,7 +533,7 @@ P_{t|t} &= P_{t|t-1} -K_tS_tK_t^T.
 
 
 
-To obtain the usual equations of the unscented Kalman filter we have to adjust the result of our derivation in two aspects.
+To obtain the equations of the unscented Kalman filter that are normally used, we have to adjust the result of our derivation in two aspects.
 The first aspect is, that we are choosing specific values for the parameters \\(a_i\\) corresponding to
 
 $$ a_i = \sqrt{n+\lambda}. $$
@@ -535,27 +542,29 @@ The weights for \\(i=1,\ldots,2n \\) are set to
 
 $$ w^i =  \frac{\lambda}{2(n + \lambda)}. $$
 
-For the center sigma point \\(\chi^0\\) we will use a different weight \\(w_s^0\\) and \\(w_c^0\\) for the calculation of the mean and the variance respectively defined by
+For the center sigma point \\(\chi^0\\), we will use a different weight \\(w_s^0\\) and \\(w_c^0\\) for the calculation of the mean and the variance respectively defined by
 
 $$
 \begin{align}
 w_s^0  &= \frac{\lambda}{n + \lambda} \\
-w_c^0  &= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta) 
-\end{align}.
+w_c^0  &= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
+\end{align}
 $$
 
-The parameter \\(\lambda\\) is defined as 
+where the parameter \\(\lambda\\) is defined as 
 
-$$ \lambda = \alpha^2(n+\kappa) - n $$. A typical recommendation is to use \\(\kappa = 0\\), \\(\alpha = 10^{-3}\\) and \\(\beta=2\\). We noted above, that the covariance of our surrogate prior \\(\hat{p}(x)\\) is not depending on the weight \\(w^0\\). But please be aware, that it will certainly impact the rest of the joint probability distribution.
+$$ \lambda = \alpha^2(n+\kappa) - n. $$
+
+A typical recommendation is to use \\(\kappa = 0\\), \\(\alpha = 10^{-3}\\) and \\(\beta=2\\). We noted above, that the covariance of our surrogate prior \\(\hat{p}(x)\\) is not depending on the weight \\(w^0\\). But please be aware, that it will certainly impact the rest of the joint probability distribution.
 
 The second aspect we have to change (or at least could change), is that we don't have to recalculate our sigma points after the prediction step. We can simply use the transformed sigma points \\(f(\chi^i)\\) as our new sigma points.
 
 
+Enough of the dry theory! Let's play around with the grid-based filter in our race track example. 
 
 
 ## Example
 
-Enough of the dry theory! Let's play around with the grid-based filter in our race track example. 
 
 
 
@@ -712,7 +721,6 @@ On the outside the race track, you will notice a blue colored strip. This strip 
 If you want to reset the environment, just press the reset button in the bottom left corner.
 As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
 
-We see, that it is actually working pretty well. But one thing seems particularly weird: At certain positions on the race track, the brownish inner strip (our likelihood) seems to be uniformly distributed. This is not a bug, but a shortcoming of the linearization. We will always experience this behavior, if the part of the road at our current posterior mean is pointing only in _tangential_ direction, with the tree as the center. In other words: A small change in position wouldn't change the distance. When we are linearizing, we assume this local behavior applies for the whole system and we won't get any new information out of our measurement. To get an intuitive understanding of this, you can imagine two parallel lines. Our car is driving along one of the parallel lines and we take the nearest distance to the other line as a measurement. This measurement would be uninformative because the distance to the parallel line is always the same.
 
 
 
