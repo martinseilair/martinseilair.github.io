@@ -3,6 +3,7 @@ layout: post
 title:  "Learning in sequential models"
 date:   2018-10-12 18:04:07 +0900
 categories: jekyll update
+comments: true
 excerpt_separator: <!--more-->
 ---
 A particle filter is a very helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding algorithm and play around with examples on the way. In order to follow the steps in this post you should bring some basic knowledge of math, probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let's dive into it!

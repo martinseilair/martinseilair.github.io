@@ -3,6 +3,7 @@ layout: post
 title:  "Nonlinear filtering: Grid-based filter"
 date:   2018-10-29 18:05:07 +0900
 categories: jekyll update
+comments: true
 excerpt_separator: <!--more-->
 ---
 The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.  <!--more-->This marks the first part of the nonlinear filtering series. If you haven't read the [introduction]({% post_url 2018-10-29-nf-intro %}), I would recommend to read it first. Before we dive into the derivation, let's try to state the main idea behind grid-based filtering.

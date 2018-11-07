@@ -3,6 +3,7 @@ layout: post
 title:  "Nonlinear filtering: Introduction"
 date:   2018-10-29 18:04:07 +0900
 categories: jekyll update
+comments: true
 excerpt_separator: <!--more-->
 ---
 This post will start a series of articles that will treat common nonlinear filtering methods that are based on the Bayes filter. The motivation is to provide an intuitive understanding of these methods by deriving them directly from the general Bayes filter. This derivation is done in steps, that are supposed to be as atomic as possible. Furthermore, each nonlinear filtering method will be shown in action by providing an interactive example to play around with. This series will require some basic knowledge in math. Especially in linear algebra and probability theory. 

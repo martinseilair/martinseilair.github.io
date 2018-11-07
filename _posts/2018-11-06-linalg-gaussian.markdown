@@ -3,6 +3,7 @@ layout: post
 title:  "Linear algebra with Gauss and Bayes"
 date:   2018-11-06 12:04:07 +0900
 categories: jekyll update
+comments: true
 excerpt_separator: <!--more-->
 ---
 [Linear algebra](https://en.wikipedia.org/wiki/Linear_algebra) is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of [Gaussian distributions](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) and [Bayes theorem](https://en.wikipedia.org/wiki/Bayes%27_theorem).

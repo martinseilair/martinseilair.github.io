@@ -3,6 +3,7 @@ layout: post
 title:  "Observability: A Bayesian perspective"
 date:   2018-11-07 01:04:07 +0900
 categories: jekyll update
+comments: true
 excerpt_separator: <!--more-->
 ---
 Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
