@@ -533,7 +533,7 @@ As before you can control the car by using your keyboard: **A** (Backward), **S*
 We see, that it is actually working pretty well. But one thing seems particularly weird: At certain positions on the race track, the brownish inner strip (our likelihood) seems to be uniformly distributed. This is not a bug, but a shortcoming of the linearization. We will always experience this behavior, if the part of the road at our current posterior mean is pointing only in _tangential_ direction, with the tree as the center. In other words: A small change in position wouldn't change the distance. When we are linearizing, we assume this local behavior applies for the whole system and we won't get any new information out of our measurement. To get an intuitive understanding of this, you can imagine two parallel lines. Our car is driving along one of the parallel lines and we take the nearest distance to the other line as a measurement. This measurement would be uninformative because the distance to the parallel line is always the same.
 
 
-
+Are you curious about the derivation of unscented Kalman filter? Then you should definitely check out the next article of the nonlinear filter series covering the [unscented Kalman filter]({% post_url 2018-11-07-nf-ukf %}). See you there!
 
 # Acknowledgement
 
