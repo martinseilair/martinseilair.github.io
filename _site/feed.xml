@@ -1,4 +1,472 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-08T13:14:45+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Unscented Kalman filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Unscented Kalman filter" /><published>2018-11-07T17:04:07+09:00</published><updated>2018-11-07T17:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html">&lt;p&gt;The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the unscented Kalman filter.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-08T13:16:13+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/particle_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_car.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/race_track.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/util.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/plot.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/scene.js&quot;&gt;&lt;/script&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/discrete_bayes_filter.js&quot;&gt;&lt;/script&gt;
+
+&lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
+
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;https://martinseilair.github.io/assets/css/nonlinear_filter/style.css&quot; /&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+
+	scene = [];
+	scenes = [];
+	scenes_name = [];
+	interval = null;
+	loaded = false;
+	var aa = 1;
+	var fast_dur = 300;
+	var slow_dur = 1000;
+	var ani_step = 3;
+
+
+	touch_id = null;
+
+
+
+
+
+&lt;/script&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;p&gt;The &lt;strong&gt;particle filter&lt;/strong&gt; is a sample-based approximation of the Bayes filter. It is used to &lt;strong&gt;infer&lt;/strong&gt; the current state of an arbitrary probabilistic state space model given all observations and inputs up to the current timestep and a prior distribution of the initial state.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;derivation&quot;&gt;Derivation&lt;/h2&gt;
+
+&lt;p&gt;In this section, we will develop the method of particle filtering directly from the Bayes filter and mean field particle methods.&lt;/p&gt;
+
+&lt;p&gt;We learned that the recursive equations of the Bayes filter consist of the 
+ &lt;strong&gt;prediction step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})p(x_{t}|y_{0:t},u_{0:t-1}) dx_{t}&lt;/script&gt;
+
+&lt;p&gt;and the &lt;strong&gt;update step&lt;/strong&gt;&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;p(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})}{\int_{x_t}p(y_t|x_t)p(x_t|y_{0:t-1},u_{0:t-1})\,dx_t}&lt;/script&gt;
+
+&lt;p&gt;and that the integrals, contained in these equations, are in general intractable. The main idea of the particle filter is to approximate the Bayes filter by approximating the current posterior \(p(x_{t+1}|y_{0:t},u_{0:t})\) and \(p(x_t|y_{0:t},u_{0:t-1})\) with &lt;a href=&quot;https://en.wikipedia.org/wiki/Empirical_measure&quot;&gt;empirical measures&lt;/a&gt;  \(\hat{p}(x_{t+1}|y_{0:t},u_{0:t})\) and \(\hat{p}(x_t|y_{0:t},u_{0:t-1})\). Let’s take a brief look at empirical measures.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Empirical measure&lt;/h1&gt;
+  &lt;p&gt;The empirical measure of \(p(x)\) is defined as&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p_N(x) = \frac{1}{N}\sum_{i=1}^{N} \delta_{x_i}(x),&lt;/script&gt;
+
+  &lt;p&gt;where \(\delta_{x_i}(x)\) is an abbreviation for the shifted &lt;a href=&quot;https://en.wikipedia.org/wiki/Dirac_delta_function&quot;&gt;Dirac delta function&lt;/a&gt; \(\delta(x-x_i)\) and \(x_{1:N}\) are \(N\) samples from \(p(x)\).
+If the number of samples goes to infinity, the empirical measure will &lt;a href=&quot;https://en.wikipedia.org/wiki/Almost_surely&quot;&gt;almost surely&lt;/a&gt; converge to the distribution \(p(x)\). The following figure shows the distribution \(p(x)\) in red and the empirical measure \(p_N(x)\) in black.&lt;/p&gt;
+
+  &lt;div style=&quot;text-align:center; width:100%&quot;&gt;&lt;div id=&quot;dirac_plot&quot; style=&quot;width:75%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;script&gt;
+function load_em_meas(){
+	var n_sam = 50;
+	var mix = [0.8,0.2];
+	var gs = [[1.5,0.6],[4.0,0.6]];
+	var dom = [0.0, 5.0];
+	var n_plot = 1000;
+	var gdata= [];
+	var samples = sample_gmm(mix, gs, n_sam, dom);
+	for (var i = 0; i &lt; n_plot; i++) {
+		var x = dom[1]*i/n_plot;	
+		gdata.push({x:x, y:gmm(x, mix, gs)});
+	}
+	var dat = [];
+	dat.gdata = gdata;
+	dat.color = &quot;red&quot;;
+	create_dirac_plot(&quot;#dirac_plot&quot;, samples, [dat], dom, 0.2, false, 0.7);
+}
+load_em_meas();
+&lt;/script&gt;
+
+  &lt;p&gt;Please be aware that the lines, representing the Dirac delta functions, would actually be infinitely high. But in order to visualize it, we set the length of the lines to be the area under the corresponding Dirac delta function. In our case, this area will be \(\frac{1}{N}\).&lt;/p&gt;
+
+  &lt;p&gt;Up until now, we assumed that each Dirac delta function is weighted uniformly. We can also define a &lt;strong&gt;weighted empirical measure&lt;/strong&gt; by&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;p_N(x) =\sum_{i=1}^{N} w_i\delta_{x_i}(x),&lt;/script&gt;
+
+  &lt;p&gt;with \(\sum_{i=1}^{N}w_i = 1\).&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;In the following, we will call the tuple \((x_i, w_i)\), corresponding to the position and weight of the \(i\)th Dirac delta function, a &lt;strong&gt;particle&lt;/strong&gt;. Now that we have an idea about empirical measures, we can directly start our derivation with the update step.&lt;/p&gt;
+
+&lt;h1 id=&quot;update-step&quot;&gt;Update step&lt;/h1&gt;
+
+&lt;p&gt;The first step is to replace the posterior distribution \(p(x_t|y_{0:t},u_{0:t-1})\) with the empirical measure \(\hat{p}(x_t|y_{0:t-1},u_{0:t-1}) = \frac{1}{N}\sum_{i=1}^N \delta_{\xi_t^i}(x_t) \). This empirical measure could look like this:&lt;/p&gt;
+
+&lt;div style=&quot;text-align:center; width:100%&quot;&gt;&lt;div id=&quot;prior_plot&quot; style=&quot;width:75%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;script&gt;
+var n_sam = 50;
+var mix = [0.8,0.2];
+var gs = [[1.5,0.6],[4.0,0.6]];
+var dom = [0.0, 5.0];
+var n_plot = 1000;
+var gdata= [];
+var samples = sample_gmm(mix, gs, n_sam, dom);
+var dat = [];
+function load_prior_meas(){
+
+	dat.gdata = gdata;
+	dat.color = &quot;red&quot;;
+	create_dirac_plot(&quot;#prior_plot&quot;, samples, [dat], dom, 0.4, false, 0.2);
+}
+load_prior_meas();
+&lt;/script&gt;
+
+&lt;p&gt;We plug our empirical measure into the update step and obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)\frac{1}{N}\sum_{i=1}^N \delta_{\xi_t^i}(x_t)}{\int_{x_t} p(y_t|x_t)\frac{1}{N}\sum_{i=1}^N \delta_{\xi_t^i}(x_t) dx_t} .&lt;/script&gt;
+
+&lt;p&gt;We are multiplying the empirical measure and the likelihood function pointwise in the numerator. This pointwise multiplication can be understood graphically:&lt;/p&gt;
+
+&lt;div style=&quot;text-align:center; width:100%&quot;&gt;&lt;div id=&quot;prior_mal_plot&quot; style=&quot;width:75%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;script&gt;
+function load_prior_meas_mal(){
+	dat.gdata = gdata;
+	dat.color = &quot;red&quot;;
+	create_dirac_plot(&quot;#prior_mal_plot&quot;, samples, [dat], dom, 0.4, false, 0.2);
+}
+load_prior_meas_mal();
+&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;*&lt;/script&gt;
+
+&lt;div style=&quot;text-align:center; width:100%&quot;&gt;&lt;div id=&quot;likelihood_mal_plot&quot; style=&quot;width:75%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;script&gt;
+function load_likelihood_meas_mal(){
+	var n_sam = 50;
+	var mix = [0.8,0.2];
+	var gs = [[1.5,0.6],[4.0,0.6]];
+	var dom = [0.0, 5.0];
+	var n_plot = 1000;
+	var gdata= [];
+	var samples = [];
+	for (var i = 0; i &lt; n_plot; i++) {
+		var x = dom[1]*i/n_plot;	
+		gdata.push({x:x, y:gmm(x, mix, gs)});
+	}
+	var dat = [];
+	dat.gdata = gdata;
+	dat.color = &quot;red&quot;;
+	
+	create_dirac_plot(&quot;#likelihood_mal_plot&quot;, samples, [dat], dom, 0.4, false, 0.2);
+}
+load_likelihood_meas_mal();
+&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;=&lt;/script&gt;
+
+&lt;div style=&quot;text-align:center; width:100%&quot;&gt;&lt;div id=&quot;posterior_mal_plot&quot; style=&quot;width:75%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;script&gt;
+function load_posterior_meas_mal(){
+	var sw = samples.map((e)=&gt;{return {x:e, w:gmm(e, mix, gs)};})
+
+	var dat = [];
+	dat.gdata = gdata;
+	dat.color = &quot;red&quot;;
+	create_dirac_plot(&quot;#posterior_mal_plot&quot;, sw, [dat], dom, 0.2, false, 0.2);
+}
+load_posterior_meas_mal();
+&lt;/script&gt;
+
+&lt;p&gt;If we look closely at the denominator, we see that we are integrating a function which is weighted by a Dirac delta function. Therefore, we can use the &lt;a href=&quot;https://en.wikipedia.org/wiki/Dirac_delta_function#Translation&quot;&gt;sifting property&lt;/a&gt; of the Dirac delta function to obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)\sum_{i=1}^N \delta_{\xi_t^i}(x_t)}{\sum_{i=1}^N p(y_t|x_t=\xi_t^i)},&lt;/script&gt;
+
+&lt;p&gt;where we canceled out the factor \(\frac{1}{N}\). As a result, we have a &lt;em&gt;weighted&lt;/em&gt; empirical measure&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_t|y_{0:t},u_{0:t-1}) =\sum_{i=1}^{N} w_i\delta_{\xi_t^i}(x_t),&lt;/script&gt;
+
+&lt;p&gt;with weights&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;w_i = \frac{p(y_t|x_t=\xi_t^i))}{\sum_{i=1}^N p(y_t|x_t=\xi_t^i)}.&lt;/script&gt;
+
+&lt;p&gt;This leads us directly to the important resampling step.&lt;/p&gt;
+
+&lt;h1 id=&quot;resampling-step&quot;&gt;Resampling step&lt;/h1&gt;
+
+&lt;p&gt;In the resampling step, we are replacing our weighted empirical measure with an (unweighted) empirical measure. This is equivalent to sampling from a &lt;a href=&quot;https://en.wikipedia.org/wiki/Categorical_distribution&quot;&gt;categorical distribution&lt;/a&gt;, where our weights are defining the probability mass function. Therefore, the probability of drawing particles with high weights is higher than drawing particles with low weights. As a result, it is possible that particles with low weights are not drawn at all and particles with high weights are drawn multiple times. 
+You may ask, why we are doing this weird resampling step? The main idea is quite simple:
+We only have a limited number of particles, therefore, we want to discard hypotheses that have low probability. Otherwise, weights of some of the particles could get close to zero and would become useless.&lt;/p&gt;
+
+&lt;p&gt;It can also be interpreted as a selection step in the context of &lt;a href=&quot;https://en.wikipedia.org/wiki/Evolutionary_algorithm&quot;&gt;evolutionary algorithms&lt;/a&gt;. Only the &lt;em&gt;fittest&lt;/em&gt; particles are able to produce the next generation of particles.&lt;/p&gt;
+
+&lt;p&gt;As a result of the resampling step, we will obtain \(N\) particles \((\hat{\xi} _ t^{i},\frac{1}{N})_{1:N}\), which were drawn from&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{\xi}_t^i \sim \hat{q}(x_t|y_{0:t},u_{0:t-1}).&lt;/script&gt;
+
+&lt;h1 id=&quot;prediction-step&quot;&gt;Prediction step&lt;/h1&gt;
+&lt;p&gt;Let’s look at the prediction step and replace the posterior with our empirical measure from the update step:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_{t+1}|y_{0:t},u_{0:t}) = \int_{x_{t}} p(x_{t+1}|x_{t}, u_{t})\frac{1}{N}\sum_{i=1}^N \delta_{\hat{\xi}_t^i}(x_t) dx_{t}.&lt;/script&gt;
+
+&lt;p&gt;By changing the order of the sum and integral&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{N}\sum_{i=1}^N\int_{x_{t}} p(x_{t+1}|x_{t}, u_{t}) \delta_{\hat{\xi}_t^i}(x_t) dx_{t},&lt;/script&gt;
+
+&lt;p&gt;we note that we can use the sifting property again and finally obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{N}\sum_{i=1}^N p(x_{t+1}|x_{t} = \hat{\xi}_t^i, u_{t}).&lt;/script&gt;
+
+&lt;p&gt;Therefore, the distribution \(\hat{q}(x_{t+1}|y_{0:t},u_{0:t})\) is a weighted sum of &lt;em&gt;continuous&lt;/em&gt; distributions over \(x_{t+1}\), which is shown schematically in the following figure.&lt;/p&gt;
+
+&lt;div style=&quot;text-align:center; width:100%&quot;&gt;&lt;div id=&quot;pred_plot&quot; style=&quot;width:75%;display:inline-block;&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;script&gt;
+function load_pred_meas(){
+	var n_sam = 50;
+	var mix = [0.2, 0.2, 0.2, 0.2];
+	var gs = [[1.5,0.6], [4.0,0.3], [2.5,0.3], [3.0,0.4]];
+	var dom = [0.0, 5.0];
+	var n_plot = 1000;
+	var samples = [];
+	var datdat = [];
+
+	var sum_data = [...Array(n_plot)].map((e,i)=&gt;{return {x:dom[1]*i/n_plot,y:0}});
+
+	for (var j = 0; j &lt; mix.length; j++) {
+		var dat = [];
+		var gdata= [];
+		dat.color = &quot;red&quot;;
+		for (var i = 0; i &lt; n_plot; i++) {
+			var x = dom[1]*i/n_plot;	
+			var v = mix[j]*gaussian(x,gs[j][0],gs[j][1] );
+			gdata.push({x:x, y:v});
+			sum_data[i].y+=v;
+		}
+		dat.gdata = gdata;
+		datdat.push(dat);
+	}
+
+	var dat = [];
+	dat.color=&quot;blue&quot;;
+	dat.gdata=sum_data;
+	datdat.push(dat);
+
+
+
+	create_dirac_plot(&quot;#pred_plot&quot;, samples, datdat, dom, 0.2, false, 0.7);
+}
+load_pred_meas();
+&lt;/script&gt;
+
+&lt;p&gt;We note, that even if we have an empirical measure as current belief distribution, we will obtain a continuous distribution for our new belief.&lt;/p&gt;
+
+&lt;p&gt;Fortunately, we already know how to obtain an empirical measure of a continous distribution: We simply have to sample from it. But how can we sample from our new belief?&lt;/p&gt;
+
+&lt;p&gt;First, we take a sample from our current empirical posterior distribution. Based on this sample we can sample from the system distribution to obtain a sample from the new posterior. This sampling procedure samples exactly from our new continuous posterior distribution.&lt;/p&gt;
+
+&lt;p&gt;Nice! We are essentially done, we expressed the update and prediction step in terms of empirical measures.&lt;/p&gt;
+
+&lt;p&gt;But one thing seems a little bit weird. In order to obtain the empirical measure of the new  posterior in the prediction step, we have to sample from the current posterior, that was obtained from the resampling step. But in the resampling step, we already sampled from our posterior distribution. Therefore, we can take the particles of the current posterior directly as our samples.&lt;/p&gt;
+
+&lt;p&gt;Let’s summarize the algorithm of the particle filter.&lt;/p&gt;
+
+&lt;div class=&quot;important_box&quot;&gt;
+  &lt;h1&gt;Algorithm of the particle filter&lt;/h1&gt;
+
+  &lt;p&gt;The algorithm is &lt;strong&gt;initialized&lt;/strong&gt; with a set of \(N\) particles \((\xi_0^{i},\frac{1}{N})_{1:N}\).&lt;/p&gt;
+
+  &lt;p&gt;We are taking the &lt;strong&gt;update step&lt;/strong&gt; and obtain the distribution&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_t|y_{0:t},u_{0:t-1}) = \frac{p(y_t|x_t)\frac{1}{N}\sum_{i=1}^N \delta_{\xi_t^i}(x_t)}{\frac{1}{N}\sum_{i=1}^N p(y_t|x_t=\xi_t^i)},&lt;/script&gt;
+
+  &lt;p&gt;which is equivalent to the particles \((\xi _ t^{i},\frac{p(y_t|x_t=\xi_t^i)}{\sum_{i=1}^N p(y_t|x_t=\xi_t^i)})_{1:N}\).&lt;/p&gt;
+
+  &lt;p&gt;In the &lt;strong&gt;resampling step&lt;/strong&gt;, we are taking \(N\) samples&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{\xi}_t^i \sim \hat{q}(x_t|y_{0:t},u_{0:t-1})&lt;/script&gt;
+
+  &lt;p&gt;and obtain new particles \((\hat{\xi} _ t^{i},\frac{1}{N})_{1:N}\).&lt;/p&gt;
+
+  &lt;p&gt;Finally, we are taking the &lt;strong&gt;prediction step&lt;/strong&gt;. We obtain the distribution&lt;/p&gt;
+
+  &lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{q}(x_{t+1}|y_{0:t},u_{0:t}) = \frac{1}{N}\sum_{i=1}^N p(x_{t+1}|x_{t} = \hat{\xi}_t^i, u_{t})&lt;/script&gt;
+
+  &lt;p&gt;and sample from it to get new particles \((\xi _ {t+1}^{i},\frac{1}{N})_{1:N}\).&lt;/p&gt;
+
+  &lt;p&gt;The process starts again with the &lt;strong&gt;update step&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;Now that we are finally done with the derivation, let’s see how the particle filter performs in our toy example.&lt;/p&gt;
+
+&lt;h1 id=&quot;example&quot;&gt;Example&lt;/h1&gt;
+
+&lt;script&gt;
+
+		// defines scenes
+	n_scene = load_race_track(&quot;race_track_particle&quot;, &quot;https://martinseilair.github.io&quot;);
+	n_scene.mode = 2;
+	//n_scene.filter = &quot;particle&quot;;
+	n_scene.dur=slow_dur;
+	n_scene.auto_start = false;
+
+	n_scene.t = 1;
+
+	n_scene.ids = [&quot;race_track_particle_timestep&quot;, &quot;race_track_particle_likelihood&quot;, &quot;race_track_particle_update&quot;,&quot;race_track_particle_predict&quot;,&quot;race_track_particle_resampling&quot; ];
+
+	n_scene.take_observation = true;
+
+
+	n_scene.loaded = function(){
+		document.getElementById(&quot;race_track_particle_likelihood&quot;).style.display=&quot;block&quot;;
+		this.rt.hide_strip(&quot;inner&quot;);
+		this.pf = init_particle_filter(this.rc, this.rt)
+
+
+        var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style(&quot;background-color&quot;)), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
+		this.rt.init_strip(&quot;inner&quot;, get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
+		
+
+        this.restart = function(){
+            for (var i=0; i&lt;this.ids.length;i++){
+
+                document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+            }
+            document.getElementById(&quot;race_track_particle_likelihood&quot;).style.display=&quot;block&quot;;
+            this.rc.reset();
+            this.t = 1;
+
+            //this.bf.reset();
+            this.pf.reset()
+
+            this.rt.hide_strip(&quot;inner&quot;);
+            this.rt.treeg.style(&quot;opacity&quot;,1.0)
+			this.take_observation = true;
+        }
+
+
+
+
+        this.rt.set_restart_button(this.restart.bind(this))
+
+
+
+        this.toogle_observation = function(){
+			if(this.take_observation){
+				this.rt.treeg.style(&quot;opacity&quot;,0.2)
+				this.take_observation = false;
+				if(this.t% 5 ==1){
+					document.getElementById(&quot;race_track_particle_likelihood&quot;).style.display=&quot;none&quot;;
+					document.getElementById(&quot;race_track_particle_timestep&quot;).style.display=&quot;block&quot;;
+					this.t = 3;
+				}
+			}else{
+				this.rt.treeg.style(&quot;opacity&quot;,1.0)
+				this.take_observation = true;
+			}
+        	
+        }
+
+		this.rt.tree_click = this.toogle_observation.bind(this)
+
+
+
+
+	}.bind(n_scene)
+
+
+	n_scene.step = function(){
+		this.t++;
+
+
+		for (var i=0; i&lt;this.ids.length;i++){
+
+			document.getElementById(this.ids[i]).style.display=&quot;none&quot;;
+		}
+		
+
+
+		if(this.t % 5 == 0){
+			this.rc.step(scene.rc.current_input);
+			this.last_input = this.rc.current_input;
+			document.getElementById(&quot;race_track_particle_predict&quot;).style.display=&quot;block&quot;;
+		}if(this.t % 5 == 1){
+	    	
+			//this.rt.update_strip(&quot;outer&quot;, get_system_dist_normalized(scene.rc, scene.rt, scene.rc.state, scene.rc.current_input));
+
+			this.pf.predict(this.last_input);
+			if(this.take_observation){
+				document.getElementById(&quot;race_track_particle_likelihood&quot;).style.display=&quot;block&quot;;
+			}else{
+				document.getElementById(&quot;race_track_particle_timestep&quot;).style.display=&quot;block&quot;;
+				this.t=3;
+			}
+			
+		}else if(this.t % 5 == 2){
+			this.rt.show_strip(&quot;inner&quot;);
+			this.rt.update_strip(&quot;inner&quot;, get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
+			document.getElementById(&quot;race_track_particle_update&quot;).style.display=&quot;block&quot;;
+		}else if(this.t % 5 == 3){
+			var output = this.rc.output_dist_sample(0);
+	    	this.pf.update(output, 0);
+	    	document.getElementById(&quot;race_track_particle_resampling&quot;).style.display=&quot;block&quot;;
+		}else if(this.t % 5 == 4){
+			this.rt.hide_strip(&quot;inner&quot;);
+			this.pf.ancestor_sampling();
+			document.getElementById(&quot;race_track_particle_timestep&quot;).style.display=&quot;block&quot;;
+		}
+
+
+
+	}.bind(n_scene);
+
+	scenes_name[&quot;race_track_particle&quot;] = n_scene;
+	scenes.push(n_scene);
+&lt;/script&gt;
+
+&lt;svg id=&quot;race_track_particle&quot; style=&quot;width:100%&quot; onclick=&quot;on_click()&quot;&gt;&lt;/svg&gt;
+
+&lt;div id=&quot;race_track_particle_timestep&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_particle'].rc.current_input=0;scenes_name['race_track_particle'].step();&quot;&gt;Backward&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_particle'].rc.current_input=1;scenes_name['race_track_particle'].step();&quot;&gt;No action&lt;/div&gt;
+&lt;div class=&quot;bt3 bt&quot; onclick=&quot;scenes_name['race_track_particle'].rc.current_input=2;scenes_name['race_track_particle'].step();&quot;&gt;Forward&lt;/div&gt;
+ &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_particle_predict&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_particle'].step();&quot;&gt;Predict step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_particle_likelihood&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_particle'].step();&quot;&gt;Observe&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_particle_update&quot; class=&quot;button_set&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot; onclick=&quot;scenes_name['race_track_particle'].step();&quot;&gt;Update step&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;race_track_particle_resampling&quot; class=&quot;button_set&quot; onclick=&quot;scenes_name['race_track_particle'].step();&quot;&gt;
+&lt;div class=&quot;bt1  bt&quot;&gt;Resampling&lt;/div&gt;
+  &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;p&gt;On the outside of the race track, you will notice uniformly distributed blue dots. These dots are our particles and, therefore, represent a set of hypotheses of the position of the race car. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement to the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step. The size of the blue dots will change according to their weighting. By pressing the &lt;strong&gt;RESAMPLING&lt;/strong&gt; button, we are performing the resampling step. As a result, you will notice that only the dots with high weights remains. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the dots will change accordingly to your chosen action. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
+
+&lt;p&gt;If you want to reset the environment, just press the reset button in the bottom left corner or press the &lt;strong&gt;R&lt;/strong&gt; button on your keyboard.
+As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
+
+&lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
+
+&lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;</content><author><name></name></author><summary type="html">This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example.</summary></entry><entry><title type="html">Nonlinear filtering: Unscented Kalman filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Unscented Kalman filter" /><published>2018-11-07T17:04:07+09:00</published><updated>2018-11-07T17:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html">&lt;p&gt;The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the unscented Kalman filter.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
