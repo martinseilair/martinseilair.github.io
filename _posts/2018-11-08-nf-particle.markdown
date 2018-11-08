@@ -399,7 +399,7 @@ Now that we are finally done with the derivation, let's see how the particle fil
 				if(this.t% 5 ==1){
 					document.getElementById("race_track_particle_likelihood").style.display="none";
 					document.getElementById("race_track_particle_timestep").style.display="block";
-					this.t = 3;
+					this.t = 4;
 				}
 			}else{
 				this.rt.treeg.style("opacity",1.0)
@@ -440,7 +440,7 @@ Now that we are finally done with the derivation, let's see how the particle fil
 				document.getElementById("race_track_particle_likelihood").style.display="block";
 			}else{
 				document.getElementById("race_track_particle_timestep").style.display="block";
-				this.t=3;
+				this.t=4;
 			}
 			
 		}else if(this.t % 5 == 2){
