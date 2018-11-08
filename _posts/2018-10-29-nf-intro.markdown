@@ -128,7 +128,7 @@ The current plan is to write articles about the following methods:
 * [Grid-based filter]({% post_url 2018-10-29-nf-grid-based %})
 * [Extended Kalman filter]({% post_url 2018-10-31-nf-ekf %})
 * [Unscented Kalman filter]({% post_url 2018-11-07-nf-ukf %})
-* Particle filter
+* [Particle filter]({% post_url 2018-11-08-nf-particle %})
 
 In this first post, I will take the chance to introduce the concept of the Bayes filter and to present the running example for the rest of this series.
 Let's get started!

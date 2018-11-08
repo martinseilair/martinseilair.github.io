@@ -740,9 +740,7 @@ What if our distance meter is not working anymore? By either clicking on the tre
 If you want to reset the environment, just press the reset button in the bottom left corner or press the **R** button on your keyboard.
 As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
 
-
-
-
+If you still didn't have enough of nonlinear filtering, you should check out the next article in this series about the derivation of the [particle filter]({% post_url 2018-11-08-nf-particle %}).
 
 # Acknowledgement
 
