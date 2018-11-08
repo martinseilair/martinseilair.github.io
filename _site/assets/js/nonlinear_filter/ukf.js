@@ -64,7 +64,6 @@ class UnscentedKalmanFilter_1D {
 		var sigma_points = spw.sigma_points;
 		var weights_s = spw.weights_s;
 		var weights_c = spw.weights_c;
-		console.log(spw)
 		// transform sigma points
 		var sigma_points_transformed = sigma_points.map((e)=>{return model_mu(e)});
 
@@ -83,7 +82,6 @@ class UnscentedKalmanFilter_1D {
 		var cross = 0;
 		for (var i = 0; i < sigma_points_transformed.length; i++) cross += weights_c[i]*(sigma_points_transformed[i] - mu_transformed)*(sigma_points[i] - mu);
 		var ret = {mu: [mu, mu_transformed], sigma:[[sigma, cross],[cross, auto]]}
-		console.log(ret)
 		return ret
 	}
 

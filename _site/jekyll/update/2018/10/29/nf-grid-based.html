@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"The process of Bayes filtering requires to solve integrals, that are in general intractable. One approach to circumvent this problem is the use of grid-based filtering. In this article, we will derive this method directly from the recursive equations of the Bayes filter.","@type":"BlogPosting","url":"https://martinseilair.github.io/jekyll/update/2018/10/29/nf-grid-based.html","headline":"Nonlinear filtering: Grid-based filter","dateModified":"2018-10-29T18:05:07+09:00","datePublished":"2018-10-29T18:05:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://martinseilair.github.io/jekyll/update/2018/10/29/nf-grid-based.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1541585983984704891"><link type="application/atom+xml" rel="alternate" href="https://martinseilair.github.io/feed.xml" title="Ikigai" /><script>
+<link rel="stylesheet" href="/assets/main.css?1541650485602034539"><link type="application/atom+xml" rel="alternate" href="https://martinseilair.github.io/feed.xml" title="Ikigai" /><script>
 if(!(window.doNotTrack === "1" || navigator.doNotTrack === "1" || navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1")) {
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -300,6 +300,8 @@ Therefore, the posterior will have the form</p>
 
 	n_scene.ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
 
+	n_scene.take_observation = true;
+
 	n_scene.loaded = function(){
 		//var ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
 		//for (var i=0; i<ids.length;i++){
@@ -322,10 +324,30 @@ Therefore, the posterior will have the form</p>
 			this.rt.hide_strip("inner");
 			this.rt.show_strip("outer");
 			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			this.rt.treeg.style("opacity",1.0)
+			this.take_observation = true;
 		}
 
 
 		this.rt.set_restart_button(this.restart.bind(this))
+
+		this.toogle_observation = function(){
+			if(this.take_observation){
+				this.rt.treeg.style("opacity",0.2)
+				this.take_observation = false;
+				if(this.t% 5 ==1){
+					document.getElementById("race_track_mar_loc_likelihood").style.display="none";
+					document.getElementById("race_track_mar_loc_timestep").style.display="block";
+					this.t = 3;
+				}
+			}else{
+				this.rt.treeg.style("opacity",1.0)
+				this.take_observation = true;
+			}
+        	
+        }
+
+		this.rt.tree_click = this.toogle_observation.bind(this)
 
 
 
@@ -348,9 +370,13 @@ Therefore, the posterior will have the form</p>
 			this.rt.hide_strip("inner");
 		}else if(this.t % 4 == 1){
 			this.bf.predict(this.last_input);
-			
 			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
-			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+			if(this.take_observation){
+				document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+			}else{
+				document.getElementById("race_track_mar_loc_timestep").style.display="block";
+				this.t=3;
+			}
 		}else if(this.t % 4 == 2){
 			this.rt.show_strip("inner");
 			this.output = scene.rc.output_dist_sample(0);
@@ -399,9 +425,11 @@ Therefore, the posterior will have the form</p>
   <span class="stretch"></span>
 </div>
 
-<p>On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the <strong>OBSERVE</strong> button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the <strong>UPDATE STEP</strong> button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the <strong>PREDICT STEP</strong> button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.</p>
+<p>On the outside of the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the <strong>OBSERVE</strong> button two things will happen: first, we will take a measurement of the distance to the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the <strong>UPDATE STEP</strong> button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the <strong>PREDICT STEP</strong> button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.</p>
 
-<p>With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
+<p>What if our distance meter is not working anymore? By either clicking on the tree or pressing the <strong>W</strong> button on your keyboard, you can turn off your measurement device. Therefore, the observation and update step will be skipped. The tree will become opaque, if your measurement device is turned off.</p>
+
+<p>With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner or press the <strong>R</strong> button on your keyboard.
 As before you can control the car by using your keyboard: <strong>A</strong> (Backward), <strong>S</strong> (Stop),  <strong>D</strong> (Forward) or the buttons below the race track.</p>
 
 <script>

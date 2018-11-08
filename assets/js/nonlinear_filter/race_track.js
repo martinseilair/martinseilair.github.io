@@ -258,6 +258,14 @@ class RadialRaceTrack {
  		this.old_pos = pos- overflow*this.track_length;
  	}
 
+ 	on_tree_click(){
+
+
+ 		if(this.tree_click){
+ 			this.tree_click()
+ 		}
+ 	}
+
 
     draw_tree(svg, x, y, s){
 	    var trunk_w = 12.0;
@@ -286,11 +294,11 @@ class RadialRaceTrack {
 
 
 		// append layer for tree
-		var treeg = svg.append("g")
-			.attr("transform","translate(" + x  + "," + (y) + ") scale(" + s + ") translate(0.0, " + (- trunk_h + d) +")");
-
+		this.treeg = svg.append("g")
+			.attr("transform","translate(" + x  + "," + (y) + ") scale(" + s + ") translate(0.0, " + (- trunk_h + d) +")")
+			.on("click",this.on_tree_click.bind(this))
 		// shadow
-		treeg.append("ellipse")
+		this.treeg.append("ellipse")
 			.attr("cx",0.0)
 			.attr("cy", trunk_h - d)    
 			.attr("rx",15.0)
@@ -299,7 +307,7 @@ class RadialRaceTrack {
 			.style("opacity",0.1);	
 
 		// trunk
-		var trunk = treeg.append("g")
+		var trunk =this.treeg.append("g")
 			.attr("clip-path","url(#trunkshape)");
 
 		trunk.append("rect")
@@ -317,7 +325,7 @@ class RadialRaceTrack {
 			.attr("fill","#9f7b5b");
 
 		// leaves
-		var leaves = treeg.append("g")
+		var leaves = this.treeg.append("g")
 			.attr("clip-path","url(#leavesshape)");   
 
 		leaves.append("rect")	
@@ -361,6 +369,10 @@ class RadialRaceTrack {
 	}
 
 
+	init_points(){
+		this.point_group = this.svg.append("g");
+	}
+
 
 	draw_points(points){
 
@@ -371,14 +383,25 @@ class RadialRaceTrack {
 	    	max = Math.max(points[i].w,max);
 	    }
 
+	    var dist = 22;
+
 		var data = [];
 		var c;
+		var angle;
 		for (var i=0; i<points.length;i++){
-			c = this.race_track_pos_abs(this.get_rad(points[i].x), 0.0);
+			var rad = this.get_rad(points[i].x);
+			c = this.race_track_pos_abs(rad, 0.0);
+			angle = this.get_angle(rad);
+
+			c.x+= Math.sin(angle)*dist;
+			c.y+= -Math.cos(angle)*dist;
+
+
 			data.push({ "cx": c.x, "cy": c.y, "r": 6.0*points[i].w/max})
 		}
 
-		var p = this.svg.selectAll("circle")
+
+		var p = this.point_group.selectAll("circle")
 			.data(data);
 		p
 		.attr("cx",function(d){return d.cx})
@@ -390,7 +413,7 @@ class RadialRaceTrack {
 		.attr("cx",function(d){return d.cx})
 		.attr("cy",function(d){return d.cy})
 		.attr("r",function(d){return d.r})
-		.style("fill","red")
+		.style("fill","blue")
 		.style("opacity",0.3);
 
 		// EXIT

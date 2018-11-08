@@ -159,7 +159,7 @@ var style = window.getComputedStyle(dp.node());
 
 var margin = {top: 20, right: 20, bottom: 30, left: 40},
     width = parseInt(style.width) - margin.left - margin.right,
-    height = parseInt(style.width)*ratio - margin.top - margin.bottom;
+    height = parseInt(style.width)*ratio;
 
 
 

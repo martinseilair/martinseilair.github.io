@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-07T19:19:43+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Unscented Kalman filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Unscented Kalman filter" /><published>2018-11-07T17:04:07+09:00</published><updated>2018-11-07T17:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html">&lt;p&gt;The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the unscented Kalman filter.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-08T13:14:45+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Unscented Kalman filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html" rel="alternate" type="text/html" title="Nonlinear filtering: Unscented Kalman filter" /><published>2018-11-07T17:04:07+09:00</published><updated>2018-11-07T17:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html">&lt;p&gt;The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.  &lt;!--more--&gt; If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the unscented Kalman filter.&lt;/p&gt;
 
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 
@@ -21,8 +21,6 @@
 &lt;link href=&quot;https://fonts.googleapis.com/css?family=Roboto&quot; rel=&quot;stylesheet&quot; /&gt;
 
 &lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;https://martinseilair.github.io/assets/css/nonlinear_filter/style.css&quot; /&gt;
-
-&lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/ekf.js&quot;&gt;&lt;/script&gt;
 
 &lt;script src=&quot;https://martinseilair.github.io/assets/js/nonlinear_filter/ukf.js&quot;&gt;&lt;/script&gt;
 
@@ -523,15 +521,17 @@ w_c^0  &amp;= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
 
     n_scene.ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
 
+    n_scene.take_observation = true;
+
     n_scene.loaded = function(){
 
         var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style(&quot;background-color&quot;)), d3.rgb('#006eff'), d3.rgb('#00028e')]);
         var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style(&quot;background-color&quot;)), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
 
-        this.ekf = init_ekf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
+
         this.ukf = init_ukf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
         this.rt.init_strip(&quot;inner&quot;, get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
-        this.rt.init_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt), outer_color, 60);
+        this.rt.init_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt), outer_color, 60);
 
 
 
@@ -551,17 +551,34 @@ w_c^0  &amp;= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
             
 
             //this.bf.reset();
-            this.ekf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
             this.ukf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
             this.rt.hide_strip(&quot;inner&quot;);
             this.rt.show_strip(&quot;outer&quot;);
-            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt));
+            this.rt.treeg.style(&quot;opacity&quot;,1.0)
+            this.take_observation = true;
         }
 
 
         this.rt.set_restart_button(this.restart.bind(this))
 
+        this.toogle_observation = function(){
+            if(this.take_observation){
+                this.rt.treeg.style(&quot;opacity&quot;,0.2)
+                this.take_observation = false;
+                if(this.t% 5 ==1){
+                    document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;none&quot;;
+                    document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+                    this.t = 3;
+                }
+            }else{
+                this.rt.treeg.style(&quot;opacity&quot;,1.0)
+                this.take_observation = true;
+            }
+            
+        }
 
+        this.rt.tree_click = this.toogle_observation.bind(this)
 
 
     }.bind(n_scene)
@@ -583,37 +600,35 @@ w_c^0  &amp;= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
             this.rt.hide_strip(&quot;inner&quot;);
         }else if(this.t % 4 == 1){
             // PREDICT
-            this.ekf.predict(this.last_input);
             this.ukf.predict(this.last_input);
 
-            // trim ekf posterior
-            if(this.ekf.posterior_mu&lt;0){
-                this.ekf.posterior_mu+=this.rt.track_length;
-            }
-            this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
+            // trim ukf posterior
 
             if(this.ukf.posterior_mu&lt;0){
                 this.ukf.posterior_mu+=this.rt.track_length;
             }
             this.ukf.posterior_mu = this.ukf.posterior_mu % this.rt.track_length;
 
-            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
-            document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt));
+            if(this.take_observation){
+                document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+            }else{
+                document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+                this.t=3;
+            }
         }else if(this.t % 4 == 2){
             // OBSERVE
             this.rt.show_strip(&quot;inner&quot;);
             this.output = scene.rc.output_dist_sample(0);
-            var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
+            var likelihood = this.ukf.get_likelihood(this.output,this.ukf.posterior_mu)
             this.rt.update_strip(&quot;inner&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
 
             document.getElementById(&quot;race_track_mar_loc_update&quot;).style.display=&quot;block&quot;;
         }else if(this.t % 4 == 3){
             // UPDATE
-
-            this.ekf.update(this.output);
             this.ukf.update(this.output);
 
-            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+            this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt));
 
             document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
         }
@@ -647,24 +662,16 @@ w_c^0  &amp;= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
   &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
 &lt;/div&gt;
 
-&lt;p&gt;On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
+&lt;p&gt;On the outside of the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance to the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
 
-&lt;p&gt;If you want to reset the environment, just press the reset button in the bottom left corner.
+&lt;p&gt;What if our distance meter is not working anymore? By either clicking on the tree or pressing the &lt;strong&gt;W&lt;/strong&gt; button on your keyboard, you can turn off your measurement device. Therefore, the observation and update step will be skipped. The tree will become opaque, if your measurement device is turned off.&lt;/p&gt;
+
+&lt;p&gt;If you want to reset the environment, just press the reset button in the bottom left corner or press the &lt;strong&gt;R&lt;/strong&gt; button on your keyboard.
 As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
 
 &lt;h1 id=&quot;acknowledgement&quot;&gt;Acknowledgement&lt;/h1&gt;
 
 &lt;p&gt;The vector graphics of the &lt;a href=&quot;https://www.freepik.com/free-photos-vectors/car&quot;&gt;car&lt;/a&gt; were created by &lt;a href=&quot;https://www.freepik.com/&quot;&gt;Freepik&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm&quot;&gt;&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm&quot;&gt;&lt;/a&gt;&lt;/p&gt;
-
-&lt;div id=&quot;rad_to_s&quot; style=&quot;width:100px&quot;&gt;&lt;/div&gt;
-&lt;div id=&quot;div1&quot;&gt;&lt;/div&gt;
-&lt;div id=&quot;div2&quot;&gt;&lt;/div&gt;
-&lt;!-- &lt;div id=&quot;system_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt; --&gt;
-&lt;!--&lt;div id=&quot;output_dist_approx&quot;  style=&quot;width: 600px; height: 600px;&quot;&gt;&lt;/div&gt;--&gt;
 
 &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;</content><author><name></name></author><summary type="html">The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.</summary></entry><entry><title type="html">Observability: A Bayesian perspective</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/07/observability.html" rel="alternate" type="text/html" title="Observability: A Bayesian perspective" /><published>2018-11-07T01:04:07+09:00</published><updated>2018-11-07T01:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/07/observability</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/07/observability.html">&lt;p&gt;Observability is an important concept of classical control theory. Quite often it is motivated by abstract concepts, that are not intuitive at all. In this article, we will take a look at observability from a Bayesian perspective and will find a natural interpretation of observability.
 &lt;!--more--&gt;
@@ -1298,7 +1305,7 @@ C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 	n_scene.auto_start = false;
 
 	n_scene.t = 1;
-
+	n_scene.take_observation = true;
 	n_scene.ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
 
 	n_scene.loaded = function(){
@@ -1332,12 +1339,30 @@ C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 			this.rt.hide_strip(&quot;inner&quot;);
 			this.rt.show_strip(&quot;outer&quot;);
 			this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+			this.rt.treeg.style(&quot;opacity&quot;,1.0)
+			this.take_observation = true;
 		}
 
 
 		this.rt.set_restart_button(this.restart.bind(this))
 
+		this.toogle_observation = function(){
+			if(this.take_observation){
+				this.rt.treeg.style(&quot;opacity&quot;,0.2)
+				this.take_observation = false;
+				if(this.t% 5 ==1){
+					document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;none&quot;;
+					document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+					this.t = 3;
+				}
+			}else{
+				this.rt.treeg.style(&quot;opacity&quot;,1.0)
+				this.take_observation = true;
+			}
+        	
+        }
 
+		this.rt.tree_click = this.toogle_observation.bind(this)
 
 
 	}.bind(n_scene)
@@ -1367,7 +1392,12 @@ C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 			}
 			this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
 			this.rt.update_strip(&quot;outer&quot;, get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
-			document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+			if(this.take_observation){
+				document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+			}else{
+				document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+				this.t=3;
+			}
 		}else if(this.t % 4 == 2){
 			// OBSERVE
 			this.rt.show_strip(&quot;inner&quot;);
@@ -1415,9 +1445,11 @@ C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
   &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
 &lt;/div&gt;
 
-&lt;p&gt;On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
+&lt;p&gt;On the outside of the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance to the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
 
-&lt;p&gt;If you want to reset the environment, just press the reset button in the bottom left corner.
+&lt;p&gt;What if our distance meter is not working anymore? By either clicking on the tree or pressing the &lt;strong&gt;W&lt;/strong&gt; button on your keyboard, you can turn off your measurement device. Therefore, the observation and update step will be skipped. The tree will become opaque, if your measurement device is turned off.&lt;/p&gt;
+
+&lt;p&gt;If you want to reset the environment, just press the reset button in the bottom left corner or press the &lt;strong&gt;R&lt;/strong&gt; button on your keyboard.
 As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
 
 &lt;p&gt;We see, that it is actually working pretty well. But one thing seems particularly weird: At certain positions on the race track, the brownish inner strip (our likelihood) seems to be uniformly distributed. This is not a bug, but a shortcoming of the linearization. We will always experience this behavior, if the part of the road at our current posterior mean is pointing only in &lt;em&gt;tangential&lt;/em&gt; direction, with the tree as the center. In other words: A small change in position wouldn’t change the distance. When we are linearizing, we assume this local behavior applies for the whole system and we won’t get any new information out of our measurement. To get an intuitive understanding of this, you can imagine two parallel lines. Our car is driving along one of the parallel lines and we take the nearest distance to the other line as a measurement. This measurement would be uninformative because the distance to the parallel line is always the same.&lt;/p&gt;
@@ -1702,6 +1734,8 @@ Therefore, the posterior will have the form&lt;/p&gt;
 
 	n_scene.ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
 
+	n_scene.take_observation = true;
+
 	n_scene.loaded = function(){
 		//var ids = [&quot;race_track_mar_loc_likelihood&quot;, &quot;race_track_mar_loc_update&quot;,&quot;race_track_mar_loc_timestep&quot;, &quot;race_track_mar_loc_predict&quot; ];
 		//for (var i=0; i&lt;ids.length;i++){
@@ -1724,10 +1758,30 @@ Therefore, the posterior will have the form&lt;/p&gt;
 			this.rt.hide_strip(&quot;inner&quot;);
 			this.rt.show_strip(&quot;outer&quot;);
 			this.rt.update_strip(&quot;outer&quot;, normalize_vector(this.bf.posterior));
+			this.rt.treeg.style(&quot;opacity&quot;,1.0)
+			this.take_observation = true;
 		}
 
 
 		this.rt.set_restart_button(this.restart.bind(this))
+
+		this.toogle_observation = function(){
+			if(this.take_observation){
+				this.rt.treeg.style(&quot;opacity&quot;,0.2)
+				this.take_observation = false;
+				if(this.t% 5 ==1){
+					document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;none&quot;;
+					document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+					this.t = 3;
+				}
+			}else{
+				this.rt.treeg.style(&quot;opacity&quot;,1.0)
+				this.take_observation = true;
+			}
+        	
+        }
+
+		this.rt.tree_click = this.toogle_observation.bind(this)
 
 
 
@@ -1750,9 +1804,13 @@ Therefore, the posterior will have the form&lt;/p&gt;
 			this.rt.hide_strip(&quot;inner&quot;);
 		}else if(this.t % 4 == 1){
 			this.bf.predict(this.last_input);
-			
 			this.rt.update_strip(&quot;outer&quot;, normalize_vector(this.bf.posterior));
-			document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+			if(this.take_observation){
+				document.getElementById(&quot;race_track_mar_loc_likelihood&quot;).style.display=&quot;block&quot;;
+			}else{
+				document.getElementById(&quot;race_track_mar_loc_timestep&quot;).style.display=&quot;block&quot;;
+				this.t=3;
+			}
 		}else if(this.t % 4 == 2){
 			this.rt.show_strip(&quot;inner&quot;);
 			this.output = scene.rc.output_dist_sample(0);
@@ -1801,9 +1859,11 @@ Therefore, the posterior will have the form&lt;/p&gt;
   &lt;span class=&quot;stretch&quot;&gt;&lt;/span&gt;
 &lt;/div&gt;
 
-&lt;p&gt;On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
+&lt;p&gt;On the outside of the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the &lt;strong&gt;OBSERVE&lt;/strong&gt; button two things will happen: first, we will take a measurement of the distance to the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the &lt;strong&gt;UPDATE STEP&lt;/strong&gt; button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the &lt;strong&gt;PREDICT STEP&lt;/strong&gt; button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.&lt;/p&gt;
 
-&lt;p&gt;With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
+&lt;p&gt;What if our distance meter is not working anymore? By either clicking on the tree or pressing the &lt;strong&gt;W&lt;/strong&gt; button on your keyboard, you can turn off your measurement device. Therefore, the observation and update step will be skipped. The tree will become opaque, if your measurement device is turned off.&lt;/p&gt;
+
+&lt;p&gt;With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner or press the &lt;strong&gt;R&lt;/strong&gt; button on your keyboard.
 As before you can control the car by using your keyboard: &lt;strong&gt;A&lt;/strong&gt; (Backward), &lt;strong&gt;S&lt;/strong&gt; (Stop),  &lt;strong&gt;D&lt;/strong&gt; (Forward) or the buttons below the race track.&lt;/p&gt;
 
 &lt;script&gt;

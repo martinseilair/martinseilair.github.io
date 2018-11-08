@@ -9,15 +9,22 @@ class ParticleFilter {
 		this.initial_dist_sample = initial_dist_sample;
 		this.draw_particles = draw_particles;
 
+		this.init_samples();
+
 	}
 
 	init_samples(){
-		this.points = [];
+		this.particles = [];
 		for (var i=0; i<this.N; i++){
 			this.particles.push({x: this.initial_dist_sample(), w:1.0/this.N})	
 		}
 
 		this.draw_particles(this.particles);
+	}
+
+	reset(){
+
+		this.init_samples();
 	}
 
 

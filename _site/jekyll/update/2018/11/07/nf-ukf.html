@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"The unscented Kalman filter describes another method for approximating the process of non-linear Bayes filtering. In this article, we will derive the corresponding equations directly from the general Bayes filter. Furthermore, we will get to know a different way to think about the unscented transform.","@type":"BlogPosting","url":"https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html","headline":"Nonlinear filtering: Unscented Kalman filter","dateModified":"2018-11-07T17:04:07+09:00","datePublished":"2018-11-07T17:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://martinseilair.github.io/jekyll/update/2018/11/07/nf-ukf.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1541585983984704891"><link type="application/atom+xml" rel="alternate" href="https://martinseilair.github.io/feed.xml" title="Ikigai" /><script>
+<link rel="stylesheet" href="/assets/main.css?1541650485602034539"><link type="application/atom+xml" rel="alternate" href="https://martinseilair.github.io/feed.xml" title="Ikigai" /><script>
 if(!(window.doNotTrack === "1" || navigator.doNotTrack === "1" || navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1")) {
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -69,8 +69,6 @@ if(!(window.doNotTrack === "1" || navigator.doNotTrack === "1" || navigator.doNo
 <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" />
 
 <link rel="stylesheet" type="text/css" href="https://martinseilair.github.io/assets/css/nonlinear_filter/style.css" />
-
-<script src="https://martinseilair.github.io/assets/js/nonlinear_filter/ekf.js"></script>
 
 <script src="https://martinseilair.github.io/assets/js/nonlinear_filter/ukf.js"></script>
 
@@ -571,15 +569,17 @@ w_c^0  &= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
 
     n_scene.ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
 
+    n_scene.take_observation = true;
+
     n_scene.loaded = function(){
 
         var outer_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#006eff'), d3.rgb('#00028e')]);
         var inner_color = d3.piecewise(d3.interpolateRgb, [d3.rgb(this.rt.svg.style("background-color")), d3.rgb('#ff834d'), d3.rgb('#8e3323')]);
 
-        this.ekf = init_ekf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
+
         this.ukf = init_ukf_1D(this.rc, this.rc.state, 3*this.rc.sigma_s_no_cache(this.rc.state));
         this.rt.init_strip("inner", get_output_dist_normalized(this.rc, this.rt, this.rc.state), inner_color, 60);
-        this.rt.init_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt), outer_color, 60);
+        this.rt.init_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt), outer_color, 60);
 
 
 
@@ -599,17 +599,34 @@ w_c^0  &= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
             
 
             //this.bf.reset();
-            this.ekf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
             this.ukf.reset(this.rc.state, this.rc.sigma_o_no_cache(this.rc.state))
             this.rt.hide_strip("inner");
             this.rt.show_strip("outer");
-            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt));
+            this.rt.treeg.style("opacity",1.0)
+            this.take_observation = true;
         }
 
 
         this.rt.set_restart_button(this.restart.bind(this))
 
+        this.toogle_observation = function(){
+            if(this.take_observation){
+                this.rt.treeg.style("opacity",0.2)
+                this.take_observation = false;
+                if(this.t% 5 ==1){
+                    document.getElementById("race_track_mar_loc_likelihood").style.display="none";
+                    document.getElementById("race_track_mar_loc_timestep").style.display="block";
+                    this.t = 3;
+                }
+            }else{
+                this.rt.treeg.style("opacity",1.0)
+                this.take_observation = true;
+            }
+            
+        }
 
+        this.rt.tree_click = this.toogle_observation.bind(this)
 
 
     }.bind(n_scene)
@@ -631,37 +648,35 @@ w_c^0  &= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
             this.rt.hide_strip("inner");
         }else if(this.t % 4 == 1){
             // PREDICT
-            this.ekf.predict(this.last_input);
             this.ukf.predict(this.last_input);
 
-            // trim ekf posterior
-            if(this.ekf.posterior_mu<0){
-                this.ekf.posterior_mu+=this.rt.track_length;
-            }
-            this.ekf.posterior_mu = this.ekf.posterior_mu % this.rt.track_length;
+            // trim ukf posterior
 
             if(this.ukf.posterior_mu<0){
                 this.ukf.posterior_mu+=this.rt.track_length;
             }
             this.ukf.posterior_mu = this.ukf.posterior_mu % this.rt.track_length;
 
-            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
-            document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt));
+            if(this.take_observation){
+                document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+            }else{
+                document.getElementById("race_track_mar_loc_timestep").style.display="block";
+                this.t=3;
+            }
         }else if(this.t % 4 == 2){
             // OBSERVE
             this.rt.show_strip("inner");
             this.output = scene.rc.output_dist_sample(0);
-            var likelihood = this.ekf.get_likelihood(this.output,this.ekf.posterior_mu)
+            var likelihood = this.ukf.get_likelihood(this.output,this.ukf.posterior_mu)
             this.rt.update_strip("inner", get_gaussian_circ_normalized(this.rt.strip_pos, likelihood.mu, likelihood.sigma, this.rt));
 
             document.getElementById("race_track_mar_loc_update").style.display="block";
         }else if(this.t % 4 == 3){
             // UPDATE
-
-            this.ekf.update(this.output);
             this.ukf.update(this.output);
 
-            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ekf.posterior_mu, this.ekf.posterior_sigma, this.rt));
+            this.rt.update_strip("outer", get_gaussian_circ_normalized(this.rt.strip_pos, this.ukf.posterior_mu, this.ukf.posterior_sigma, this.rt));
 
             document.getElementById("race_track_mar_loc_timestep").style.display="block";
         }
@@ -695,24 +710,16 @@ w_c^0  &= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
   <span class="stretch"></span>
 </div>
 
-<p>On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the <strong>OBSERVE</strong> button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the <strong>UPDATE STEP</strong> button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the <strong>PREDICT STEP</strong> button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.</p>
+<p>On the outside of the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. We will start with a Gaussian prior distribution around the true mean. By pressing the <strong>OBSERVE</strong> button two things will happen: first, we will take a measurement of the distance to the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the <strong>UPDATE STEP</strong> button, we will perform our update step and show the resulting posterior at the outer strip. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the <strong>PREDICT STEP</strong> button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.</p>
 
-<p>If you want to reset the environment, just press the reset button in the bottom left corner.
+<p>What if our distance meter is not working anymore? By either clicking on the tree or pressing the <strong>W</strong> button on your keyboard, you can turn off your measurement device. Therefore, the observation and update step will be skipped. The tree will become opaque, if your measurement device is turned off.</p>
+
+<p>If you want to reset the environment, just press the reset button in the bottom left corner or press the <strong>R</strong> button on your keyboard.
 As before you can control the car by using your keyboard: <strong>A</strong> (Backward), <strong>S</strong> (Stop),  <strong>D</strong> (Forward) or the buttons below the race track.</p>
 
 <h1 id="acknowledgement">Acknowledgement</h1>
 
 <p>The vector graphics of the <a href="https://www.freepik.com/free-photos-vectors/car">car</a> were created by <a href="https://www.freepik.com/">Freepik</a>.</p>
-
-<p><a href="https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm"></a></p>
-
-<p><a href="https://www.freepik.com/free-vector/flat-car-collection-with-side-view_1505022.htm"></a></p>
-
-<div id="rad_to_s" style="width:100px"></div>
-<div id="div1"></div>
-<div id="div2"></div>
-<!-- <div id="system_dist_approx"  style="width: 600px; height: 600px;"></div> -->
-<!--<div id="output_dist_approx"  style="width: 600px; height: 600px;"></div>-->
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_SVG"></script>
 

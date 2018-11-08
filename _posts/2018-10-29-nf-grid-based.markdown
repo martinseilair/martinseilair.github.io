@@ -302,6 +302,8 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 
 	n_scene.ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
 
+	n_scene.take_observation = true;
+
 	n_scene.loaded = function(){
 		//var ids = ["race_track_mar_loc_likelihood", "race_track_mar_loc_update","race_track_mar_loc_timestep", "race_track_mar_loc_predict" ];
 		//for (var i=0; i<ids.length;i++){
@@ -324,10 +326,30 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 			this.rt.hide_strip("inner");
 			this.rt.show_strip("outer");
 			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
+			this.rt.treeg.style("opacity",1.0)
+			this.take_observation = true;
 		}
 
 
 		this.rt.set_restart_button(this.restart.bind(this))
+
+		this.toogle_observation = function(){
+			if(this.take_observation){
+				this.rt.treeg.style("opacity",0.2)
+				this.take_observation = false;
+				if(this.t% 5 ==1){
+					document.getElementById("race_track_mar_loc_likelihood").style.display="none";
+					document.getElementById("race_track_mar_loc_timestep").style.display="block";
+					this.t = 3;
+				}
+			}else{
+				this.rt.treeg.style("opacity",1.0)
+				this.take_observation = true;
+			}
+        	
+        }
+
+		this.rt.tree_click = this.toogle_observation.bind(this)
 
 
 
@@ -350,9 +372,13 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 			this.rt.hide_strip("inner");
 		}else if(this.t % 4 == 1){
 			this.bf.predict(this.last_input);
-			
 			this.rt.update_strip("outer", normalize_vector(this.bf.posterior));
-			document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+			if(this.take_observation){
+				document.getElementById("race_track_mar_loc_likelihood").style.display="block";
+			}else{
+				document.getElementById("race_track_mar_loc_timestep").style.display="block";
+				this.t=3;
+			}
 		}else if(this.t % 4 == 2){
 			this.rt.show_strip("inner");
 			this.output = scene.rc.output_dist_sample(0);
@@ -407,9 +433,11 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 
 
 
-On the outside the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the __OBSERVE__ button two things will happen: first, we will take a measurement of the distance of the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the __UPDATE STEP__ button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the __PREDICT STEP__ button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.
+On the outside of the race track, you will notice a blue colored strip. This strip represents our current posterior of the current position of the race car. At the beginning, we have no knowledge about the position of the race car and assign uniform probability over all positions. By pressing the __OBSERVE__ button two things will happen: first, we will take a measurement of the distance to the tree and second, we will display the likelihood for this observed distance on the brown strip inside the race track. By pressing the __UPDATE STEP__ button, we will perform our update step and show the resulting posterior at the outer strip. You will note, that both strips will have the same form after the update. The reason is simple: we just multiplied our likelihood with a constant vector and normalized afterward. Now we are ready for the next time step. Take an action, by pressing the corresponding button below the race track. After the step is performed, you have to update your posterior by pressing the __PREDICT STEP__ button. You will see that the outer strip will change accordingly. Now we finished one full cycle of the filtering process and are ready to start a new cycle by taking a measurement.
 
-With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner.
+What if our distance meter is not working anymore? By either clicking on the tree or pressing the **W** button on your keyboard, you can turn off your measurement device. Therefore, the observation and update step will be skipped. The tree will become opaque, if your measurement device is turned off.
+
+With the slider below the race track, you can choose a grid size of the discrete probability models. If you want to reset the environment, just press the reset button in the bottom left corner or press the **R** button on your keyboard.
 As before you can control the car by using your keyboard: **A** (Backward), **S** (Stop),  **D** (Forward) or the buttons below the race track.
 
 <script>

@@ -131,6 +131,7 @@ function init_particle_filter(race_car, race_track){
 	function observe_dist(distance, state){
 		return race_car.output_dist_single(distance, state, 0);
 	}
+	race_track.init_points();
 	var N = 100; //no. of particles
 	pf = new ParticleFilter(N, race_car.system_dist_single.bind(race_car), race_car.system_dist_sample.bind(race_car), [observe_dist], race_car.initial_dist_sample.bind(race_car), race_track.draw_points.bind(race_track));
 	return pf;
@@ -291,6 +292,21 @@ function key_to_input(key){
 
 function key_down(){
 	var key = d3.event.keyCode;
+
+
+	if(key==87) {
+		if(scene.toogle_observation){
+			scene.toogle_observation()
+		}
+		return;
+	}
+
+	if(key==82) {
+		if(scene.restart){
+			scene.restart()
+		}
+		return;
+	}
 
 	var input = -1;
 	if(key==65) input = 0;
