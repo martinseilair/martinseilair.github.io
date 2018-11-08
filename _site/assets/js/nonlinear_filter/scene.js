@@ -101,7 +101,7 @@ function load_race_track(id, url,strip_n_e){
 	if(strip_n_e){
 		strip_n = strip_n_e;
 	}else{
-		strip_n = 1000;
+		strip_n = 900;
 	}
 
 	var strip_dist_n = 1000;

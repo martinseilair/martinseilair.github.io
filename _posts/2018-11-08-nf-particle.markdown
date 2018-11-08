@@ -445,11 +445,11 @@ Now that we are finally done with the derivation, let's see how the particle fil
 			
 		}else if(this.t % 5 == 2){
 			this.rt.show_strip("inner");
-			this.rt.update_strip("inner", get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
+			this.output = this.rc.output_dist_sample(0);
+			this.rt.update_strip("inner", get_output_dist_normalized_from_distance(this.rc, this.rt, this.output));
 			document.getElementById("race_track_particle_update").style.display="block";
 		}else if(this.t % 5 == 3){
-			var output = this.rc.output_dist_sample(0);
-	    	this.pf.update(output, 0);
+	    	this.pf.update(this.output, 0);
 	    	document.getElementById("race_track_particle_resampling").style.display="block";
 		}else if(this.t % 5 == 4){
 			this.rt.hide_strip("inner");

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-08T13:32:59+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-08T14:15:26+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
   &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
@@ -410,11 +410,11 @@ load_pred_meas();
 			
 		}else if(this.t % 5 == 2){
 			this.rt.show_strip(&quot;inner&quot;);
-			this.rt.update_strip(&quot;inner&quot;, get_output_dist_normalized(scene.rc, scene.rt, scene.rc.state));
+			this.output = this.rc.output_dist_sample(0);
+			this.rt.update_strip(&quot;inner&quot;, get_output_dist_normalized_from_distance(this.rc, this.rt, this.output));
 			document.getElementById(&quot;race_track_particle_update&quot;).style.display=&quot;block&quot;;
 		}else if(this.t % 5 == 3){
-			var output = this.rc.output_dist_sample(0);
-	    	this.pf.update(output, 0);
+	    	this.pf.update(this.output, 0);
 	    	document.getElementById(&quot;race_track_particle_resampling&quot;).style.display=&quot;block&quot;;
 		}else if(this.t % 5 == 4){
 			this.rt.hide_strip(&quot;inner&quot;);
@@ -977,7 +977,7 @@ w_c^0  &amp;= \frac{\lambda}{n + \lambda} + (1-\alpha^2 + \beta),
 &lt;script&gt;
 
 
-    n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;https://martinseilair.github.io&quot;,1000);
+    n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;https://martinseilair.github.io&quot;);
     n_scene.mode = 2;
     n_scene.filter = &quot;&quot;;
     n_scene.dur=slow_dur;
@@ -1766,7 +1766,7 @@ C_t &amp;= \nabla_{x_t} h(x_t, v_t)^T|_ {x_t=\hat x_{t|t-1},v_t=0}\\
 &lt;script&gt;
 
 
-	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;https://martinseilair.github.io&quot;,1000);
+	n_scene = load_race_track(&quot;race_track_mar_loc&quot;,&quot;https://martinseilair.github.io&quot;);
 	n_scene.mode = 2;
 	n_scene.filter = &quot;&quot;;
 	n_scene.dur=slow_dur;

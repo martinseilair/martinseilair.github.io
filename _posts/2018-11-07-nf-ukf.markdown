@@ -573,7 +573,7 @@ Enough of the dry theory! Let's play around with the grid-based filter in our ra
 <script>
 
 
-    n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}",1000);
+    n_scene = load_race_track("race_track_mar_loc","{{ base.url | prepend: site.url }}");
     n_scene.mode = 2;
     n_scene.filter = "";
     n_scene.dur=slow_dur;
