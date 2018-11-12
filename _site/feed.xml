@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-08T14:15:26+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-12T12:08:15+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
   &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
@@ -1282,7 +1282,7 @@ In the first case, we have no uncertainty: The system is observable. In the seco
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}.&lt;/script&gt;
 
-&lt;p&gt;Please be aware, that this formula is &lt;strong&gt;not&lt;/strong&gt; equivalent to our matrix product above. We introduced two new variables \(\Sigma_x\) and \(\Sigma_b\), which represents the covariance matrix of the corresponding Gaussian distributions.
+&lt;p&gt;Please be aware, that this formula is &lt;strong&gt;not&lt;/strong&gt; equivalent to our matrix product above. We introduced two new variables \(\Sigma_x\) and \(\Sigma_b\), which are representing the covariance matrices of the corresponding Gaussian distributions.
 The two formulations will become equivalent if the covariance matrices will go to zero.
 Let’s check if this is true!&lt;/p&gt;
 
@@ -1305,7 +1305,7 @@ Up until now, there is nothing fancy about this result. It’s just a weird way 
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;x = A^{-1}b.&lt;/script&gt;
 
-&lt;p&gt;But you have to be careful: This equations only hold, if the matrix \(A\) has full rank. In this case, there is exactly one point \(x\) that maps to \(b\). But we shouldn’t waste our time on special cases. Let’s directly look at the general case for an arbitrary matrix \(A\).&lt;/p&gt;
+&lt;p&gt;But you have to be careful: This equations only holds, if the matrix \(A\) has full rank. In this case, there is exactly one point \(x\) that maps to \(b\). But we shouldn’t waste our time on special cases. Let’s directly look at the general case for an arbitrary matrix \(A\).&lt;/p&gt;
 
 &lt;p&gt;We come back to our old friends Gauss and Bayes and try to formulate the inverse operation in terms of Gaussian distributions and Bayes theorem&lt;/p&gt;
 
@@ -1317,7 +1317,7 @@ Up until now, there is nothing fancy about this result. It’s just a weird way 
 
 &lt;p&gt;To simplify this expression we can use equation 39 and 40 from the &lt;a href=&quot;https://ipvs.informatik.uni-stuttgart.de/mlr/marc/notes/gaussians.pdf&quot;&gt;Gaussian identities&lt;/a&gt; and obtain&lt;/p&gt;
 
-&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(\hat{x}|\mu, \Sigma) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.&lt;/script&gt;
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}} = \mathcal{N}(\hat{x}|\mu, \Sigma)&lt;/script&gt;
 
 &lt;p&gt;with&lt;/p&gt;
 
@@ -1336,7 +1336,7 @@ We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to&lt;/p&g
 
 &lt;script type=&quot;math/tex; mode=display&quot;&gt;\Sigma_b = \delta I&lt;/script&gt;
 
-&lt;p&gt;and letting \(\delta\) go to zero.&lt;/p&gt;
+&lt;p&gt;and letting the scalar \(\delta\) go to zero.&lt;/p&gt;
 
 &lt;p&gt;The resulting formula will be&lt;/p&gt;
 

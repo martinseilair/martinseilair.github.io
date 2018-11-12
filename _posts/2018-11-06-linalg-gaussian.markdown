@@ -31,7 +31,7 @@ The transformation of our vector \\(x\\) with matrix \\(A\\) becomes a marginali
 
 $$ \int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}. $$
 
-Please be aware, that this formula is **not** equivalent to our matrix product above. We introduced two new variables \\(\Sigma_x\\) and \\(\Sigma_b\\), which represents the covariance matrix of the corresponding Gaussian distributions.
+Please be aware, that this formula is **not** equivalent to our matrix product above. We introduced two new variables \\(\Sigma_x\\) and \\(\Sigma_b\\), which are representing the covariance matrices of the corresponding Gaussian distributions.
 The two formulations will become equivalent if the covariance matrices will go to zero.
 Let's check if this is true!
 
@@ -54,7 +54,7 @@ Up until now, there is nothing fancy about this result. It's just a weird way to
 
 $$ x = A^{-1}b. $$
 
-But you have to be careful: This equations only hold, if the matrix \\(A\\) has full rank. In this case, there is exactly one point \\(x\\) that maps to \\(b\\). But we shouldn't waste our time on special cases. Let's directly look at the general case for an arbitrary matrix \\(A\\).
+But you have to be careful: This equations only holds, if the matrix \\(A\\) has full rank. In this case, there is exactly one point \\(x\\) that maps to \\(b\\). But we shouldn't waste our time on special cases. Let's directly look at the general case for an arbitrary matrix \\(A\\).
 
 We come back to our old friends Gauss and Bayes and try to formulate the inverse operation in terms of Gaussian distributions and Bayes theorem
 
@@ -70,7 +70,7 @@ To simplify this expression we can use equation 39 and 40 from the [Gaussian ide
 
 
 
-$$ \mathcal{N}(\hat{x}|\mu, \Sigma) =  \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}}.  $$
+$$ \frac{\mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x)}{\int_\hat{x} \mathcal{N}(b|A\hat{x}, \Sigma_b)\mathcal{N}(\hat{x}|x, \Sigma_x) \,d\hat{x}} = \mathcal{N}(\hat{x}|\mu, \Sigma) $$
 
 with 
 
@@ -87,7 +87,7 @@ But what is with \\(\Sigma_b\\)? We want to calculate the inverse of the determi
 
 $$ \Sigma_b = \delta I $$
 
-and letting \\(\delta\\) go to zero.
+and letting the scalar \\(\delta\\) go to zero.
 
 The resulting formula will be 
 
