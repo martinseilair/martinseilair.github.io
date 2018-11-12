@@ -63,6 +63,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  bundler (~> 1.16)
   jekyll (~> 3.8.0)
   jekyll-feed (~> 0.6)
   jekyll-seo-tag (~> 2.1)

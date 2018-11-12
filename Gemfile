@@ -28,3 +28,6 @@ gem "wdm", "~> 0.1.0" if Gem.win_platform?
 
 
 gem "jekyll-sitemap", "~> 1.2"
+
+# Added at 2018-11-12 14:22:36 +0900 by root:
+gem "bundler", "~> 1.16"
