@@ -28,6 +28,7 @@ class SpringMassDamper extends MechanicalSystem{
 
 		var dx, dxd;
 		var fk,fb;
+		var p0,p1;
 
 
 		var dist;

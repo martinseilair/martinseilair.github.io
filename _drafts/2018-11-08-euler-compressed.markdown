@@ -50,13 +50,28 @@ var radius = 10;
 var m = 100;
 
 // initialize points
-var points = []
+var points = [];
+var edges = [];
 if(false){
-	var N = 5;
+	var N = 12;
 	points = [...Array(N)].map(()=> {return [width/2*(Math.random()+0.5),height/2*(Math.random()+0.5), m]})
+
+	// create springs with delaunay
+	const delaunay = Delaunator.from(points);
+
+
+	var rest_length;
+	for (let e = 0; e < delaunay.triangles.length; e++) {
+	    if (e > delaunay.halfedges[e]) {
+			p0 = delaunay.triangles[e];
+			p1 = delaunay.triangles[nextHalfedge(e)];
+			rest_length = dist(points[p0], points[p1])+ Math.random()*0;
+	        edges.push([delaunay.triangles[e], delaunay.triangles[nextHalfedge(e)], rest_length])
+	    }
+	}
 }else{
-	var gw = 6;
-	var gh = 2;
+	var gw = 3;
+	var gh = 4;
 
 	var gx = 50;
 	var gy = 50;
@@ -66,23 +81,48 @@ if(false){
 			points.push([100.0 + i*gx,100.0 + j*gy, m])
 		}
 	}
+
+	// add springs
+	var rest_x = gx;
+	var rest_y = gy;
+	var rest_d = norm([gx, gy]);
+
+	// add horizontal and vertical springs
+	for (var i=0; i<gw;i++){
+		for (var j=0; j<gh;j++){
+			cp = j+ i*gh;
+
+			// to the right
+			if(i<gw-1){
+				edges.push([cp , cp + gh, rest_x])
+			}
+
+			// to the bottom
+			if(j<gh-1){
+				edges.push([cp , cp + 1, rest_y])
+			}
+
+			// diagonal right
+			if((i<gw-1)&&(j<gh-1)){
+				edges.push([cp , cp + gh + 1, rest_d])
+			}
+
+			// diagonal left
+			if((i>0)&&(j<gh-1)){
+				edges.push([cp , cp - gh + 1, rest_d])
+			}
+			
+		}
+	}
+
+	console.log(edges)
+
+
 }
 
 
 
-// create springs with delaunay
-const delaunay = Delaunator.from(points);
 
-var edges = [];
-var rest_length;
-for (let e = 0; e < delaunay.triangles.length; e++) {
-    if (e > delaunay.halfedges[e]) {
-		p0 = delaunay.triangles[e];
-		p1 = delaunay.triangles[nextHalfedge(e)];
-		rest_length = dist(points[p0], points[p1])+ Math.random()*0;
-        edges.push([delaunay.triangles[e], delaunay.triangles[nextHalfedge(e)], rest_length])
-    }
-}
 
 // initial state
 state = math.zeros(4*N);
