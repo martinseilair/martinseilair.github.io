@@ -146,9 +146,44 @@ for \\(\delta\to 0\\).
 
 Please be aware, that things will break if there is no intersection at all. In the case of two parallel lines and before you take the limit, the resulting mean \\(\mu\\) will lie directly in the middle of the connecting line of the two means \\(a\\) and \\(b\\) and \\(\Sigma\\) will be the same as \\(A(\delta)=B(\delta)\\). 
 
+# Determinant
+
+Let's assume you have a unit [hypercube](https://en.wikipedia.org/wiki/Hypercube), which is transformed via the regular square matrix \\(A \in \mathbb{R}^{n \times n}\\). The volume of the resulting [parallelepiped](https://en.wikipedia.org/wiki/Parallelepiped) is equal to the absolute value of the [determinant](https://en.wikipedia.org/wiki/Determinant) of \\(A\\). Therefore, the determinant can be described as the scaling factor of \\(A\\).
+
+Can we find this scaling factor with our Gaussian distributions as well? Clearly, probability distributions are always normalized: the probability _volume_ won't change at all. But we remember that the definition of the multivariate Gaussian distribution 
+
+$$ \mathcal{N}(x|\mu, \Sigma) = \underbrace{\frac{1}{\sqrt{(2\pi)^n \det(\Sigma)}}}_{Z} \exp\left(-\frac{1}{2}(x-\mu)^T\Sigma^{-1}(x-\mu)\right) $$
+
+has a normalizer \\(Z\\). If we transform the distribution \\(\mathcal{N}(x\|\mu, \delta_x I)\\) with  \\(\mathcal{N}(b\|Ax, \delta_b I)\\), we will obtain \\(\mathcal{N}(b\|A\mu, A(\delta_xI))A^T + \delta_b I)\\). What will be the ratio of the coprresponding normalizers \\(\frac{Z_b}{Z_x}\\)?
+
+Let's find out! We insert the normalizers
+
+$$ \frac{\sqrt{(2\pi)^n \det(A(\delta_xI)) A^T + \delta_b I)}}{\sqrt{(2\pi)^n \det(\delta_x I)}}, $$
+
+combine the square roots and cancel out \\((2\pi)^n\\) to obtain
+
+$$ \sqrt{\frac{\det(A(\delta_xI)) A^T + \delta_b I)}{ \det(\delta_x I)}}. $$
+
+
+We assume a deterministic linear transformation, therefore, we let \\(\delta_b\\) go to zero and obtain
+
+$$
+\begin{align} 
+\sqrt{\frac{\det(\delta_xA^TA)}{\det(\delta_xI)}} &= \sqrt{\frac{\delta_x^n\det(A^TA)}{\delta_x^n}} \\
+&= \sqrt{\det(A^TA)} \\
+&= \sqrt{\det(A^T)\det(A)} \\
+&= \sqrt{\det(A)\det(A)} \\
+&= \sqrt{\det(A)^2}  \\
+&= \det(A)  \\
+\end{align}
+$$
+
+Nice! We identified the ratio of the normalizing factors of the Gaussian distributions as the determinant of \\(A\\).
+
+
 # Summary
 
-In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \\(A\\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Furthermore, we learned that the word natural comes naturally with Bayes.
+In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \\(A\\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Finally, we found a nice interpretation of the determinant in terms of normalizers. Furthermore, we learned that the word natural comes naturally with Bayes.
 
 <script type="text/x-mathjax-config">
 

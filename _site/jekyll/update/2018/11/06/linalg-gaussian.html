@@ -17,7 +17,7 @@
 <script type="application/ld+json">
 {"description":"Linear algebra is a wonderful field of mathematics with endless applications. Despite its obvious beauty, it can also be quite confusing. Especially, when it comes to subspaces, inverses and determinants. In this article, I want to present a different view on some aspects of linear algebra with the help of Gaussian distributions and Bayes theorem.","@type":"BlogPosting","url":"https://martinseilair.github.io/jekyll/update/2018/11/06/linalg-gaussian.html","headline":"Linear algebra with Gauss and Bayes","dateModified":"2018-11-06T12:04:07+09:00","datePublished":"2018-11-06T12:04:07+09:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://martinseilair.github.io/jekyll/update/2018/11/06/linalg-gaussian.html"},"@context":"http://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
-<link rel="stylesheet" href="/assets/main.css?1542018238110391177"><link type="application/atom+xml" rel="alternate" href="https://martinseilair.github.io/feed.xml" title="Ikigai" /><script>
+<link rel="stylesheet" href="/assets/main.css?1542072896793936939"><link type="application/atom+xml" rel="alternate" href="https://martinseilair.github.io/feed.xml" title="Ikigai" /><script>
 if(!(window.doNotTrack === "1" || navigator.doNotTrack === "1" || navigator.doNotTrack === "yes" || navigator.msDoNotTrack === "1")) {
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -180,9 +180,41 @@ We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to</p>
 
 <p>Please be aware, that things will break if there is no intersection at all. In the case of two parallel lines and before you take the limit, the resulting mean \(\mu\) will lie directly in the middle of the connecting line of the two means \(a\) and \(b\) and \(\Sigma\) will be the same as \(A(\delta)=B(\delta)\).</p>
 
+<h1 id="determinant">Determinant</h1>
+
+<p>Let’s assume you have a unit <a href="https://en.wikipedia.org/wiki/Hypercube">hypercube</a>, which is transformed via the regular square matrix \(A \in \mathbb{R}^{n \times n}\). The volume of the resulting <a href="https://en.wikipedia.org/wiki/Parallelepiped">parallelepiped</a> is equal to the absolute value of the <a href="https://en.wikipedia.org/wiki/Determinant">determinant</a> of \(A\). Therefore, the determinant can be described as the scaling factor of \(A\).</p>
+
+<p>Can we find this scaling factor with our Gaussian distributions as well? Clearly, probability distributions are always normalized: the probability <em>volume</em> won’t change at all. But we remember that the definition of the multivariate Gaussian distribution</p>
+
+<script type="math/tex; mode=display">\mathcal{N}(x|\mu, \Sigma) = \underbrace{\frac{1}{\sqrt{(2\pi)^n \det(\Sigma)}}}_{Z} \exp\left(-\frac{1}{2}(x-\mu)^T\Sigma^{-1}(x-\mu)\right)</script>
+
+<p>has a normalizer \(Z\). If we transform the distribution \(\mathcal{N}(x|\mu, \delta_x I)\) with  \(\mathcal{N}(b|Ax, \delta_b I)\), we will obtain \(\mathcal{N}(b|A\mu, A(\delta_xI))A^T + \delta_b I)\). What will be the ratio of the coprresponding normalizers \(\frac{Z_b}{Z_x}\)?</p>
+
+<p>Let’s find out! We insert the normalizers</p>
+
+<script type="math/tex; mode=display">\frac{\sqrt{(2\pi)^n \det(A(\delta_xI)) A^T + \delta_b I)}}{\sqrt{(2\pi)^n \det(\delta_x I)}},</script>
+
+<p>combine the square roots and cancel out \((2\pi)^n\) to obtain</p>
+
+<script type="math/tex; mode=display">\sqrt{\frac{\det(A(\delta_xI)) A^T + \delta_b I)}{ \det(\delta_x I)}}.</script>
+
+<p>We assume a deterministic linear transformation, therefore, we let \(\delta_b\) go to zero and obtain</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align} 
+\sqrt{\frac{\det(\delta_xA^TA)}{\det(\delta_xI)}} &= \sqrt{\frac{\delta_x^n\det(A^TA)}{\delta_x^n}} \\
+&= \sqrt{\det(A^TA)} \\
+&= \sqrt{\det(A^T)\det(A)} \\
+&= \sqrt{\det(A)\det(A)} \\
+&= \sqrt{\det(A)^2}  \\
+&= \det(A)  \\
+\end{align} %]]></script>
+
+<p>Nice! We identified the ratio of the normalizing factors of the Gaussian distributions as the determinant of \(A\).</p>
+
 <h1 id="summary">Summary</h1>
 
-<p>In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \(A\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Furthermore, we learned that the word natural comes naturally with Bayes.</p>
+<p>In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \(A\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Finally, we found a nice interpretation of the determinant in terms of normalizers. Furthermore, we learned that the word natural comes naturally with Bayes.</p>
 
 <script type="text/x-mathjax-config">
 

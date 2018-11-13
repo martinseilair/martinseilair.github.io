@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-12T19:23:58+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-13T10:34:56+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
   &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
@@ -1394,9 +1394,41 @@ We will set \(x=0\) and \(\Sigma_x = I\). Our equations will simplify to&lt;/p&g
 
 &lt;p&gt;Please be aware, that things will break if there is no intersection at all. In the case of two parallel lines and before you take the limit, the resulting mean \(\mu\) will lie directly in the middle of the connecting line of the two means \(a\) and \(b\) and \(\Sigma\) will be the same as \(A(\delta)=B(\delta)\).&lt;/p&gt;
 
+&lt;h1 id=&quot;determinant&quot;&gt;Determinant&lt;/h1&gt;
+
+&lt;p&gt;Let’s assume you have a unit &lt;a href=&quot;https://en.wikipedia.org/wiki/Hypercube&quot;&gt;hypercube&lt;/a&gt;, which is transformed via the regular square matrix \(A \in \mathbb{R}^{n \times n}\). The volume of the resulting &lt;a href=&quot;https://en.wikipedia.org/wiki/Parallelepiped&quot;&gt;parallelepiped&lt;/a&gt; is equal to the absolute value of the &lt;a href=&quot;https://en.wikipedia.org/wiki/Determinant&quot;&gt;determinant&lt;/a&gt; of \(A\). Therefore, the determinant can be described as the scaling factor of \(A\).&lt;/p&gt;
+
+&lt;p&gt;Can we find this scaling factor with our Gaussian distributions as well? Clearly, probability distributions are always normalized: the probability &lt;em&gt;volume&lt;/em&gt; won’t change at all. But we remember that the definition of the multivariate Gaussian distribution&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{N}(x|\mu, \Sigma) = \underbrace{\frac{1}{\sqrt{(2\pi)^n \det(\Sigma)}}}_{Z} \exp\left(-\frac{1}{2}(x-\mu)^T\Sigma^{-1}(x-\mu)\right)&lt;/script&gt;
+
+&lt;p&gt;has a normalizer \(Z\). If we transform the distribution \(\mathcal{N}(x|\mu, \delta_x I)\) with  \(\mathcal{N}(b|Ax, \delta_b I)\), we will obtain \(\mathcal{N}(b|A\mu, A(\delta_xI))A^T + \delta_b I)\). What will be the ratio of the coprresponding normalizers \(\frac{Z_b}{Z_x}\)?&lt;/p&gt;
+
+&lt;p&gt;Let’s find out! We insert the normalizers&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{\sqrt{(2\pi)^n \det(A(\delta_xI)) A^T + \delta_b I)}}{\sqrt{(2\pi)^n \det(\delta_x I)}},&lt;/script&gt;
+
+&lt;p&gt;combine the square roots and cancel out \((2\pi)^n\) to obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\sqrt{\frac{\det(A(\delta_xI)) A^T + \delta_b I)}{ \det(\delta_x I)}}.&lt;/script&gt;
+
+&lt;p&gt;We assume a deterministic linear transformation, therefore, we let \(\delta_b\) go to zero and obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\begin{align} 
+\sqrt{\frac{\det(\delta_xA^TA)}{\det(\delta_xI)}} &amp;= \sqrt{\frac{\delta_x^n\det(A^TA)}{\delta_x^n}} \\
+&amp;= \sqrt{\det(A^TA)} \\
+&amp;= \sqrt{\det(A^T)\det(A)} \\
+&amp;= \sqrt{\det(A)\det(A)} \\
+&amp;= \sqrt{\det(A)^2}  \\
+&amp;= \det(A)  \\
+\end{align} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Nice! We identified the ratio of the normalizing factors of the Gaussian distributions as the determinant of \(A\).&lt;/p&gt;
+
 &lt;h1 id=&quot;summary&quot;&gt;Summary&lt;/h1&gt;
 
-&lt;p&gt;In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \(A\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Furthermore, we learned that the word natural comes naturally with Bayes.&lt;/p&gt;
+&lt;p&gt;In this post, we took a brief look on linear algebra expressed in terms of Gaussian distributions. We saw, that we can perform matrix transformations by marginalization and that the inverse of a matrix \(A\) can be obtained naturally with Bayes theorem. As a side product, we learned a natural way to describe affine linear subspaces. The intersection of two affine linear subspaces is again an affine linear space. We saw how to calculate these intersections by simple multiplication of the corresponding Gaussian distributions. Finally, we found a nice interpretation of the determinant in terms of normalizers. Furthermore, we learned that the word natural comes naturally with Bayes.&lt;/p&gt;
 
 &lt;script type=&quot;text/x-mathjax-config&quot;&gt;
 

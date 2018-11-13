@@ -13,7 +13,15 @@ excerpt_separator: <!--more-->
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>
 
+<script src="{{ base.url | prepend: site.url }}/assets/js/euler/mechanical_system.js"></script>
 <script src="{{ base.url | prepend: site.url }}/assets/js/euler/springmass.js"></script>
+<script src="{{ base.url | prepend: site.url }}/assets/js/euler/springmassdamper.js"></script>
+<script src="{{ base.url | prepend: site.url }}/assets/js/euler/rigidbody.js"></script>
+
+<script src="{{ base.url | prepend: site.url }}/assets/js/euler/point_renderer.js"></script>
+
+
+<script src="{{ base.url | prepend: site.url }}/assets/js/euler/utils.js"></script>
 <script src="{{ base.url | prepend: site.url }}/assets/js/math.min.js" type="text/javascript"></script>
     
 <style>
@@ -26,354 +34,84 @@ svg { border: 1px solid black; }
 
 <script src="https://unpkg.com/delaunator@3.0.2/delaunator.js"></script>
 
-<div id="sim" style="width:100%"></div>
+<div id="smd" style="width:100%"></div>
+<div id="rb" style="width:100%"></div>
 
 <script type="text/javascript">
 
-var mouse_is_down = false;
-var mouse_has_left = true;
-var mouse_coords = math.matrix([0.0, 0.0]);
-var mouse_coords_old =  math.matrix([0.0, 0.0]);
-var mouse_coords_d = math.matrix([0.0, 0.0]);
-var drag_i = -1;	
-
+// window size
 var width = 500;
 var height = 300;
 
-var box = [[0,width],[0,height]];
-
+// ball radius
 var radius = 10;
-var mean_length = width/5;
-var var_length = width/5;
-var var_length = 0;
-var N = 5;
-var points = [...Array(N)].map(()=> {return [width/2*(Math.random()+0.5),height/2*(Math.random()+0.5)]})
 
+// mass per point
+var m = 100;
 
-var gw = 6;
-var gh = 2;
+// initialize points
+var points = []
+if(false){
+	var N = 5;
+	points = [...Array(N)].map(()=> {return [width/2*(Math.random()+0.5),height/2*(Math.random()+0.5), m]})
+}else{
+	var gw = 6;
+	var gh = 2;
 
-var gx = 50;
-var gy = 50;
-points = []
-var N = gw*gh;
-for (var i=0; i<gw;i++){
-	for (var j=0; j<gh;j++){
-		points.push([100.0 + i*gx,100.0 + j*gy])
+	var gx = 50;
+	var gy = 50;
+	var N = gw*gh;
+	for (var i=0; i<gw;i++){
+		for (var j=0; j<gh;j++){
+			points.push([100.0 + i*gx,100.0 + j*gy, m])
+		}
 	}
 }
 
 
-//const points = [[168, 180], [168, 178], [168, 179], [168, 181], [168, 183]];
 
+// create springs with delaunay
 const delaunay = Delaunator.from(points);
-// [623, 636, 619,  636, 444, 619, ...]
 
 var edges = [];
-
-function dist(p,q){
-	return Math.sqrt((p[0]-q[0])*(p[0]-q[0]) + (p[1]-q[1])*(p[1]-q[1]));
-}
-
-function norm(p){
-	return Math.sqrt(p[0]*p[0]+ p[1]*p[1]);
-}
-
-function nextHalfedge(e) { return (e % 3 === 2) ? e - 2 : e + 1; }
-
+var rest_length;
 for (let e = 0; e < delaunay.triangles.length; e++) {
     if (e > delaunay.halfedges[e]) {
-    	var l = (Math.random()-0.5)*var_length + mean_length;
 		p0 = delaunay.triangles[e];
 		p1 = delaunay.triangles[nextHalfedge(e)];
-		l = dist(points[p0], points[p1]);//+ Math.random()*10;
-
-        edges.push([delaunay.triangles[e], delaunay.triangles[nextHalfedge(e)], l])
-
+		rest_length = dist(points[p0], points[p1])+ Math.random()*0;
+        edges.push([delaunay.triangles[e], delaunay.triangles[nextHalfedge(e)], rest_length])
     }
 }
 
-//edges = [];
-
-
-
-// calculate system matrices
-
-var T = 0.01;
-
-var m = 100;
-
-var k = 100000;
-
-var b = 1000;
-
-var M = math.multiply(m, math.identity(2*N));
-
-
-
-function dxdt(x, u){
-	var F = math.zeros(2*N);
-
-	var dist;
-	for (var i=0; i<edges.length;i++){
-		p0 = edges[i][0];
-		p1 = edges[i][1];
-
-		// difference of positions
-		dx = math.subtract(math.subset(x, math.index(math.range(2*p0,2*p0+2))),math.subset(x, math.index(math.range(2*p1,2*p1+2))))
-		// difference of velocity
-		dxd = math.subtract(math.subset(x, math.index(math.range(2*N + 2*p0,2*N + 2*p0+2))),math.subset(x, math.index(math.range(2*N + 2*p1,2*N + 2*p1+2))))
-		// distance between points
-		dist = norm(dx._data);
-
-		// factors for springs and damper
-		fk = k*(dist-edges[i][2])/dist;
-		fb = b*math.multiply(dx,dxd)/(dist*dist);
-
-		for (var j=0; j<2;j++){ // for x and y	
-			// spring 
-			F._data[2*p0+j]+=fk*dx._data[j]
-			F._data[2*p1+j]+=-fk*dx._data[j]
-			// damper
-			F._data[2*p0+j]+=fb*dx._data[j]
-			F._data[2*p1+j]+=-fb*dx._data[j]
-		}
-	}
-
-	// Wall collision
-	kw = 80000;
-	bw = 1000;
-	var s;
-	for (var i=0; i<N;i++){ 			// points
-		for (var j=0; j<2;j++){			// dimensions (=2)
-			if(x._data[2*i+j]<box[j][0]+radius){
-				F._data[2*i+j]+=-kw*(-x._data[2*i+j] + radius + box[j][0]);
-				F._data[2*i+j]+=-bw*(-x._data[2*N + 2*i+j]);
-			}
-			if(x._data[2*i+j]>box[j][1]-radius){
-				F._data[2*i+j]+=kw*(x._data[2*i+j] + radius - box[j][1]);
-				F._data[2*i+j]+=bw*(x._data[2*N + 2*i+j]);
-			}
-		}
-	}
-
-
-	function far(p1, p2, dist) {
-		return(p2 - p1 > dist || p1 - p2 > dist);
-	}
-
-
-	// collision with other balls
-
-	kb = 100000;
-	bb = 1000;
-	for (var i=0; i<N;i++){ 			// first point
-		for (var j=i+1; j<N;j++){ 			// second point
-			if(far(x._data[2*i], x._data[2*j], 2 * radius) && far(x._data[2*i+1], x._data[2*j+1], 2 * radius)) continue;
-
-
-			dx = math.subtract(math.subset(x, math.index(math.range(2*i,2*i+2))),math.subset(x, math.index(math.range(2*j,2*j+2))))
-			dxd = math.subtract(math.subset(x, math.index(math.range(2*N + 2*i,2*N + 2*i+2))),math.subset(x, math.index(math.range(2*N + 2*j,2*N + 2*j+2))))
-		
-			dist = norm(dx._data);
-
-			if(dist < 2*radius){
-				// factors for springs and damper
-				fk = kb*(2*radius-dist)/dist;
-				fb = bb*math.multiply(dx,dxd)/(dist*dist);
-
-				for (var l=0; l<2;l++){ // for x and y	
-					// spring 
-
-					F._data[2*i+l]+=-fk*dx._data[l]
-					F._data[2*j+l]+=fk*dx._data[l]
-					// damper
-					F._data[2*i+l]+=fb*dx._data[l]
-					F._data[2*j+l]+=-fb*dx._data[l]
-				}
-
-			}
-
-		}
-	}
-	km = 50000;
-	bm = 10000;
-	if(mouse_is_down){
-
-		// add spring and damper to drag point
-
-		dx = math.subtract(math.subset(x, math.index(math.range(2*drag_i,2*drag_i+2))),mouse_coords)
-		dxd = math.subtract(math.subset(x, math.index(math.range(2*N + 2*drag_i,2*N + 2*drag_i+2))), mouse_coords_d)
-		// distance between points
-		dist = norm(dx._data);
-
-		// factors for springs and damper
-		fk = km*(dist-0)/dist;
-		fb = bm*math.multiply(dx,dxd)/(dist*dist);
-
-
-		for (var j=0; j<2;j++){ // for x and y	
-			// spring 
-			F._data[2*drag_i+j]+=fk*dx._data[j]
-
-			// damper
-			F._data[2*drag_i+j]+=fb*dx._data[j]
-
-		}
-
-
-	}
-
-
-
-
-
-
-	var x_out = math.zeros(4*N);
-
-
-	var MF = math.multiply(math.inv(m),math.subtract(u,F));
-	x_out.subset(math.index(math.range(0,2*N))		, math.subset(x, math.index(math.range(2*N,4*N))))
-	x_out.subset(math.index(math.range(2*N,4*N)) , MF)
-	return x_out;	
-}
-
+// initial state
 state = math.zeros(4*N);
 u = math.zeros(2*N);
 
 for (var i=0; i<points.length;i++){
-
 	state._data[i*2] = points[i][0];
 	state._data[i*2+1] = points[i][1];
 	//state._data[2*N+2*i] = 500;
 	//state._data[2*N+2*i+1] = -300;
 }
 
-//state._data[2*N+1] = 100;
-
-dxdtt = dxdt(state,u)
-
-function rk4(x, u, f, h){
-	k1 = math.multiply(h,f(x,u));
-	k2 = math.multiply(h,f(math.add(x, math.multiply(0.5,k1)),u));
-	k3 = math.multiply(h,f(math.add(x, math.multiply(0.5,k2)),u));
-	k4 = math.multiply(h,f(math.add(x, k3),u));
-
-	return math.add(x, math.multiply(1.0/6.0,math.add(k1,math.multiply(2,k2),math.multiply(2,k3),k4)))
-}
+smd = new SpringMassDamper(points, edges, radius, width, height);
+smd.init_renderer("smd")
+smd.start(state)
 
 
+//state = math.matrix([width/2.0, height/2.0, Math.PI/6.0, 0.0, 0.0, 0.0])
+rb = new RigidBody(points, edges, radius, width, height);
+rb.init_renderer("rb")
 
+// draw
+foo = rb.state;
 
-function mouse_down(d, i){
-	mouse_is_down = true;
-	drag_i = i;
-}
-
-function mouse_move(){
-	mouse_coords = math.matrix(d3.mouse(this));
-}
-
-function mouse_up(){
-	mouse_is_down = false;
-}
-
-function mouse_leave(){
-	mouse_is_down = false;
-	mouse_has_left = true;
-}
-
-function mouse_enter(){
-	mouse_has_left = false;
-	mouse_coords_old = math.matrix(d3.mouse(this));
-	mouse_coords_d = math.matrix([0.0, 0.0]);
-}
-
-
-svg = d3.select("#sim").append("svg")
-		.attr("id", "simsvg")
-		.attr("viewBox","0 0 " + width +  " " + height)
-		.on("mousemove", mouse_move)
-		.on("mouseup", mouse_up)
-		.on("mouseleave", mouse_leave)
-		.on("mouseenter", mouse_enter);
-
-
-svg.selectAll("path")
-	.data(edges)
-	.enter()
-	.append("path")
-	.attr("d", function(d){return "M " +  state._data[2*d[0]] + " , " +  state._data[2*d[0]+1] + "L " +  state._data[2*d[1]] + " , " +  state._data[2*d[1]+1]}) 
-	.style("stroke","#000000")
-	.style("fill","#FF0000")
-
-svg.selectAll("circle")
-	.data(points)
-	.enter()
-	.append("circle")
-	.attr("cx", function(d,i){return state._data[2*i]})
-	.attr("cy", function(d,i){return state._data[2*i+1]})
-	.attr("r", radius)
-	.style("stroke","#000000")
-	.style("fill","#FF0000")
-	.on("mousedown", mouse_down)
-
-
-
-
-
-
-
-
-var last_time = new Date().getTime();
-var d_dt  = 0.005;
-function update(){
-
-	var this_time = new Date().getTime();
-
-	dt = (this_time-last_time)/1000.0;
-	last_time = this_time;
-
-
-	// calculate mouse speed
-	if(!mouse_has_left){
-		var alpha = 0.8;
-		mouse_coords_d = math.add(
-			math.multiply(alpha,		mouse_coords_d), 
-			math.multiply(1.0-alpha,	math.multiply(1/dt,math.subtract(mouse_coords,mouse_coords_old))))
-
-		mouse_coords_old = math.clone(mouse_coords);
-	}
-
-	n = math.ceil(dt/d_dt);
-	n=3
-	console.log(dt)
-	console.log(n)
-	for(var i=0;i<n;i++){
-		u = math.zeros(2*N);
-		state = rk4(state, u, dxdt, d_dt)
-	}
-
-
-
-
-
-	svg.selectAll("path")
-		.data(edges)
-		.attr("d", function(d){return "M " +  state._data[2*d[0]] + " , " +  state._data[2*d[0]+1] + "L " +  state._data[2*d[1]] + " , " +  state._data[2*d[1]+1]}) 
-
-	svg.selectAll("circle")
-		.data(points)
-	.attr("cx", function(d,i){return state._data[2*i]})
-	.attr("cy", function(d,i){return state._data[2*i+1]})
-
-}
-
-T = 10;
-
-setInterval(update, T);
-
-// particular matrix
+//foo._data[3] = 300.0;
+//foo._data[4] = 300.0;
+//foo._data[5] = Math.PI/6.0;
+//rb.pr.update(rb.state_to_points(foo))
+rb.start(foo)
 
 
 
