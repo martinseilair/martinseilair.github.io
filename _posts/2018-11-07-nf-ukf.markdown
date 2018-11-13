@@ -560,7 +560,7 @@ A typical recommendation is to use \\(\kappa = 0\\), \\(\alpha = 10^{-3}\\) and 
 The second aspect we have to change (or at least could change), is that we don't have to recalculate our sigma points after the prediction step. We can simply use the transformed sigma points \\(f(\chi^i)\\) as our new sigma points.
 
 
-Enough of the dry theory! Let's play around with the grid-based filter in our race track example. 
+Enough of the dry theory! Let's play around with the unscented Kalman filter in our race track example. 
 
 
 ## Example
