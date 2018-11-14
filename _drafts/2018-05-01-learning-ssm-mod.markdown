@@ -50,6 +50,12 @@ $$ p(x|\theta) = \int_z p(x,z|\theta) $$
 	Variantional inference
 	Monte Carlo
 
+
+
+
+How to choose input? Exploration problem
+Exploration noise
+
 Learning nonlinear state-space models for control
 	https://ieeexplore.ieee.org/document/1555957
 

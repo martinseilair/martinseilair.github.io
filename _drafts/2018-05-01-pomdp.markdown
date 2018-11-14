@@ -1,13 +1,67 @@
 ---
 layout: post
-title:  "Optimal Control in MDP"
+title:  "Optimal control in POMDP"
 date:   2018-10-12 18:04:07 +0900
 categories: jekyll update
 comments: true
 excerpt_separator: <!--more-->
 ---
-A particle filter is a very helpful tool for tracking dynamic systems. This article is meant to be an introduction to particle filters with a strong focus on visual examples. In the course of this post we will think about the main idea of the particle filter, derive the corresponding algorithm and play around with examples on the way. In order to follow the steps in this post you should bring some basic knowledge of math, probability theory in particular. In the derivations and explanations, I tried to take as small steps as possible, to keep everyone on board. Let's dive into it!
 <!--more-->
+What is a partially observable Markov decision process?
+
+A partially observable Markov decision process (POMDP) is a generalization of a Markov decision process. In comparison to an MDP the agent cannot observe the state \\(s_t\\) directly, but only an observation based on the current state \\(s_{t+1}\\) and taken action \\(a_t\\). A POMDP is defined by the tuple \\((\mathcal{S}, \mathcal{A},\mathcal{O}, \mathcal{P},\mathcal{Z}, \mathcal{R}, s_0)\\). At every time step an observation \\(o_{t+1}\\) is received, which is distributed corresponding to \\(o_{t+1}\sim \mathcal{Z}(o_{t+1}\|s_{t+1},a_t)\\).
+
+In the partially observable setting the sufficient statistic \\(s_t\\) is not available to the agent. Therefore, the action taken at time step \\(t\\) has to be dependent on the entire history \\(h  = (s_{0:t},a_{0:t})\\). The policy \\(\pi(a_t\|s_{0:t},a_{0:t})\\) would be time dependent with changing input dimensions.
+
+To circumvent this problem, the policy can be conditioned on a sufficient statistic of \\(s_t\\), which dependents on the history. This sufficient statistic \\(p(s_t\|o_{0:t},a_{0:t})\\) is called belief state \\(b_t\\). The initial belief state \\(b_0\\) is set to the initial state distribution. The belief state can be computed recursively corresponding to the prediction step \\(b_{t+1} := \int_{s_{t}}p(s_{t+1}\|s_t,a_t)b_t(s_t)ds_t\\), which progresses the environment one time step, and the update step \\(b_t :=  \frac{\mathcal{Z}(o_t\|s_t, a_{t-1})b_t(s_t)}{\int_{s_t}\mathcal{Z}(o_t\|s_t, a_{t-1})b_t(s_t)ds_t}\\), which incorporates new observations.
+
+How can we do optimal control?
+
+We have to maintain the posterior distribution over the current states given the observations.
+
+We have to learn a controller, that takes this belief state as input. If our system model is not linear Gaussian, then this belief can only be described by uncountable infinite parameters. 
+
+MDP
+
+$$ \pi(a_t|s_t) $$
+
+
+POMDP
+
+$$ \pi(a_t|b_t) $$
+
+\\(\pi(a_t\|b_t)\\) maps the function \\(b(s_t)\\) and the vector \\(a_t\\) to the reals.
+
+
+We can reformulate the problem of optimal control in POMDPs in terms of MDPs
+
+
+$$ p(b_{t+1}|b_t,a_t,o_{t+1}) = \delta(b_{t+1} - \upsilon_\phi(b_t, a_t, o_{t+1})), $$
+
+with the deterministic belief update
+
+$$ b_{t+1}  = \upsilon_\phi(b_t, a_t, o_{t+1}) $$.
+
+
+\\(p(b_{t+1}\|b_t,a_t,o_{t+1})\\) maps the functions \\(b(s_t)\\) and \\(b(s_{t+1})\\) and the vectors \\(a_t\\) and  \\(o_t\\) to the reals.
+
+In can be interepreted as augmentation of the input with the observations.
+
+
+
+
+This is intractable!
+
+We can approximate the current belief. Either by Monte Carlo methods, or by variational inference.
+In the end we will obtain a representation of the posterior, that has finite parametrization.
+We can use vanilla RL algorithm to solve this.
+
+
+
+
+
+
+
 <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
 <script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
