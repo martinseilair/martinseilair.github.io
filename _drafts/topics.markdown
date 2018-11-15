@@ -13,4 +13,5 @@ Interesting topics
  * Lagrangian / principle of least action / Lagrange multiplier
  * Emergence / Complexity / self-organization
  * Bells theorem / EPR paradox
+ * Causality
 

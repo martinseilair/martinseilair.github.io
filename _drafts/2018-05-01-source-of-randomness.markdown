@@ -1,176 +1,330 @@
 ---
 layout: post
-title:  "Source of randomness"
+title:  "Source of randomness and Markov madness"
 date:   2018-10-12 18:04:07 +0900
 categories: jekyll update
 comments: true
 excerpt_separator: <!--more-->
 ---
+Probabilistic models are used massively in almost any field imaginable. In this short article, I will reason about the notion of randomness in a deterministic contexts.
 
+Just some thoughts
 <!--more-->
 
 <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
+In engineering, we often assume that some kinf of noise is acting on the system. This noise is treated as purely random. On the other hand, if we assume that the world is deterministic, or at least possible _true_ randomness from the quantum world has no impact on the macro world, something as noise shouldn't exist. 
 
-If we neglect _true_ randomness (from quantum effects), where is randomness coming from?
+<div class="important_box">
 
-We always work with probability distributions, but if we are living in a deterministic world, where is the randomness coming from?
+If the world is deterministic, why are we using the concept of randomness to describe the world?
+
+</div>
 
 This article argues, that if we have a probability distribution, the element of stochasticity always comes from a lack of knowledge.
 
+# Deterministic model
 
 Lets assume we have a deterministc system, that is described by the equation 
 
 $$ y = f(x). $$
 
-In this case \\(x\\) determines \\(y\\) or in other words, \\(x\\) causes \\(y\\).
+In this case \\(x\\) determines \\(y\\) or in other words, \\(x\\) causes \\(y\\). Let's assume we are in a setting, where we _know exactly_ that \\(x=\hat{x}\\). If we want the value of \\(y\\), we simply have to insert this value into our equation
 
-If we want the value of \\(y\\) given an particular \\(\hat{x}\\) we simply have to insert this value into our equation:
+$$ \hat{y} = f(\hat{x}), $$
 
-$$ \hat{y} = f(\hat{x}). $$
+to obtain the specific value of \\(\hat{y}\\).
 
-As a result we will get a specific value of \\(\hat{y}\\).
+We can use the [Dirac delta function](https://en.wikipedia.org/wiki/Dirac_delta_function) to formulate this process of insertion in a fancy way, by using the [sifting property](https://en.wikipedia.org/wiki/Dirac_delta_function#Translation). We can express it as 
 
-We can also formuate our deterministic model in the language of probability as conditional distribution
+$$ \int_x f(x) \delta_{\hat{x}}(x)\,dx = f(\hat{x}) = \hat{y}$$ 
 
-$$ p(y|x) = \delta(y - f(x)). $$
+where we use \\(\delta_{\hat{x}}(x)\\) as shorthand for \\(\delta(x-\hat{x})\\).
 
-In the language of probability theory, what does it mean to plug in a specific value \\(\hat{x}\\) to the function?
+We can also formuate our deterministic model \\(y=f(x)\\) in the language of probability theory as a conditional distribution
 
-Actually this is pretty easy. We use the Dirac delta function and use the sifting property
+$$ p(y|x) = \delta_{f(x)}(y). $$
 
-$$ p(y) = \int_x p(y|x) \delta(x-\hat{x}) dx$$
+Let's plug our \\(\hat{x}\\) again into our distribution.
 
-$$ p(y) = \int_x \delta(y - f(x)) \delta(x-\hat{x}) dx $$
+With this new formulation how would plugging in \\(\hat{x}\\) would look like? We do again our trick with the Dirac delta function and obtain
 
-$$ p(y) = \delta(y - f(\hat{x})). $$
 
-All the probability mass will be at the point where \\(y = f(\hat{x})\\) is satisfied.
-Ok thats nice!
+$$ p(y) = \int_x \delta_{f(x)}(y) \delta_{\hat{x}}(x) \,dx. $$
 
+If we look very closely, we notice that this expression has the form of a marginalization
+
+$$ p(y) = \int_x p(y|x) p(x)\,dx.$$
+
+The Dirac delta function encoding our input \\(\delta_{\hat{x}}(x)\\) can be interpreted as our _belief_ about the input. In our case, we are certain about the input! All probability mass will be at \\(x=\hat{x}\\).
+But what will be the result of this marginalization? By using the sifting property again, we obtain
+
+$$ p(y) = \delta_{f(\hat{x})}(y). $$
+
+
+All the probability mass will is at the point where \\(y = f(\hat{x})\\) is satisfied.
+This makes sense.
 
 Up until now, we were sure about our input \\(\hat{x}\\).
 
-But what about if we have not full knowledge of our input, but only some belief, that can be described by a distribution \\(p(x)\\).
+Let's assume that we have no full knowledge of our input anymore, but only some belief of it that can be described by a belief distribution \\(p(x)\\).
 
-We cant just input this into our deterministic function, which only takes on single input. But we can use the probabilistic interpreation to insert our belief at once.
+It is not possible to input this distriubution directly into our deterministic function: it only takes single values of \\(x\\). But we can use our probabilistic interpreation to insert our belief distribution all at once
 
+$$ p(y) = \int_x \delta_{f(x)}(y)p(x)\,dx.$$
 
-$$ p(y) = \int_x p(y|x) p(x) dx$$
+In general, even if we have a deterministic \\(p(y\|x)\\), the resulting \\(p(y)\\) will not be a Dirac delta function anymore, but a belief distribution over y.
 
-$$ p(y) = \int_x \delta(y - f(x))p(x) dx$$
+# Stochastic models
 
-In general, even if we have a deterministic \\(p(y\|x)\\) the resulting \\(p(y)\\) will not be deterministic.
+Up until now, we looked only at deterministic functions. Now let's take a look at stchastic models and what meaning they have in deterministic settings. For this purpose we will construct a stochastic from a deterministic function. Let's start
 
+We are starting again the _deterministic_ model 
 
-Ok, great! But what is if we have not deterministic functions but stochastic function? How can we explain this?
+$$ y = f(x,h), $$
 
-We are starting again from a _deterministic_ model 
+where we have the additional variable \\(h\\).
 
-$$ y = f(x,z). $$
+Now, let's assume that we _exactly know_ that \\(h = \hat{h}\\). We can plug \\(\hat{h}\\) into our equation and obtain the new equation
 
-Everything is nice. Now, let's assume we know we know \\(z\\) is \\(\hat{z}\\). We can plug \\(\hat{z}\\) into our equation and obtain the new equation
+$$ y =  f(x,\hat{h}) = \hat{f}(x). $$
 
-$$ y = \hat{f}(x) = f(x,\hat{z}). $$
-
-By plugging in \\(\hat{z}\\) we have effectively reduced the dimensionality of our function.
-Can we also formulate in the deterministic setting? Yes, we can:
-
-
-$$ p(y|x) = \int_x p(y|x,z) \delta(z-\hat{z}) dx$$
-
-$$ p(y|x) = \int_x \delta(y - f(x,z)) \delta(z-\hat{z}) dx $$
-
-$$ p(y|x) = \delta(y - f(x,\hat{z})). $$
-
-Nice!
-
-But what happens, if we don't know our input exactly and have distriubtion over \\(p(z)\\)?
-
-We can use the same machinery.
-
-$$ p(y|x) = \int_x p(y|x,z)p(z) dx$$
-
-$$ p(y|x) = \int_x \delta(y - f(x,z)) p(z) dx $$
+By inserting \\(\hat{h}\\), we have effectively reduced the dimensionality of our function. Our function is again only depend on one parameter.
+Can we also formulate in the probabilistic setting? Yes, we can:
 
 
-Even is we have a deterministic \\(p(y\|x,z)\\) we will end up with a resulting stochastic \\(p(y\|x)\\). Where is the randomness coming from? It comes from the lack of knowledge of the parameter \\(z\\). But the process itself is still deterministic.
+$$
+\begin{align}
+p(y|x) &= \int_h p(y|x,h) \delta_{\hat{h}}(h)\, dh \\
+p(y|x) &= \int_h \delta_{f(x,h)}(y) \delta_{\hat{h}}(h)\, dh \\
+p(y|x) &= \delta_{f(x,\hat{h})}(y). 
+\end{align}
+$$
 
-What can we learn from it? If we have probabilistic conditional dependencies, we **know** that we missed some hidden variables or left some on purpose.
+But what happens, if we don't know our input \\(\hat{h}\\) _not exactly_ and have belief distriubtion \\(p(h)\\)?
 
-Ok! Great! But now let's think for a moment about Markov processes.
+By replacing the Dirac delta function \\(\delta_{\hat{h}}(h)\\) with \\(p(h)\\), we note that our formula is equivalent to a marginalization over \\(h\\).
 
-How are Markov processes defined?
+$$ p(y|x) = \int_h p(y|x,h)p(h) \,dh.$$
 
-If we have stochastic process 
+Even if we have a deterministic function \\(p(y\|x,h)\\) we will obtain a stochastic model \\(p(y\|x)\\). We produced a stochastic model from an deterministic function. But where is the uncertainty coming from? We decided to get rid of the parameter \\(h\\). We did this by marginalizing over \\(h\\) but marginalization in this context is the same as insertion. We can insert a particular value \\(\hat{h}\\) and obtain again a deterministic function or insert a distribution over \\(h\\) and obtain a stochastic model. 
+
+Therefore, the uncertainty comes from the lack of knowledge of the parameter \\(h\\). But even if our model is stochastic, the process itself is still deterministic.
+
+What can we learn from it? If we have stochastic model, we **know** that we missed some hidden variables or left some on purpose.
+
+
+# Markov processes
+Now let's take a look at Markov processes, which are very widely used.
+
+If a stochastic process 
 
 $$ p(x_1, \ldots, x_T) $$
 
-we can separate it by
+has the Markov property we have a Markov process. A stochastic process has the Markov property if the next state \\(x_{t+1}\\) is only conditionally dependend on the current state \\(x_t\\). In this case we can describe our model by
 
-$$ p(x_0, \ldots, x_T) = p(x_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t) $$
+$$ p(x_0, \ldots, x_T) = p(x_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t). $$
 
-This model does describe a chain. The value of \\(x_t\\) depends only on \\(x_{t-1}\\).
-So far so good.
+We can visualize this stochastic process with the help of graphical models.
 
-But let's think about our finding from above. We know that the uncertainty of the \\(p(x_{t+1}\|x_t) \\) comes from hidden variables. Therefore, we know that there are more variables involved in the environment.
+<svg class="pgm_centered" onload="draw_markov(this);"></svg>
 
-Actually we have the deterministic conditionals
+You note that there are only arrows, which represent conditional dependencies, connecting adjacent nodes. We assume, that the particular conditional dependencies \\(p(x_{t+1}\|x_t)\\) are stochastic.
 
-$$ p(x_{t+1}|x_t, h_t) $$
 
-Ok fair enough. Our next state \\(x_{t+1}\\) is not only depending on \\(x_t\\) but also on \\(h_t\\). 
 
-In a closed system, this hidden variables have to be part of the dynamic as well.
+Let's use our findings from above and think about this uncertainty. We know, that we are still living in a determinsitic world. Therefore, we know that the uncertainty of \\(p(x_{t+1}\|x_t) \\) has to come from _hidden variables_. By "reversing" the marginalization that was done to obtain \\(p(x_{t+1}\|x_t) \\) we retrieve again the deterministic function of the system
 
-Therefore, we will have a hidden _deterministic_ dynamic 
+$$ p(x_{t+1}|x_t, h_t). $$
+
+
+
+
+Therefore, our next state \\(x_{t+1}\\) is not only depending on \\(x_t\\) but also on \\(h_t\\). 
+
+We assume, that we are in a closed system, therefore, the hidden variables \\(h\\) will also be states of this closed system.
+
+There will be a hidden _deterministic_ dynamic 
 
 $$ p(h_{t+1}|x_t, h_t). $$
 
 
-Our total process will be 
+Therefore, our total process will be 
 
-$$ p(x_0, \ldots, x_T,h_0, \ldots, h_T) = p(x_0)p(h_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t, h_t)p(h_{t+1}|x_t, h_t) $$
+$$ p(x_0, \ldots, x_T,h_0, \ldots, h_T) = p(x_0)p(h_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t, h_t)p(h_{t+1}|x_t, h_t). $$
+
+Again, we can visualize this deterministic model as a probabilistic graphical model:
 
 
+<svg class="pgm_centered" onload="draw_ssm_joint(this);"></svg>
 
-If we look at our graphical we see that given the state \\(x_t\\) its not blocking the way to \\(x_{t-1}\\) anymore. We lost our Markov property! Now our model is not only dependent on the last state.
+We changed our model, let's check if the Markov property still holds.
+We have to think about conditional dependencies in probabilistic graphical models. For this purpose, we can use D-separation. We are asking us, if \\(x_{t+1}\\) and \\(x_{t-1}\\) are conditionally independent given \\(x_t\\). Let's try to reason graphically.
 
-But why is it still reasonable to use Markov models?
+<svg class="pgm_centered" onload="draw_ssm_hh_sh(this);"></svg>
 
-Even if we assume, 
+In the figure, we see that the direct way over \\(x_t\\) is blocked, because \\(x_t\\) is observed. This path is drawn in red. On the other hand, we can reach \\(x_{t-1}\\) over the unobserved node \\(h_t\\). This path is shown in green. Therefore, \\(x_{t+1}\\) will be dependend not only on the current state \\(x_{t}\\), but also on \\(x_{t-1}\\) and all states before. By introducing the hidden variables \\(h\\) we lost the Markov property.
 
-$$ p(x_0, \ldots, x_T,h_0, \ldots, h_T) = p(x_0)p(h_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t, h_t)p(h_{t+1}|h_t) $$
+Ok, that is strange. Maybe, our assumptions about the connection between known and unknown dynamics where to strong. We can loose the assumptions, by assuming that the hidden state is only dependend on the last hidden state. But that the next state is still dependent on the hidden variable. We can formulate this as 
 
-or
+$$ p(x_0, \ldots, x_T,h_0, \ldots, h_T) = p(x_0)p(h_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t, h_t)p(h_{t+1}|h_t). $$
+
+Let's again check conditional dependencies using the corresponding graphical model.
+
+<svg class="pgm_centered" onload="draw_ssm_hh(this);"></svg>
+
+Again, we note that the direct way is blocked by the observed node \\(x_t\\). But we see, that \\(x_{t-1}\\) and \\(x_{t+1}\\) are connected through three hidden variable nodes. We still lost the Markov property.
+
+
+Another assumption we could take is that the hidden state is only depending on the last state. The corresponding stochastic process can be forumulated as
 
 $$ p(x_0, \ldots, x_T,h_0, \ldots, h_T) = p(x_0)p(h_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t, h_t)p(h_{t+1}|x_t) $$
 
-we dont obtain the Markov property!!!! It seems, that the only case where the Markov property holds is if we have independend \\(p(h_t)\\) at a\every timestep.
+If we take a look at the probabilistic graphical model of this system, we note again, that there is path connecting \\(x_{t-1}\\) and \\(x_{t+1}\\).
+<svg class="pgm_centered" onload="draw_ssm_sh(this);"></svg>
 
-But we have a deterministic system it has to come from somewhere!
+There is one last case left. The hidden state has **no** dependencies at all. We can write this as
 
-We have to assume the following property
+$$ p(x_0, \ldots, x_T,h_0, \ldots, h_T) = p(x_0)p(h_0) \prod_{t=1}^{T-1} p(x_{t+1}|x_t)p(h_{t}). $$
 
-$$ p(h_{t+1}|x_t, h_t) = p(h_{t+1})p(x_t)p(h_t) $$
+By taking a look at the graphical model
+<svg class="pgm_centered" onload="draw_ssm(this);"></svg>
+
+we can finally confirm, that the stochastic process has the Markov property again. There is no path connecting \\(x_{t-1}\\) and \\(x_{t+1}\\) that is not blocked.
 
 
-https://en.wikipedia.org/wiki/Mixing_(mathematics)
-This property is called mixing. If we have an deterministic input, we will get an deterministic output. But if we are just slightly uncertain about our input, this will lead to completely random outputs, without any correlation to the input. Totally crazy.
+But now we are facing a contradiction. We have deterministic system 
 
-At the same time
-$$  h_{t+1} = f(x_t, h_t) $$
-$$ p(h_{t+1}) = \int\limits_{x_t, h_t}\delta(h_{t+1}-f(x_t, h_t))\delta(x_t - \hat{x}_t)\delta(h_t - \hat{h}_t) \,dx_t \, dh_t $$
+$$ (x_{t+1}, h_{t+1} ) = f(x_t, h_t) $$
 
-$$ p(h_{t+1}) = \delta(h_{t+1}-f(\hat{x}_t, \hat{h}_t))$$
+that defines the next hidden state \\(h_{t+1}\\) deterministically. On the other hand, in order to keep the Markov property, we have to assume, that the nodes \\(h_t\\) are isolated and are not depending on the state before. We can describe this contradiction in mathematical terms. 
 
-and 
 
-$$ p(h_{t+1}) = \int\limits_{x_t, h_t}\delta(h_{t+1}-f(x_t, h_t))\mathcal{N}\left(\begin{matrix} x_t\\ h_t \end{matrix}\middle|\begin{matrix} \hat{x}_t\\ \hat{h}_t \end{matrix},\delta\begin{pmatrix} I & 0\\ 0 & I \end{pmatrix}\right) \,dx_t \, dh_t $$
+If we plug in determiinsitic inputs into
+
+$$  h_{t+1} = f_h(x_t, h_t) $$
+
+we will obtain an deterministic output
+
+$$
+\begin{align} p(h_{t+1}) &= \int\limits_{x_t, h_t}\delta_{f_h(x_t, h_t)}(h_{t+1})\delta_{\hat{x}_t}(x_t)\delta_{\hat{h}_t}(h_t) \,dx_t \, dh_t \\
+p(h_{t+1}) &= \delta_{f_h(\hat{x}_t, \hat{h}_t)}(h_{t+1})
+\end{align}
+$$
+
+in form of a Dirac delta function.
+
+Now, let's assume that have an infitesimal uncertainty about our model, which we will model as 
+
+$$ p(x_t, h_t) =  \mathcal{N}\left(\begin{matrix} x_t\\ h_t \end{matrix}\middle|\begin{matrix} \hat{x}_t\\ \hat{h}_t \end{matrix},\epsilon\begin{pmatrix} I & 0\\ 0 & I \end{pmatrix}\right), $$
+
+where \\(\epsilon\\) is very close to \\(0\\). If we know plug this into our model
+
+$$ \int\limits_{x_t, h_t}\delta_{f(x_t, h_t)}(h_{t+1})\mathcal{N}\left(\begin{matrix} x_t\\ h_t \end{matrix}\middle|\begin{matrix} \hat{x}_t\\ \hat{h}_t \end{matrix},\epsilon\begin{pmatrix} I & 0\\ 0 & I \end{pmatrix}\right) \,dx_t \, dh_t $$
+
+the resulting \\(p(h_{t+1})\\) won't be dependend on the input \\(\hat{x}\\) and \\(\hat{z}\\). If you have at least a bit of uncertainty about your input, you can't tell anything about the following state.
+
+
+
+This property is called [mixing](https://en.wikipedia.org/wiki/Mixing_(mathematics)). If we have an deterministic input, we will get an deterministic output. But if we are just slightly uncertain about our input, this will lead to completely random outputs, without any correlation to the input. Totally crazy.
+
+An intuitive example is the mixing of two liquids like wine and water. If you know the exact configuration of the system, in this case the molecules of wine and water, you can determine the exact configuration at the end of the process. But if you have a small uncertainty about your initial state, you can't tell anything about the resulting state. If the behaviour is sensitive to small deviations of the initial conditions we have chaotic system.
+
+
 
 <script type="text/javascript">
-function draw_ssm_indi(svg){
+color_normal = "#333"
+color_block = "#F00"
+color_pass = "#0F0"
+
+
+
+
+function draw_ssm_joint(svg){
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var hidden_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<2) ind+=(t-2)
+      	if (t>2) ind+="+"+(t-2)
+
+
+      	hidden_ns.push({title: "\\( h_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#FFFFFF"});
+
+      	statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+
+        ss_col = color_normal 
+        sh_col = color_normal 
+        hs_col = color_normal 
+        hh_col = color_normal 
+
+
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:"", color:ss_col })
+        	edges.push({source: hidden_ns[t-1], target: state_ns[t], dash:"", color:hs_col })
+        	edges.push({source: state_ns[t-1], target: hidden_ns[t], dash:"", color:sh_col })
+        	edges.push({source: hidden_ns[t-1], target: hidden_ns[t], dash:"", color:hh_col })
+        }
+      }
+
+    e_state_state = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    e_hidden_hidden= {x: hidden_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
+    
+    e_hidden_state = {x: hidden_ns[T-1].x +  radius*3.5, y: hidden_ns[T-1].y+ radius*3.5}
+    e_state_hidden = {x: state_ns[T-1].x + radius*3.5, y: state_ns[T-1].y- radius*3.5}
+
+    
+
+    b_state_state = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    b_hidden_hidden = {x: hidden_ns[0].x - radius*4, y: hidden_ns[0].y}
+    
+    b_hidden_state = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+    b_state_hidden = {x: hidden_ns[0].x - 2*Math.sqrt(2)*radius, y: hidden_ns[0].y +2*Math.sqrt(2)*radius}
+
+
+    edges.push({source: state_ns[T-1], target: e_state_state, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_state, dash:"5,5"})
+
+    edges.push({source: state_ns[T-1], target: e_state_hidden, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_hidden, dash:"5,5"})
+
+
+
+    edges.push({source: b_state_state, target: state_ns[0], dash:"5,5"})
+    edges.push({source: b_hidden_state, target: state_ns[0], dash:"5,5"})
+
+    edges.push({source: b_hidden_hidden, target: hidden_ns[0], dash:"5,5"})
+    edges.push({source: b_state_hidden , target: hidden_ns[0], dash:"5,5"})
+
+
+  	nodes = hidden_ns.concat(state_ns);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+
+
+
+function draw_ssm_hh_sh(svg){
 
       var radius = 30;
       var dist_x = 120;
@@ -199,43 +353,403 @@ function draw_ssm_indi(svg){
       	statefill = (t==2) ? "#e3e5feff" :statefill = "#FFFFFF";
         state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
 
+        ss_col = color_normal 
+        sh_col = color_normal 
+        hs_col = color_normal 
+        hh_col = color_normal 
 
+        if(t==2){
+        	sh_col = color_pass
+        	ss_col = color_block
+        }else if(t==3){
+        	hs_col = color_pass
+        	ss_col = color_block
+        }
 
         if (t>0) {
-        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:""})
-        	edges.push({source: hidden_ns[t-1], target: state_ns[t], dash:""})
-        	edges.push({source: state_ns[t-1], target: hidden_ns[t], dash:""})
-        	edges.push({source: hidden_ns[t-1], target: hidden_ns[t], dash:""})
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:"", color:ss_col })
+        	edges.push({source: hidden_ns[t-1], target: state_ns[t], dash:"", color:hs_col })
+        	edges.push({source: state_ns[t-1], target: hidden_ns[t], dash:"", color:sh_col })
+        	edges.push({source: hidden_ns[t-1], target: hidden_ns[t], dash:"", color:hh_col })
         }
       }
 
-    estate_h = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
-    ehidden_h = {x: hidden_ns[T-1].x + 2*Math.sqrt(2)*radius, y: hidden_ns[T-1].y+ 2*Math.sqrt(2)*radius}
+    e_state_state = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    e_hidden_hidden= {x: hidden_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
+    
+    e_hidden_state = {x: hidden_ns[T-1].x +  radius*3.5, y: hidden_ns[T-1].y+ radius*3.5}
+    e_state_hidden = {x: state_ns[T-1].x + radius*3.5, y: state_ns[T-1].y- radius*3.5}
 
-    estate_hh = {x: state_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
-    ehidden_hh = {x: hidden_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
     
 
-    bstate_h = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
-    bhidden_h = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
-
-    bstate_hh = {x: state_ns[0].x - radius*4, y: hidden_ns[0].y}
-    bhidden_hh = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: hidden_ns[0].y +2*Math.sqrt(2)*radius}
-
-
-    edges.push({source: state_ns[T-1], target: estate_h, dash:"5,5"})
-    edges.push({source: hidden_ns[T-1], target: ehidden_h, dash:"5,5"})
-
-    edges.push({source: state_ns[T-1], target: estate_hh, dash:"5,5"})
-    edges.push({source: hidden_ns[T-1], target: ehidden_hh, dash:"5,5"})
+    b_state_state = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    b_hidden_hidden = {x: hidden_ns[0].x - radius*4, y: hidden_ns[0].y}
+    
+    b_hidden_state = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+    b_state_hidden = {x: hidden_ns[0].x - 2*Math.sqrt(2)*radius, y: hidden_ns[0].y +2*Math.sqrt(2)*radius}
 
 
+    edges.push({source: state_ns[T-1], target: e_state_state, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_state, dash:"5,5"})
 
-    edges.push({source: bstate_h, target: state_ns[0], dash:"5,5"})
-    edges.push({source: bhidden_h, target: state_ns[0], dash:"5,5"})
+    edges.push({source: state_ns[T-1], target: e_state_hidden, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_hidden, dash:"5,5"})
 
-    edges.push({source: bstate_hh, target: hidden_ns[0], dash:"5,5"})
-    edges.push({source: bhidden_hh, target: hidden_ns[0], dash:"5,5"})
+
+
+    edges.push({source: b_state_state, target: state_ns[0], dash:"5,5"})
+    edges.push({source: b_hidden_state, target: state_ns[0], dash:"5,5"})
+
+    edges.push({source: b_hidden_hidden, target: hidden_ns[0], dash:"5,5"})
+    edges.push({source: b_state_hidden , target: hidden_ns[0], dash:"5,5"})
+
+
+  	nodes = hidden_ns.concat(state_ns);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+function draw_ssm_hh(svg){
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var hidden_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<2) ind+=(t-2)
+      	if (t>2) ind+="+"+(t-2)
+
+
+      	hidden_ns.push({title: "\\( h_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#FFFFFF"});
+
+      	statefill = (t==2) ? "#e3e5feff" :statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+
+        ss_col = color_normal 
+        sh_col = color_normal 
+        hs_col = color_normal 
+        hh_col = color_normal 
+
+        if(t==1){
+        	hs_col = color_pass
+        	hh_col = color_pass
+        }else if(t==2){
+        	ss_col = color_block
+        	hh_col = color_pass
+        }else if(t==3){
+        	hs_col = color_pass
+        	ss_col = color_block
+        }
+
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:"", color:ss_col })
+        	edges.push({source: hidden_ns[t-1], target: state_ns[t], dash:"", color:hs_col })
+        	//edges.push({source: state_ns[t-1], target: hidden_ns[t], dash:"", color:sh_col })
+        	edges.push({source: hidden_ns[t-1], target: hidden_ns[t], dash:"", color:hh_col })
+        }
+      }
+
+    e_state_state = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    e_hidden_hidden= {x: hidden_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
+    
+    e_hidden_state = {x: hidden_ns[T-1].x +  radius*3.5, y: hidden_ns[T-1].y+ radius*3.5}
+    e_state_hidden = {x: state_ns[T-1].x + radius*3.5, y: state_ns[T-1].y- radius*3.5}
+
+    
+
+    b_state_state = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    b_hidden_hidden = {x: hidden_ns[0].x - radius*4, y: hidden_ns[0].y}
+    
+    b_hidden_state = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+    b_state_hidden = {x: hidden_ns[0].x - 2*Math.sqrt(2)*radius, y: hidden_ns[0].y +2*Math.sqrt(2)*radius}
+
+
+    edges.push({source: state_ns[T-1], target: e_state_state, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_state, dash:"5,5"})
+
+    //edges.push({source: state_ns[T-1], target: e_state_hidden, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_hidden, dash:"5,5"})
+
+
+
+    edges.push({source: b_state_state, target: state_ns[0], dash:"5,5"})
+    edges.push({source: b_hidden_state, target: state_ns[0], dash:"5,5"})
+
+    edges.push({source: b_hidden_hidden, target: hidden_ns[0], dash:"5,5"})
+    //edges.push({source: b_state_hidden , target: hidden_ns[0], dash:"5,5"})
+
+
+  	nodes = hidden_ns.concat(state_ns);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+function draw_ssm_sh(svg){
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var hidden_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<2) ind+=(t-2)
+      	if (t>2) ind+="+"+(t-2)
+
+
+      	hidden_ns.push({title: "\\( h_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#FFFFFF"});
+
+      	statefill = (t==2) ? "#e3e5feff" :statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+
+        ss_col = color_normal 
+        sh_col = color_normal 
+        hs_col = color_normal 
+        hh_col = color_normal 
+
+        if(t==2){
+        	sh_col = color_pass
+        	ss_col = color_block
+        }else if(t==3){
+        	hs_col = color_pass
+        	ss_col = color_block
+        }
+
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:"", color:ss_col })
+        	edges.push({source: hidden_ns[t-1], target: state_ns[t], dash:"", color:hs_col })
+        	edges.push({source: state_ns[t-1], target: hidden_ns[t], dash:"", color:sh_col })
+        	//edges.push({source: hidden_ns[t-1], target: hidden_ns[t], dash:"", color:hh_col })
+        }
+      }
+
+    e_state_state = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    e_hidden_hidden= {x: hidden_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
+    
+    e_hidden_state = {x: hidden_ns[T-1].x +  radius*3.5, y: hidden_ns[T-1].y+ radius*3.5}
+    e_state_hidden = {x: state_ns[T-1].x + radius*3.5, y: state_ns[T-1].y- radius*3.5}
+
+    
+
+    b_state_state = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    b_hidden_hidden = {x: hidden_ns[0].x - radius*4, y: hidden_ns[0].y}
+    
+    b_hidden_state = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+    b_state_hidden = {x: hidden_ns[0].x - 2*Math.sqrt(2)*radius, y: hidden_ns[0].y +2*Math.sqrt(2)*radius}
+
+
+    edges.push({source: state_ns[T-1], target: e_state_state, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_state, dash:"5,5"})
+
+    edges.push({source: state_ns[T-1], target: e_state_hidden, dash:"5,5"})
+    //edges.push({source: hidden_ns[T-1], target: e_hidden_hidden, dash:"5,5"})
+
+
+
+    edges.push({source: b_state_state, target: state_ns[0], dash:"5,5"})
+    edges.push({source: b_hidden_state, target: state_ns[0], dash:"5,5"})
+
+    //edges.push({source: b_hidden_hidden, target: hidden_ns[0], dash:"5,5"})
+    edges.push({source: b_state_hidden , target: hidden_ns[0], dash:"5,5"})
+
+
+  	nodes = hidden_ns.concat(state_ns);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+
+function draw_ssm(svg){
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 120;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var hidden_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<2) ind+=(t-2)
+      	if (t>2) ind+="+"+(t-2)
+
+
+      	hidden_ns.push({title: "\\( h_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#FFFFFF"});
+
+      	statefill = (t==2) ? "#e3e5feff" :statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+
+        ss_col = color_normal 
+        sh_col = color_normal 
+        hs_col = color_normal 
+        hh_col = color_normal 
+
+        if(t==2){
+        	ss_col = color_block
+        }else if(t==3){
+        	ss_col = color_block
+        }
+
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:"", color:ss_col })
+        	edges.push({source: hidden_ns[t-1], target: state_ns[t], dash:"", color:hs_col })
+        	//edges.push({source: state_ns[t-1], target: hidden_ns[t], dash:"", color:sh_col })
+        	//edges.push({source: hidden_ns[t-1], target: hidden_ns[t], dash:"", color:hh_col })
+        }
+      }
+
+    e_state_state = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    e_hidden_hidden= {x: hidden_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
+    
+    e_hidden_state = {x: hidden_ns[T-1].x +  radius*3.5, y: hidden_ns[T-1].y+ radius*3.5}
+    e_state_hidden = {x: state_ns[T-1].x + radius*3.5, y: state_ns[T-1].y- radius*3.5}
+
+    
+
+    b_state_state = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    b_hidden_hidden = {x: hidden_ns[0].x - radius*4, y: hidden_ns[0].y}
+    
+    b_hidden_state = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+    b_state_hidden = {x: hidden_ns[0].x - 2*Math.sqrt(2)*radius, y: hidden_ns[0].y +2*Math.sqrt(2)*radius}
+
+
+    edges.push({source: state_ns[T-1], target: e_state_state, dash:"5,5"})
+    edges.push({source: hidden_ns[T-1], target: e_hidden_state, dash:"5,5"})
+
+    //edges.push({source: state_ns[T-1], target: e_state_hidden, dash:"5,5"})
+    //edges.push({source: hidden_ns[T-1], target: e_hidden_hidden, dash:"5,5"})
+
+
+
+    edges.push({source: b_state_state, target: state_ns[0], dash:"5,5"})
+    edges.push({source: b_hidden_state, target: state_ns[0], dash:"5,5"})
+
+    //edges.push({source: b_hidden_hidden, target: hidden_ns[0], dash:"5,5"})
+    //edges.push({source: b_state_hidden , target: hidden_ns[0], dash:"5,5"})
+
+
+  	nodes = hidden_ns.concat(state_ns);
+    var svg_w = 2*margin_x + dist_x*(T-1);
+    var svg_h = 2*margin_y + dist_y;
+
+    create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
+    }
+
+
+function draw_markov(svg){
+
+      var radius = 30;
+      var dist_x = 120;
+      var dist_y = 0;
+      var margin_x = 100;
+      var margin_y = 50;
+      var markersize = 10;
+
+      var hidden_ns = [];
+      var state_ns = [];
+      var output_ns = [];
+      var edges = [];
+      var T = 5;
+
+      for (var t = 0; t<T;t++){
+
+
+      	ind = "t"
+
+      	if (t<2) ind+=(t-2)
+      	if (t>2) ind+="+"+(t-2)
+
+
+      	//hidden_ns.push({title: "\\( h_{" + ind + "}\\)", type: "prob", x: margin_x + dist_x*t , y: margin_y , fill:"#FFFFFF"});
+
+      	statefill = "#FFFFFF";
+        state_ns.push({title: "\\( x_{" + ind + "} \\)", type: "prob", x: margin_x + dist_x*t , y: margin_y + dist_y, fill:statefill});
+
+        ss_col = color_normal 
+        sh_col = color_normal 
+        hs_col = color_normal 
+        hh_col = color_normal 
+
+        if(t==2){
+        	ss_col = color_block
+        }else if(t==3){
+        	ss_col = color_block
+        }
+
+        if (t>0) {
+        	edges.push({source: state_ns[t-1], target: state_ns[t], dash:"" })
+        	//edges.push({source: hidden_ns[t-1], target: state_ns[t], dash:"", color:hs_col })
+        	//edges.push({source: state_ns[t-1], target: hidden_ns[t], dash:"", color:sh_col })
+        	//edges.push({source: hidden_ns[t-1], target: hidden_ns[t], dash:"", color:hh_col })
+        }
+      }
+
+    e_state_state = {x: state_ns[T-1].x + radius*4, y: state_ns[T-1].y}
+    //e_hidden_hidden= {x: hidden_ns[T-1].x + radius*4, y: hidden_ns[T-1].y}
+    
+    //e_hidden_state = {x: hidden_ns[T-1].x +  radius*3.5, y: hidden_ns[T-1].y+ radius*3.5}
+    //e_state_hidden = {x: state_ns[T-1].x + radius*3.5, y: state_ns[T-1].y- radius*3.5}
+
+    
+
+    b_state_state = {x: state_ns[0].x - radius*4, y: state_ns[0].y}
+    //b_hidden_hidden = {x: hidden_ns[0].x - radius*4, y: hidden_ns[0].y}
+    
+    //b_hidden_state = {x: state_ns[0].x - 2*Math.sqrt(2)*radius, y: state_ns[0].y- 2*Math.sqrt(2)*radius}
+    //b_state_hidden = {x: hidden_ns[0].x - 2*Math.sqrt(2)*radius, y: hidden_ns[0].y +2*Math.sqrt(2)*radius}
+
+
+    edges.push({source: state_ns[T-1], target: e_state_state, dash:"5,5"})
+    //edges.push({source: hidden_ns[T-1], target: e_hidden_state, dash:"5,5"})
+
+    //edges.push({source: state_ns[T-1], target: e_state_hidden, dash:"5,5"})
+    //edges.push({source: hidden_ns[T-1], target: e_hidden_hidden, dash:"5,5"})
+
+
+
+    edges.push({source: b_state_state, target: state_ns[0], dash:"5,5"})
+    //edges.push({source: b_hidden_state, target: state_ns[0], dash:"5,5"})
+
+    //edges.push({source: b_hidden_hidden, target: hidden_ns[0], dash:"5,5"})
+    //edges.push({source: b_state_hidden , target: hidden_ns[0], dash:"5,5"})
 
 
   	nodes = hidden_ns.concat(state_ns);
@@ -245,17 +759,8 @@ function draw_ssm_indi(svg){
     create_graph(d3.select(svg), nodes, edges, radius, markersize, svg_w, svg_h);
     }
 
+
 </script>
-
-
-<svg class="pgm_centered" onload="draw_ssm_indi(this);"></svg>
-
-# Causality
-
-
-
-
-
 
 
 
