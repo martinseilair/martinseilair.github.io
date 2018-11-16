@@ -60,15 +60,21 @@ class SpringMassDamper extends MechanicalSystem{
 		var kw = 80000;
 		var bw = 1000;
 		var s;
+		var mu = 0.1;
 		for (var i=0; i<this.N;i++){ 			// points
 			for (var j=0; j<2;j++){			// dimensions (=2)
 				if(x._data[2*i+j]<this.box[j][0]+radius){
 					F._data[2*i+j]+=-kw*(-x._data[2*i+j] + radius + this.box[j][0]);
 					F._data[2*i+j]+=-bw*(-x._data[2*this.N + 2*i+j]);
+					var v = x._data[2*this.N + 2*i+((j+1)%2)];
+					//F._data[2*i+((j+1)%2)]+=v/Math.abs(v)*mu*kw*(-x._data[2*i+j] + radius + this.box[j][0]);
 				}
 				if(x._data[2*i+j]>this.box[j][1]-radius){
 					F._data[2*i+j]+=kw*(x._data[2*i+j] + radius - this.box[j][1]);
 					F._data[2*i+j]+=bw*(x._data[2*this.N + 2*i+j]);
+					var v = x._data[2*this.N + 2*i+((j+1)%2)];
+					//F._data[2*i+((j+1)%2)]+=-v/Math.abs(v)*mu*kw*(-x._data[2*i+j] + radius + this.box[j][0]);
+				
 				}
 			}
 		}

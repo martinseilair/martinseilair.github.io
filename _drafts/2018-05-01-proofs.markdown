@@ -1,0 +1,111 @@
+---
+layout: post
+title:  "Proof with Bayes"
+date:   2018-10-12 18:04:07 +0900
+categories: jekyll update
+comments: true
+excerpt_separator: <!--more-->
+---
+
+<!--more-->
+
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+What is a proof?
+You want to check if a statement is true.
+
+Example: Proof of Pythagoras' theorem.
+
+
+We want to check that 
+
+$$ c = \sqrt{a^2 + b^2} $$
+
+is true for any right triangle with hypotenuse \\(c\\) and catheti \\(a\\) and \\(b\\).
+
+We can formulate this in the language of probability theory.
+
+We want to check that
+
+$$ p(c|a,b,\perp) = \delta\left(c - \sqrt{a^2 + b^2}\right) $$
+
+
+$$ p(\perp|A,B,C) = \left[(B-C)^T(A-C)==0\right] = \left[\begin{pmatrix} B_x - C_x \\ B_y - C_y  \end{pmatrix}^T\begin{pmatrix} A_x - C_x \\ A_y - C_y  \end{pmatrix}==0\right]  $$
+
+$$ p(\perp|A,B,C) =  \left[(B_x - C_x)(A_x - C_x) + (B_y - C_y)(A_y - C_y)==0\right]  $$
+
+$$ p(a|A,B,C) = p(a|B,C) = \delta\left(a - \sqrt{(B_x - C_x)^2 + (B_y - C_y)^2}\right) $$
+
+$$ p(b|A,B,C) = p(b|A,C) = \delta\left(b - \sqrt{(A_x - C_x)^2 + (A_y - C_y)^2}\right) $$
+
+$$ p(c|A,B,C) = p(c|A,B) = \delta\left(c - \sqrt{(A_x - B_x)^2 + (A_y - B_y)^2}\right) $$
+
+
+
+Ok let's start with a uniform prior 
+
+$$ p(A,B,C), $$
+
+we want to check it for any set of points.
+
+We assume, that we take a measurement of \\(a\\). We update our prior with Bayes to obtain the posterior
+
+$$ p(A,B,C|a) = \frac{p(a|B,C)p(A,B,C)}{p(a)}. $$
+
+Mentally we are left only with those points \\(A\\), \\(B\\), \\(C\\) that satisfy the constraint.
+
+This is like a tube in 6 dimensional space. (Or not!)
+
+We now measure \\(b\\) and update our current belief \\(p(A,B,C\|a)\\)
+
+$$ p(A,B,C|a,b) = \frac{p(b|A,C)p(A,B,C|a)}{p(b|a)}. $$
+
+As a last step we _observe_ that we have orthogonality. We are not really observing it, but we want to restrict us to worlds with orthogonality. We know there is orthogonality.
+
+$$ p(A,B,C|a,b,\perp) = \frac{p(\perp|A,B,C)p(A,B,C|a,b)}{p(\perp|a,b)}. $$
+
+
+Great! We now have an expression that has all the information of our assumptions.
+
+The only thing that we have to do is to check if our condition holds for any of these remaining points \\(A\\), \\(B\\) and \\(C\\).
+
+We marginalize over every possible point
+
+$$ p(c|a,b,\perp) = \int_{A,B,C} p(c|A,B) p(A,B,C|a,b,\perp) \,dA\,dB\,dC$$
+
+
+Now we simply have to check if
+
+$$ p(c|a,b,\perp) = \delta\left(c - \sqrt{a^2 + b^2}\right) $$
+
+holds.
+
+Theoretically, you could do this simply by _looking_.
+
+But this is not practical. Therefore, we try to find analytic expressions for the steps in the middle.
+
+
+How does 
+
+$$ p(\perp|A,B,C) = \left[(B-C)^T(A-C)==0\right] = \left[\begin{pmatrix} B_x - C_x \\ B_y - C_y  \end{pmatrix}^T\begin{pmatrix} A_x - C_x \\ A_y - C_y  \end{pmatrix}==0\right]  $$
+
+look like?
+
+It is a six dimensional manifold in seven dimensional space.
+
+How can we check, if a line is orthogonal to a plane?
+
+$$ p(A,B|plane) $$
+
+$$ p(C|line) $$
+
+$$ p(\perp|plane, line) = \int_{A,B,C} p(\perp|A,B,C) p(A,B|plane)p(C|line)  \,dA\,dB\,dC $$
+
+
+
+
+
+
+
