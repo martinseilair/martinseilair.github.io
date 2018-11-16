@@ -1,0 +1,41 @@
+---
+layout: post
+title:  "Temp POMDP"
+date:   2018-10-12 18:04:07 +0900
+categories: jekyll update
+comments: true
+excerpt_separator: <!--more-->
+---
+
+<!--more-->
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
+
+
+
+The value function \\(V_\pi(s)\\) gives you the expected reward from this state onwards.
+
+The action-value function \\(Q_\pi(a,s)\\) gives you the expected reward from state \\(s\\) when you take action \\(a\\) onwards.
+
+You can get a better or equal policy by taking the action \\(a\\) that maximizes the action-value function given a state \\(s\\).
+
+You have a distribution over the best action.
+
+Value of information: If you can quantify the value of the information you will get, you can do the exploration explotation tradeoff optimally.
+
+
+Value function as Lagrange mulitplier
+
+https://editorialexpress.com/jrust/sdp/lagrange.pdf
+
+
+$$ \lambda (s) = \frac{\partial V(s)}{\partial s} $$
+
+
+
+
+
+
+
+
