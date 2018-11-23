@@ -1,4 +1,739 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-19T14:03:46+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.4">Jekyll</generator><link href="https://martinseilair.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://martinseilair.github.io/" rel="alternate" type="text/html" /><updated>2018-11-24T00:33:41+09:00</updated><id>https://martinseilair.github.io/feed.xml</id><title type="html">Ikigai</title><subtitle>A dump for random thoughts and observations</subtitle><entry><title type="html">Fourier curves</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/24/fourier-curve.html" rel="alternate" type="text/html" title="Fourier curves" /><published>2018-11-24T00:04:07+09:00</published><updated>2018-11-24T00:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/24/fourier-curve</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/24/fourier-curve.html">&lt;p&gt;Inspired by &lt;a href=&quot;https://twitter.com/pickover/status/1065227111315767297?s=19&quot;&gt;Cliff Pickovers tweet&lt;/a&gt; and powered by my fascination about the Fourier transform, I took the time to derive and implement the Fourier series of a two dimensional  piecewise linear parametric curve. 
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;p&gt;By clicking on the empty canvas you can design your custom shape. If you close the path, the Fourier series will be animated similarly to the video mentioned above. Have fun!
+&lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+&lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script type=&quot;text/javascript&quot; src=&quot;https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;
+
+&lt;script src=&quot;https://martinseilair.github.io/assets/js/euler/mechanical_system.js&quot;&gt;&lt;/script&gt;
+
+&lt;style&gt;
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 25px;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: green;
+}
+&lt;/style&gt;
+
+&lt;div id=&quot;fourier&quot;&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;button onclick=&quot;toggle_ellipses();&quot; id=&quot;ell_btn&quot; class=&quot;button&quot;&gt;Toggle ellipses&lt;/button&gt; &lt;button onclick=&quot;toggle_lines();&quot; id=&quot;lin_btn&quot; class=&quot;button&quot;&gt;Toggle lines&lt;/button&gt;&lt;/p&gt;
+
+&lt;div id=&quot;yx&quot;&gt;&lt;/div&gt;
+
+&lt;div id=&quot;yy&quot;&gt;&lt;/div&gt;
+
+&lt;script type=&quot;text/javascript&quot;&gt;
+
+var show_ellipses = true;
+var show_lines = true;
+
+function toggle_ellipses(){
+	show_ellipses = !show_ellipses;
+
+	eg.style(&quot;visibility&quot;,show_ellipses?&quot;visible&quot;:&quot;hidden&quot;)
+}
+
+
+function toggle_lines(){
+	show_lines = !show_lines;
+	vg.style(&quot;visibility&quot;,show_lines?&quot;visible&quot;:&quot;hidden&quot;)
+}
+
+
+
+// define path
+
+var points = [];
+var r_0 = 7;
+var r = 4;
+var T = 5;
+
+var omega = 2*Math.PI/T;
+
+var y = {x: [], y: []};
+
+var time;
+
+
+
+var N_start = 1;
+var N_max = 30;
+var N_inc = 1;
+
+var N = N_start;
+
+var cx;
+var cy;
+
+
+var NP;
+
+var curr_step = 0;
+var steps = 400;
+
+var dt = T/steps;
+
+var fp;
+
+var vp;
+
+var ells = [];
+
+function calc_coeff(f){
+	// pre calculate sin and cos
+
+	var S = Array(N+1).fill(null).map(()=&gt;Array(NP).fill(null));
+	var C = Array(N+1).fill(null).map(()=&gt;Array(NP).fill(null));
+	a = [];
+
+	A = [];
+	phi = [];
+
+	for (var k=0; k&lt;N+1;k++){
+		for(var i=0; i&lt;NP; i++){
+			S[k][i] = Math.sin(k*omega*time[i]);
+			C[k][i] = Math.cos(k*omega*time[i]);
+		}
+	}
+
+	for(var i=0; i&lt;NP-1; i++){
+		a[i] = (f[i+1] - f[i])/(time[i+1] - time[i]);	
+	}
+
+	for (var k=0; k&lt;N+1;k++){
+
+		var re = 0;
+		var im = 0;
+
+		if(k==0){
+			for(var i=0; i&lt;NP-1; i++){
+			 	re+= (f[i]-time[i]*a[i])*(time[i+1]-time[i]) + a[i]/2*(time[i+1]*time[i+1]-time[i]*time[i]);
+			}
+			re = 1/T*re;
+		}else{
+			for(var i=0; i&lt;NP-1; i++){
+			 	re+= -f[i]*S[k][i] + f[i+1]*S[k][i+1] -a[i]/(k*omega)*C[k][i] +a[i]/(k*omega)*C[k][i+1];
+
+			 	im+= -f[i]*C[k][i] + f[i+1]*C[k][i+1] +a[i]/(k*omega)*S[k][i] -a[i]/(k*omega)*S[k][i+1];
+			}
+			re = 1/(2*Math.PI*k)*re;
+			im = 1/(2*Math.PI*k)*im;
+		}
+
+		if (k==0){
+			A[k] = re; 
+		}else{
+			A[k] = 2*Math.sqrt(re*re + im*im);
+		}
+
+		if (k==0){
+			phi[k] = Math.PI/2; 
+		}else{
+			phi[k] = Math.atan2(re, -im);
+		}
+	}
+	return {A: A, phi:phi};
+}
+
+function calc_fourier_ramp(cx,cy){
+
+	fp = [];
+
+	vp = [];
+	for(var step=0; step&lt;steps+1;step++){
+
+		var t = step/steps*T;
+
+		var p = [points[0][0],points[0][1]]
+		var vpp = [];
+		for (var k=0; k&lt;N+1;k++){
+			p[0]+=cx.A[k]*Math.sin(k*omega*t+cx.phi[k])
+			p[1]+=cy.A[k]*Math.sin(k*omega*t+cy.phi[k])
+			vpp.push([p[0], p[1]]);
+		}
+		vp.push(vpp);
+		fp.push(p);
+	}
+
+}
+
+function draw_fourier_ramp(){
+
+	fps = fp.slice(0, curr_step+1);
+
+
+	path_f = path_f.data([fps])
+    path_f.attr('d', function(d){return line(d)})
+        .style('stroke-width', 1)
+        .style('stroke', 'black')
+        .style('fill', 'none');	
+    path_f.enter().append('svg:path').attr('d', function(d){return line(d)})
+        .style('stroke-width', 1)
+        .style('stroke', 'black')
+        .style('fill', 'none');	
+    path_f.exit().remove();
+
+
+	vg.selectAll(&quot;path&quot;).remove()
+    for(var k=0;k&lt;N;k++){
+    	vg.append(&quot;path&quot;)
+    		.attr(&quot;d&quot;,&quot;M &quot; + vp[curr_step][k][0] + &quot; &quot; + vp[curr_step][k][1] + &quot; L &quot; + vp[curr_step][k+1][0] + &quot; &quot; + vp[curr_step][k+1][1])
+    		.style('stroke-width', 1)
+        	.style('stroke', 'red')
+        	.style('fill', 'none');	
+    }
+
+
+}
+
+function calc_ellipse(){
+	ells = [];
+	console.log(eg)
+	eg.selectAll(&quot;g&quot;).remove()
+	//var eg = svg.append(&quot;g&quot;);
+	for (var k=1; k&lt;N+1;k++){
+		var ell = [];
+	    for(var step=0; step&lt;steps+1;step++){
+
+	    	 ell.push([vp[step][k][0]-vp[step][k-1][0],vp[step][k][1]-vp[step][k-1][1]]);
+	    }
+
+	    c_x = vp[curr_step][k-1][0];
+	    c_y = vp[curr_step][k-1][1];
+
+	    console.log(eg)
+		eeg = eg.append(&quot;g&quot;)
+				.attr(&quot;transform&quot;,&quot;translate(&quot; + c_x + &quot;,&quot; + c_y + &quot;)&quot;)
+		path_e = eeg.append(&quot;path&quot;);
+
+
+		path_e = path_e.data([ell])
+	    path_e.attr('d', function(d){return line(d)})
+	        .style('stroke-width', 1)
+	        .style('stroke', 'blue')
+	        .style('fill', 'none');	
+	    path_e.enter().append('svg:path').attr('d', function(d){return line(d)})
+	        .style('stroke-width', 1)
+	        .style('stroke', 'blue')
+	        .style('fill', 'none');	
+	    path_e.exit().remove();
+
+	    ells.push(eeg)
+	}
+}
+
+
+function draw_ellipse(){
+
+ 	for (var k=1; k&lt;N+1;k++){
+	    c_x = vp[curr_step][k-1][0];
+	    c_y = vp[curr_step][k-1][1];
+
+		ells[k-1].attr(&quot;transform&quot;,&quot;translate(&quot; + c_x + &quot;,&quot; + c_y + &quot;)&quot;)
+
+	}
+
+}
+
+function update_path(){
+
+
+
+	path = path.data([points])
+    path.attr('d', function(d){return line(d)})
+        .style('stroke-width', 1)
+        .style('stroke', 'steelblue')
+        .style('fill', 'none');
+    path.enter().append('svg:path').attr('d', function(d){return line(d)})
+        .style('stroke-width', 1)
+        .style('stroke', 'steelblue')
+        .style('fill', 'none');
+    path.exit().remove()	
+}
+
+function animate(){
+	
+	if(curr_step&gt;steps){
+		curr_step = 0;
+		N+=N_inc;
+		if(N&gt;N_max){
+			N = N_start;
+		}
+		cx = calc_coeff(y.x);
+		cy = calc_coeff(y.y);
+		calc_fourier_ramp(cx,cy);
+		calc_ellipse()
+	}
+
+	draw_fourier_ramp();
+	draw_ellipse()
+	curr_step++;
+}
+
+function click_circ(i){
+	svg.on(&quot;mousedown&quot;,null)
+	points.push(points[0]);
+	update_path();
+	calc_y();
+	//draw_components();
+
+	svg.selectAll(&quot;circle&quot;).remove()
+
+
+	cx = calc_coeff(y.x);
+	cy = calc_coeff(y.y);
+	calc_fourier_ramp(cx,cy);
+	calc_ellipse()
+
+	window.setInterval(animate, 1000*dt );
+}
+
+function dist(x1,x2){
+
+	return Math.sqrt((x1[0]-x2[0])*(x1[0]-x2[0]) + (x1[1]-x2[1])*(x1[1]-x2[1]) );
+}
+
+function calc_y(){
+	// compute distances
+
+	time = [];
+	time.push(0);
+	var total_dist = 0;
+	var d;
+	for(var i=0; i&lt;points.length-1; i++){
+		d = dist(points[i],points[i+1]);
+		total_dist+=d
+		time.push(d)
+	}
+
+	// total time
+	for(var i=1; i&lt;points.length; i++){
+		time[i] = time[i-1] + time[i]*T/total_dist;
+	}
+
+
+
+
+	for(var i=0; i&lt;points.length; i++){
+		y.x.push(points[i][0]-points[0][0])
+	}
+
+	for(var i=0; i&lt;points.length; i++){
+		y.y.push(points[i][1]-points[0][1])
+	}
+
+	NP = time.length;
+
+}
+
+function draw_components(){
+
+	pxmax = Math.max.apply(Math, y.x);
+	pxmin = Math.min.apply(Math, y.x);
+	// compute function
+	var px = [];
+	for(var i=0; i&lt;y.x.length;i++){
+		px.push([time[i],(y.x[i]-pxmin)/(pxmax-pxmin)])
+	} 
+
+	var svgyx = d3.select('#yx').append('svg')
+			.style(&quot;width&quot;,&quot;100%&quot;)
+			.style(&quot;border&quot;,&quot;1px solid black&quot;)
+			.attr(&quot;viewBox&quot;,&quot;0 0 &quot; + T +  &quot; &quot; + (pxmax-pxmin)/(pxmax-pxmin))
+
+
+	var pathyx = svgyx.append(&quot;path&quot;);
+
+
+	pathyx = pathyx.data([px])
+    pathyx.attr('d', function(d){return line(d)})
+        .style('stroke-width', 0.01)
+        .style('stroke', 'steelblue')
+        .style('fill', 'none');	
+
+	pymax = Math.max.apply(Math, y.y);
+	pymin = Math.min.apply(Math, y.y);
+	// compute function
+	var py = [];
+	for(var i=0; i&lt;y.y.length;i++){
+		py.push([time[i],(y.y[i]-pymin)/(pymax-pymin)])
+	} 
+
+	var svgyy = d3.select('#yy').append('svg')
+			.style(&quot;width&quot;,&quot;100%&quot;)
+			.style(&quot;border&quot;,&quot;1px solid black&quot;)
+			.attr(&quot;viewBox&quot;,&quot;0 0 &quot; + T +  &quot; &quot; + (pymax-pymin)/(pymax-pymin))
+
+
+	var pathyy = svgyy.append(&quot;path&quot;);
+
+
+	pathyy = pathyy.data([py])
+    pathyy.attr('d', function(d){return line(d)})
+        .style('stroke-width', 0.01)
+        .style('stroke', 'steelblue')
+        .style('fill', 'none');	
+
+}
+
+
+
+function click(){
+	var coords = d3.mouse(this);
+
+	points.push(coords);   // Push data to our array
+
+	svg.selectAll(&quot;circle&quot;)  // For new circle, go through the update process
+		.data(points)
+		.enter()
+		.append(&quot;circle&quot;)
+		.attr(&quot;cx&quot;, function(d) { return d[0]; })
+		.attr(&quot;cy&quot;, function(d) { return d[1]; })  // Get attributes from circleAttrs var
+		.style(&quot;fill&quot;, function(d,i) { return (i==0)?&quot;#00F&quot;:&quot;#000&quot;; })
+		.attr(&quot;r&quot;, function(d,i) { return (i==0)?r_0:r; })
+		.on(&quot;mousedown&quot;, function(d,i) { if(i==0)click_circ(i)})  // Get attributes from circleAttrs var
+
+	update_path();
+
+
+
+}
+
+var line = d3.line()
+            .x(function(d) { return d[0]; })
+            .y(function(d) { return d[1]; })
+
+var svg = d3.select('#fourier').append('svg')
+			.style(&quot;width&quot;,&quot;100%&quot;)
+			.style(&quot;border&quot;,&quot;1px solid black&quot;)
+			.attr(&quot;viewBox&quot;,&quot;0 0 &quot; + 500 +  &quot; &quot; + 300)
+			.on(&quot;mousedown&quot;, click)
+
+var path = svg.append(&quot;path&quot;);
+
+var path_f = svg.append(&quot;path&quot;);
+
+
+
+var vg = svg.append(&quot;g&quot;);
+
+var eg = svg.append(&quot;g&quot;);
+
+
+
+
+
+
+
+
+&lt;/script&gt;
+
+&lt;h2 id=&quot;derivation&quot;&gt;Derivation&lt;/h2&gt;
+&lt;p&gt;The following derivation shows a way to obtain the equations of the Fourier series of a two dimensional piecewise linear parametric curve. Please be aware, that this is certainly not the most efficient way to derive it.&lt;/p&gt;
+
+&lt;p&gt;We will treat the \(x\) and \(y\) component of the function separately. Therefore, we calculate the Fourier series for both components separately.&lt;/p&gt;
+
+&lt;h1 id=&quot;fourier-series&quot;&gt;Fourier series&lt;/h1&gt;
+
+&lt;p&gt;The complex Fourier series is defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;y(t) = \sum \limits_{-\infty}^{\infty} \hat{y}_k e^{ik\omega t}&lt;/script&gt;
+
+&lt;p&gt;with&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_k = \frac{1}{T} \int\limits_0^T y(t) e^{-ik\omega t} \,dt .&lt;/script&gt;
+
+&lt;p&gt;Our component functions \(y(t)\) are piecewise linear and can be defined as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+y(t) = y_{i} + (t - T_i)\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}  \,\text{ , }\, T_i \leq t &lt; T_{i+1} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;Let’s calculate the Fourier coefficients. We start with \(k=0\):&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_0 = \frac{1}{T} \sum_{i=0}^{N-1} \int\limits_{T_i}^{T_{i+1}} \left(y_{i} + (t - T_i)\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) e^{-i0\omega t} \,dt&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_0 = \frac{1}{T} \sum_{i=0}^{N-1} \int\limits_{T_i}^{T_{i+1}} \left(y_{i} + (t - T_i)\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \,dt&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_0 = \frac{1}{T} \sum_{i=0}^{N-1} y_{i}\int\limits_{T_i}^{T_{i+1}} 1   \,dt + \frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\int\limits_{T_i}^{T_{i+1}} t \,dt - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\int\limits_{T_i}^{T_{i+1}} 1 \,dt&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_0 = \frac{1}{T} \sum_{i=0}^{N-1} y_{i}\left[t\right]_{T_i}^{T_{i+1}}  + \frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\left[\frac{1}{2}t^2\right]_{T_i}^{T_{i+1}} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\left[t\right]_{T_i}^{T_{i+1}}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_0 = \frac{1}{T} \sum_{i=0}^{N-1} y_{i}\left[T_{i+1} - T_i \right]  + \frac{1}{2}\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\left[T_{i+1}^2 - T_i^2\right] - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\left[T_{i+1} - T_i\right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_0 = \frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \left[T_{i+1} - T_i \right]  + \frac{1}{2}\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\left[T_{i+1}^2 - T_i^2\right]&lt;/script&gt;
+
+&lt;p&gt;Now we look at the general case \(k&amp;gt;0\):&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_k = \frac{1}{T} \sum_{i=0}^{N-1} \int\limits_{T_i}^{T_{i+1}} \left(y_{i} + (t - T_i)\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) e^{-ik\omega t} \,dt&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_k = \frac{1}{T} \sum_{i=0}^{N-1} \int\limits_{T_i}^{T_{i+1}} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) e^{-ik\omega t} \,dt + \frac{1}{T} \sum_{i=0}^{N-1} \int\limits_{T_i}^{T_{i+1}} t\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}e^{-ik\omega t} \,dt&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_k = \frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right)\int\limits_{T_i}^{T_{i+1}}  e^{-ik\omega t} \,dt + \frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i} \int\limits_{T_i}^{T_{i+1}} te^{-ik\omega t} \,dt&lt;/script&gt;
+
+&lt;p&gt;The first term simplifies to&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \int\limits_{T_i}^{T_{i+1}}  e^{-ik\omega t} \,dt&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \left[ \frac{1}{-ik\omega}  e^{-ik\omega t} \right]_{T_i}^{T_{i+1}}&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \frac{i}{k\omega}\left[   e^{-ik\omega T_{i+1}} - e^{-ik\omega T_i} \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \frac{i}{k\omega}\left[ \cos(-k\omega T_{i+1}) + i\sin(-k\omega T_{i+1})   - \cos(-k\omega T_{i}) - i\sin(-k\omega T_{i})  \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \frac{1}{k\omega}\left[ i\cos(-k\omega T_{i+1}) -\sin(-k\omega T_{i+1})   - i\cos(-k\omega T_{i}) +\sin(-k\omega T_{i})  \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \frac{1}{k\omega}\left[ i\cos(k\omega T_{i+1}) +\sin(k\omega T_{i+1})   - i\cos(k\omega T_{i}) -\sin(k\omega T_{i})  \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \frac{1}{k\omega}\left[\sin(k\omega T_{i+1}) -\sin(k\omega T_{i}) + i\left[\cos(k\omega T_{i+1})    - \cos(k\omega T_{i})\right]  \right]&lt;/script&gt;
+
+&lt;p&gt;We now look at the second term&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i} \int\limits_{T_i}^{T_{i+1}} te^{-ik\omega t} \,dt .&lt;/script&gt;
+
+&lt;p&gt;Fortunately, we know the identity&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int\limits_0^1 x^n e^{-ax}\,dx = \frac{n!}{a^{n+1}}\left[1 - e^{-a}\sum_{i=0}^n \frac{a^i}{i!}\right].&lt;/script&gt;
+
+&lt;p&gt;We can use it, by applying the coordinate transformation to our integral&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;t = T_i + (T_{i+1} - T_i)x&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;dt = (T_{i+1} - T_i)\,dx&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;x = \frac{t - T_i}{T_{i+1} - T_i}&lt;/script&gt;
+
+&lt;p&gt;We obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i} \int\limits_{0}^{1} (T_i + (T_{i+1} - T_i)x)e^{-ik\omega (T_i + (T_{i+1} - T_i)x)}(T_{i+1} - T_i) \,dx&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}(T_{i+1} - T_i) e^{-ik\omega T_i} \left[T_i\int\limits_{0}^{1}  e^{-ik\omega (T_{i+1} - T_i)x} \,dx + (T_{i+1} - T_i)\int\limits_{0}^{1} xe^{-ik\omega (T_{i+1} - T_i)x} \,dx \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}(y_{i+1}-y_{i}) e^{-ik\omega T_i} \left[T_i\int\limits_{0}^{1}  e^{-ik\omega (T_{i+1} - T_i)x} \,dx + (T_{i+1} - T_i)\int\limits_{0}^{1} xe^{-ik\omega (T_{i+1} - T_i)x} \,dx \right]&lt;/script&gt;
+
+&lt;p&gt;Now we have to integrals of the identity above. The first integral is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int\limits_{0}^{1}  e^{-ik\omega (T_{i+1} - T_i)x} \,dx&lt;/script&gt;
+
+&lt;p&gt;with \(a = ik\omega (T_{i+1} - T_i) \) and \(n=0\). It follows&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int\limits_0^1 x^n e^{-ax}\,dx = \frac{0!}{a^{0+1}}\left[1 - e^{-a}\sum_{i=0}^0 \frac{a^i}{i!}\right] =  \frac{1}{a}\left[1 - e^{-a}\right] =  \frac{1}{ik\omega (T_{i+1} - T_i)}\left[1 - e^{-ik\omega (T_{i+1} - T_i)}\right]&lt;/script&gt;
+
+&lt;p&gt;The second integral is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int\limits_{0}^{1} xe^{-ik\omega (T_{i+1} - T_i)x} \,dx&lt;/script&gt;
+
+&lt;p&gt;with \(a = ik\omega (T_{i+1} - T_i) \) and \(n=1\).&lt;/p&gt;
+
+&lt;p&gt;It follows&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\int\limits_0^1 x^n e^{-ax}\,dx = \frac{1!}{a^{1+1}}\left[1 - e^{-a}\sum_{i=0}^1 \frac{a^i}{i!}\right] =  \frac{1}{a^2}\left[1 - e^{-a}(1 + a)\right] =  \frac{1}{-k^2\omega^2 (T_{i+1} - T_i)^2}\left[1 - e^{-ik\omega (T_{i+1} - T_i)}(1 + ik\omega (T_{i+1} - T_i))\right]&lt;/script&gt;
+
+&lt;p&gt;We insert the results back into our equation&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}(y_{i+1}-y_{i}) e^{-ik\omega T_i} \left[T_i\frac{1}{ik\omega (T_{i+1} - T_i)}\left[1 - e^{-ik\omega (T_{i+1} - T_i)}\right] + (T_{i+1} - T_i)\frac{1}{-k^2\omega^2 (T_{i+1} - T_i)^2}\left[1 - e^{-ik\omega (T_{i+1} - T_i)}(1 + ik\omega (T_{i+1} - T_i))\right] \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}(y_{i+1}-y_{i}) e^{-ik\omega T_i} \left[-\frac{i T_i}{k\omega (T_{i+1} - T_i)}\left[1 - e^{-ik\omega (T_{i+1} - T_i)}\right] -\frac{1}{k^2\omega^2 (T_{i+1} - T_i)}\left[1 - e^{-ik\omega (T_{i+1} - T_i)}(1 + ik\omega (T_{i+1} - T_i))\right] \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)} e^{-ik\omega T_i} \left[-i T_i\left[1 - e^{-ik\omega (T_{i+1} - T_i)}\right] - \frac{1}{k\omega }\left[1 - e^{-ik\omega (T_{i+1} - T_i)}(1 + ik\omega (T_{i+1} - T_i))\right] \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[-i T_i e^{-ik\omega T_i} +i T_ie^{-ik\omega T_i}e^{-ik\omega (T_{i+1} - T_i)} - \frac{1}{k\omega }e^{-ik\omega T_i} + \frac{1}{k\omega }e^{-ik\omega T_i}e^{-ik\omega (T_{i+1} - T_i)}(1 + ik\omega (T_{i+1} - T_i)) \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[-i T_i e^{-ik\omega T_i} +i T_ie^{-ik\omega T_{i+1}} - \frac{1}{k\omega }e^{-ik\omega T_i} + \frac{1}{k\omega }e^{-ik\omega T_{i+1}}(1 + ik\omega (T_{i+1} - T_i)) \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[-i T_i e^{-ik\omega T_i} +i T_ie^{-ik\omega T_{i+1}} - \frac{1}{k\omega }e^{-ik\omega T_i} + \frac{1}{k\omega }e^{-ik\omega T_{i+1}}+ \frac{1}{k\omega }e^{-ik\omega T_{i+1}}ik\omega (T_{i+1} - T_i) \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[-i T_i e^{-ik\omega T_i} +i T_ie^{-ik\omega T_{i+1}} - \frac{1}{k\omega }e^{-ik\omega T_i} + \frac{1}{k\omega }e^{-ik\omega T_{i+1}}+ iT_{i+1}e^{-ik\omega T_{i+1}} - iT_ie^{-ik\omega T_{i+1}} \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[-i T_i e^{-ik\omega T_i} - \frac{1}{k\omega }e^{-ik\omega T_i} + \frac{1}{k\omega }e^{-ik\omega T_{i+1}}+ iT_{i+1}e^{-ik\omega T_{i+1}} \right]&lt;/script&gt;
+
+&lt;p&gt;We replace the exponential terms with \(\sin\) and \(\cos\)&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[
+-i T_i (\cos(-k\omega T_{i}) + i\sin(-k\omega T_{i})) 
+- \frac{1}{k\omega }(\cos(-k\omega T_{i}) + i\sin(-k\omega T_{i})) 
++ \frac{1}{k\omega }(\cos(-k\omega T_{i+1}) + i\sin(-k\omega T_{i+1}))
++ iT_{i+1}(\cos(-k\omega T_{i+1}) + i\sin(-k\omega T_{i+1})) \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[ 
+-i T_i\cos(-k\omega T_{i}) 
++ T_i\sin(-k\omega T_{i}) 
+- \frac{1}{k\omega }\cos(-k\omega T_{i}) 
+-i\frac{1}{k\omega }\sin(-k\omega T_{i}) 
++ \frac{1}{k\omega }\cos(-k\omega T_{i+1}) 
++ i\frac{1}{k\omega }\sin(-k\omega T_{i+1})
++ iT_{i+1}\cos(-k\omega T_{i+1}) 
+- T_{i+1}\sin(-k\omega T_{i+1}) \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[ 
+-i T_i\cos(k\omega T_{i}) 
+- T_i\sin(k\omega T_{i}) 
+- \frac{1}{k\omega }\cos(k\omega T_{i}) 
++i\frac{1}{k\omega }\sin(k\omega T_{i}) 
++ \frac{1}{k\omega }\cos(k\omega T_{i+1}) 
+-i\frac{1}{k\omega }\sin(k\omega T_{i+1})
++ iT_{i+1}\cos(k\omega T_{i+1}) 
++ T_{i+1}\sin(k\omega T_{i+1}) \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[
+- T_i\sin(k\omega T_{i})
+- \frac{1}{k\omega }\cos(k\omega T_{i})
++ \frac{1}{k\omega }\cos(k\omega T_{i+1})
++ T_{i+1}\sin(k\omega T_{i+1})
+ +i\left[-T_i\cos(k\omega T_{i})   
+ +\frac{1}{k\omega }\sin(k\omega T_{i})  
+ -\frac{1}{k\omega }\sin(k\omega T_{i+1})
+ + T_{i+1}\cos(k\omega T_{i+1}) \right]  \right]&lt;/script&gt;
+
+&lt;p&gt;We now look again at our first term from above and separate it
+&lt;script type=&quot;math/tex&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} \left(y_{i} - T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i}\right) \frac{1}{k\omega}\left[\sin(k\omega T_{i+1}) -\sin(k\omega T_{i}) + i\left[\cos(k\omega T_{i+1})    - \cos(k\omega T_{i})\right]  \right]&lt;/script&gt;&lt;/p&gt;
+
+&lt;p&gt;into&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;-\frac{1}{T} \sum_{i=0}^{N-1} T_i\frac{y_{i+1}-y_{i}}{T_{i+1} - T_i} \frac{1}{k\omega}\left[\sin(k\omega T_{i+1}) -\sin(k\omega T_{i}) + i\left[\cos(k\omega T_{i+1})    - \cos(k\omega T_{i})\right]  \right]&lt;/script&gt;
+
+&lt;p&gt;and&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1} y_{i}\frac{1}{k\omega}\left[\sin(k\omega T_{i+1}) -\sin(k\omega T_{i}) + i\left[\cos(k\omega T_{i+1})    - \cos(k\omega T_{i})\right]  \right] .&lt;/script&gt;
+
+&lt;p&gt;We combine the result of the second term with first equation of the separation&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[
+- T_i\sin(k\omega T_{i})
+- \frac{1}{k\omega }\cos(k\omega T_{i})
++ \frac{1}{k\omega }\cos(k\omega T_{i+1})
++ T_{i+1}\sin(k\omega T_{i+1})
+ +i\left[-T_i\cos(k\omega T_{i})   
+ +\frac{1}{k\omega }\sin(k\omega T_{i})  
+ -\frac{1}{k\omega }\sin(k\omega T_{i+1})
+ + T_{i+1}\cos(k\omega T_{i+1}) \right]
+
+-T_i\sin(k\omega T_{i+1}) 
++T_i\sin(k\omega T_{i}) 
++ i\left[-T_i\cos(k\omega T_{i+1})    
++T_i \cos(k\omega T_{i})\right]
+  \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[
+\underbrace{- T_i\sin(k\omega T_{i})
++T_i\sin(k\omega T_{i}) }_{0}
+- \frac{1}{k\omega }\cos(k\omega T_{i})
++ \frac{1}{k\omega }\cos(k\omega T_{i+1})
++ (T_{i+1}-T_i)\sin(k\omega T_{i+1})
+ +i\left[\underbrace{-T_i\cos(k\omega T_{i})  
+ +T_i \cos(k\omega T_{i}) }_{0}  
+ +\frac{1}{k\omega }\sin(k\omega T_{i})  
+ -\frac{1}{k\omega }\sin(k\omega T_{i+1})
+ + (T_{i+1}-T_i)\cos(k\omega T_{i+1}) \right]
+  \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{y_{i+1}-y_{i}}{k\omega (T_{i+1} - T_i)}  \left[
+- \frac{1}{k\omega }\cos(k\omega T_{i})
++ \frac{1}{k\omega }\cos(k\omega T_{i+1})
++ (T_{i+1}-T_i)\sin(k\omega T_{i+1})
+ +i\left[  
+ \frac{1}{k\omega }\sin(k\omega T_{i})  
+ -\frac{1}{k\omega }\sin(k\omega T_{i+1})
+ + (T_{i+1}-T_i)\cos(k\omega T_{i+1}) \right]
+  \right]&lt;/script&gt;
+
+&lt;p&gt;Now we incorporate the second part of the separation.&lt;/p&gt;
+
+&lt;p&gt;With the helping variable&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;a = \frac{y_{i+1}-y_{i}}{(T_{i+1} - T_i)}&lt;/script&gt;
+
+&lt;p&gt;follows&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{1}{k\omega}  \left[
+ -y_i\sin(k\omega T_{i}) 
++(y_i+a(T_{i+1}-T_i))\sin(k\omega T_{i+1}) 
+- \frac{a}{k\omega }\cos(k\omega T_{i})
++ \frac{a}{k\omega }\cos(k\omega T_{i+1})
+ +i\left[
+ - y_i\cos(k\omega T_{i})
+ +(y_i+a(T_{i+1}-T_i))\cos(k\omega T_{i+1})
+ +\frac{a}{k\omega }\sin(k\omega T_{i})  
+ -\frac{a}{k\omega }\sin(k\omega T_{i+1})
+ \right] 
+
+  \right]&lt;/script&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\frac{1}{T} \sum_{i=0}^{N-1}\frac{1}{k\omega}  \left[
+ -y_i\sin(k\omega T_{i}) 
++y_{i+1}\sin(k\omega T_{i+1}) 
+- \frac{a}{k\omega }\cos(k\omega T_{i})
++ \frac{a}{k\omega }\cos(k\omega T_{i+1})
+ +i\left[
+ - y_i\cos(k\omega T_{i})
+ +y_{i+1}\cos(k\omega T_{i+1})
+ +\frac{a}{k\omega }\sin(k\omega T_{i})  
+ -\frac{a}{k\omega }\sin(k\omega T_{i+1})
+ \right] 
+
+  \right]&lt;/script&gt;
+
+&lt;p&gt;The resulting formula is&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_k =  \frac{1}{T} \sum_{i=0}^{N-1}\frac{1}{k\omega}  \left[
+ -y_i\sin(k\omega T_{i}) 
++y_{i+1}\sin(k\omega T_{i+1}) 
+- \frac{a}{k\omega }\cos(k\omega T_{i})
++ \frac{a}{k\omega }\cos(k\omega T_{i+1})
+ +i\left[
+ - y_i\cos(k\omega T_{i})
+ +y_{i+1}\cos(k\omega T_{i+1})
+ +\frac{a}{k\omega }\sin(k\omega T_{i})  
+ -\frac{a}{k\omega }\sin(k\omega T_{i+1})
+ \right] 
+
+  \right]&lt;/script&gt;
+
+&lt;p&gt;We note that we can \(\frac{1}{T}\frac{1}{k\omega} = \frac{1}{2\pi k}\) and finally obtain&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\hat{y}_k =  \frac{1}{2\pi k} \sum_{i=0}^{N-1}  \left[
+ -y_i\sin(k\omega T_{i}) 
++y_{i+1}\sin(k\omega T_{i+1}) 
+- \frac{a}{k\omega }\cos(k\omega T_{i})
++ \frac{a}{k\omega }\cos(k\omega T_{i+1})
+ +i\left[
+ - y_i\cos(k\omega T_{i})
+ +y_{i+1}\cos(k\omega T_{i+1})
+ +\frac{a}{k\omega }\sin(k\omega T_{i})  
+ -\frac{a}{k\omega }\sin(k\omega T_{i+1})
+ \right] 
+
+  \right]&lt;/script&gt;
+
+&lt;p&gt;In the final step, we can express our result as&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;y(t) = \sum_{k=0}^N A_k \sin(k\omega t + \varphi_k)&lt;/script&gt;
+
+&lt;p&gt;with coefficients&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+A_k = \begin{cases}
+      \hat{y}_0 &amp; k = 0 \\
+      2 |\hat{y}_k|      &amp; k&gt;0
+    \end{cases} %]]&gt;&lt;/script&gt;
+
+&lt;p&gt;and&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;% &lt;![CDATA[
+\varphi_l = \begin{cases}
+      0 &amp; k = \frac{pi}{2} \\
+      \text{atan2}( \Re(\hat{y}_k), - \Im(\hat{y}_k))      &amp; k&gt;0
+    \end{cases}. %]]&gt;&lt;/script&gt;</content><author><name></name></author><summary type="html">Inspired by Cliff Pickovers tweet and powered by my fascination about the Fourier transform, I took the time to derive and implement the Fourier series of a two dimensional piecewise linear parametric curve.</summary></entry><entry><title type="html">Nonlinear filtering: Particle filter</title><link href="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html" rel="alternate" type="text/html" title="Nonlinear filtering: Particle filter" /><published>2018-11-08T07:04:07+09:00</published><updated>2018-11-08T07:04:07+09:00</updated><id>https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle</id><content type="html" xml:base="https://martinseilair.github.io/jekyll/update/2018/11/08/nf-particle.html">&lt;p&gt;This article, treating the derivation of the particle filter, marks the last part of the nonlinear filtering series. We will derive the particle filter algorithm directly from the equations of the Bayes filter. In the end, we will have the opportunity to play around with the particle filter with our toy example. &lt;!--more--&gt;If you haven’t read the &lt;a href=&quot;/jekyll/update/2018/10/29/nf-intro.html&quot;&gt;introduction&lt;/a&gt;, I would recommend to read it first. Before we dive into the derivation, let’s try to state the main idea behind the particle filter.
 &lt;script src=&quot;https://d3js.org/d3.v5.min.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
 &lt;script type=&quot;text/javascript&quot; async=&quot;&quot; src=&quot;https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG&quot;&gt;&lt;/script&gt;
   &lt;script src=&quot;https://cdn.plot.ly/plotly-latest.min.js&quot;&gt;&lt;/script&gt;&lt;/p&gt;

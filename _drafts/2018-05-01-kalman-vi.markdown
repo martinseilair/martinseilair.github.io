@@ -1,0 +1,60 @@
+---
+layout: post
+title:  "Kalman filter and VI"
+date:   2018-10-12 18:04:07 +0900
+categories: jekyll update
+comments: true
+excerpt_separator: <!--more-->
+---
+
+<!--more-->
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
+
+
+
+Predict step:
+
+$$ D_{KL}(p||q) = \int_{x_{t+1}} \int_{x_t}\mathcal{N}(x_{t+1}|A_tx_t + B_t u_t, Q_t)\mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t \log\left( \frac{\int_{x_t}\mathcal{N}(x_{t+1}|A_tx_t + B_t u_t, Q_t)\mathcal{N}(x_t|\hat x_{t|t}, P_{t|t}) dx_t}{\mathcal{N}(x_{t+1}|\mu, \Sigma)} \right)\,dx_{t+1}$$
+
+
+$$ D_{KL}(p||q) = \int_{x_{t+1}} \mathcal{N}(x_{t+1}|A_t \hat x_{t|t} + B_tu_t, Q_t + A_t P_{t|t} A_t^T) \log\left(\frac{\mathcal{N}(x_{t+1}|A_t \hat x_{t|t} + B_tu_t, Q_t + A_t P_{t|t} A_t^T)}{\mathcal{N}(x_{t+1}|\mu, \Sigma)}\right) \,dx_{t+1}$$
+
+
+$$ \mathcal{N}(x|a, A) $$
+
+$$ \mathcal{N}(x|b, B) $$
+
+
+$$ D_{KL}(p||q) = \int_x p(x) \log\left(\frac{p(x)}{q(x)}\right)\,dx $$
+
+
+$$ D_{KL}(p||q) = \frac{1}{2}\left( \log\left(\frac{\det(B)}{\det(A)}\right) + \text{tr}(B^{-1}A) + (b-a)^TB^{-1}(b-a) -n \right) $$
+
+
+$$ D_{KL}(p||q) = \int_{x_{t+1}} \mathcal{N}(x_{t+1}|A_t \hat x_{t|t} + B_tu_t, Q_t + A_t P_{t|t} A_t^T) \log\left(\frac{\mathcal{N}(x_{t+1}|A_t \hat x_{t|t} + B_tu_t, Q_t + A_t P_{t|t} A_t^T)}{\mathcal{N}(x_{t+1}|\mu, \Sigma)}\right) \,dx_{t+1}$$
+
+$$ a = A_t \hat x_{t|t} + B_tu_t $$
+
+$$ A = Q_t + A_t P_{t|t} A_t^T $$
+
+$$ b = \mu $$
+
+$$ B = \Sigma $$
+
+
+
+$$ D_{KL}(p||q) = \frac{1}{2}\left( \log\left(\frac{\det(B)}{\det(A)}\right) + \text{tr}(B^{-1}A) + (b-a)^TB^{-1}(b-a) -n \right) $$
+
+Second order approximation 
+
+$$ D_{KL}(p||q) = D_{KL}(p||q)|_{b=\hat{b}, B = \hat{B}} + \nabla_b D_{KL}(p||q)|_{b=\hat{b}, B = \hat{B}}(b-\hat{b}) + \nabla_B D_{KL}(p||q)|_{b=\hat{b}, B = \hat{B}}(B-\hat{B}) $$
+
+
+$$ D_{KL}(p||q)|_{b=\hat{b}, B = \hat{B}} = \frac{1}{2}\left( \log\left(\frac{\det(\hat{B})}{\det(A)}\right) + \text{tr}(B^{-1}A) + (\hat{b}-a)^T\hat{B}^{-1}(\hat{b}-a) -n \right) $$
+
+$$ \nabla_b D_{KL}(p||q)|_{b=\hat{b}, B = \hat{B}} = 2\hat{B}^{-1}(\hat{b}-a)   $$
+
+$$ \nabla_B D_{KL}(p||q)|_{b=\hat{b}, B = \hat{B}} = \hat{B}^{-1} +  (\hat{b}-a)^T(\hat{b}-a)   $$
+

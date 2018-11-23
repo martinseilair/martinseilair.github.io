@@ -1,0 +1,85 @@
+---
+layout: post
+title:  "Fourier and Nyquist–Shannon sampling theorem"
+date:   2018-10-12 18:04:07 +0900
+categories: jekyll update
+comments: true
+excerpt_separator: <!--more-->
+---
+
+<!--more-->
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
+
+
+Let's assume you have a signal \\(f(t)\\). You want to infer the spectrum of this signal.
+
+If you are given sample after time \\(T_s\\) has passed you can reconstruct the true spectrum if the higheest frequency in the signal is \\(\frac{1}{2T_s}\\).
+
+
+With Bayes you can also infer possible spectra given arbitrary samples.
+
+$$ p(Spectrum|sample_1,..., sample_N) $$
+
+But how?
+
+The true spectrum is defined as 
+
+$$ (\mathcal{F}f)(\omega) $$
+
+How can you get the value of the corresponding at time T?
+
+You have to perform the inverse Fourier transform and evaluate at time T
+
+$$ y(T) = \int_t (\mathcal{F^{-1}}F)(t)\delta(t-T) \,dt $$
+
+If you know obtain a sample \\(y(T)\\) you can update your prior that is in the beginning the whole function space.
+
+By updating your prior you will cut away all possible spectra that are not compatible with your findings.
+
+If you have now evenly spaced samples with the condition from above, only one function remains. The correct spectrum. 
+
+If you have higher frequencies in your signals, there are infinitely many functions remaining.
+
+The condition that there a no higher frequencies is also cutting your space, that there are effectively no ambiguities.
+
+It is also possible, that you have samples with noise. In this case, the cutting that you perform in function space is smooth. You will have a distribution over functions.
+
+Is there something like a Delta dirac function in function space?
+
+$$ \int_{f \in Function space} \delta(f - g) \,df $$
+
+
+
+
+
+Another way to think about it
+
+You want to infer the function given samples.
+Every sample is cutting parts of the function space.
+
+If you know have conditions on your function (for example smoothness or lipschitz or function type) this will already cut away some functions.
+
+If now a sample is given it will cut more away than before, because it will also restrict the neighbouring points.
+
+One particular example are polynomials. You assume, that your function is \\(n\\)th-order polynomial. For every sample you will cut away functions from your space. If you have the \\(n\\)-th sample, there is only one sample remaining.
+
+If your samples are noisy, you will also make a noisy cut. You will need more samples.
+
+But actually, if you already restrict your space as \\(n\\)th-order polynomial you can express every point (function) in this space by \\(n\\) numbers uniquely.
+
+I guess, that after the first point is given your manifold will lose a dimension. You only need \\(n-1\\) to describe the remaining space.
+
+Instead of using with the space itself, you can use the parameters itself. And also have distribution over these functions, if your samples are noisy.
+
+
+
+Can you Fourier transform several functions at once?
+
+
+
+
+
+
+
