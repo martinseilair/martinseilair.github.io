@@ -787,7 +787,7 @@ with coefficients
 and 
 
   $$ \varphi_l = \begin{cases}
-      0 & k = \frac{pi}{2} \\
+      \frac{\pi}{2} & k = 0 \\
       \text{atan2}( \Re(\hat{y}_k), - \Im(\hat{y}_k))      & k>0
     \end{cases}. $$
 
