@@ -13,6 +13,484 @@ excerpt_separator: <!--more-->
 <script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
+<style>
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 25px;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: green;
+}
+</style>
+
+<button onclick="set_tool('and');"  class="button">And</button> <button onclick="set_tool('or');" class="button">Or</button> <button onclick="set_tool('snk');" class="button">Sink</button> <button onclick="set_tool('true');" class="button">True</button> <button onclick="set_tool('false');" class="button">False</button> <button onclick="set_tool('neg');" class="button">Negation</button> <button onclick="set_tool('xor');" class="button">XOR</button>
+
+
+
+<div id="logic" style="width:100%;"></div>
+
+<button onclick="lgc.step();lgr.step();lgc.print_state();" class="button">Simulate step</button>
+
+<script type="text/javascript">
+
+
+class LogicGate{
+
+	constructor(init_state){
+		this.state = init_state;
+		this.next_state = [];
+		this.inputs = [];
+		this.n_inputs = 0;
+		this.n_outputs = 0;
+	}
+
+	step(){
+
+	}
+
+	update(){
+		this.state = this.next_state;
+	}
+
+	get_type(){
+		return "logic_gate";
+	}
+}
+
+
+class AndGate extends LogicGate{
+
+	get_type(){
+		return "and";
+	}
+
+	constructor(init_state){
+		super(init_state);
+		this.n_inputs = 2;
+		this.n_outputs = 1;
+	}
+
+	step(){
+		this.next_state = [this.inputs[0].state()&&this.inputs[1].state()];
+	}
+
+}
+
+
+class OrGate extends LogicGate{
+
+	get_type(){
+		return "or";
+	}
+
+	constructor(init_state){
+		super(init_state);
+		this.n_inputs = 2;
+		this.n_outputs = 1;
+	}
+
+	step(){
+		this.next_state = [this.inputs[0].state()||this.inputs[1].state()];
+	}
+
+}
+
+class XorGate extends LogicGate{
+
+	get_type(){
+		return "xor";
+	}
+
+	constructor(init_state){
+		super(init_state);
+		this.n_inputs = 2;
+		this.n_outputs = 1;
+	}
+
+	step(){
+		this.next_state = [this.inputs[0].state()?!this.inputs[1].state():this.inputs[1].state()];
+	}
+
+}
+
+
+class SourceGate extends LogicGate{
+
+	get_type(){
+		return "src";
+	}
+
+	constructor(init_state){
+		super(init_state);
+		this.n_inputs = 0;
+		this.n_outputs = 1;
+	}
+
+	step(){
+		this.next_state = this.state;
+	}
+}
+
+class SinkGate extends LogicGate{
+
+	get_type(){
+		return "snk";
+	}
+
+	constructor(init_state){
+		super(init_state);
+		this.n_inputs = 1;
+		this.n_outputs = 0;
+	}
+
+	step(){
+		this.next_state = [this.inputs[0].state()] ;
+	}
+
+}
+
+class NegationGate extends LogicGate{
+
+	get_type(){
+		return "neg";
+	}
+
+	constructor(init_state){
+		super(init_state);
+		this.n_inputs = 1;
+		this.n_outputs = 1;
+	}
+
+	step(){
+		this.next_state = [!this.inputs[0].state()] ;
+	}
+}
+
+
+
+
+class LogicGateContainer{
+
+
+	constructor(name){
+
+		this.inputs = [];
+		this.outputs = [];
+		this.logic_gates = [];
+		this.connectors = [];
+		this.name = name;
+	}
+
+	add_logic_gate(logic_gate){
+		this.logic_gates.push(logic_gate)
+	}
+
+	add_connector(connector){
+		this.connectors.push(connector)
+	}
+
+	step(){
+		for(var i=0;i<this.logic_gates.length;i++){
+			this.logic_gates[i].step();
+		}
+		for(var i=0;i<this.logic_gates.length;i++){
+			this.logic_gates[i].update();
+		}
+	}
+
+	print_state(){
+		console.log("State of container: " + this.name)
+		for(var i=0;i<this.logic_gates.length;i++){
+			console.log(this.logic_gates[i].get_type() + ": " + this.logic_gates[i].state);
+		}
+	}
+}
+
+
+class LogicGateFactory{
+	constructor(){
+
+
+		this.gate_lib = {};
+		this.gate_lib["and"] = AndGate;
+		this.gate_lib["or"] = OrGate;
+		this.gate_lib["neg"] = NegationGate;
+		this.gate_lib["src"] = SourceGate;
+		this.gate_lib["snk"] = SinkGate;
+		this.gate_lib["xor"] = XorGate;
+	}
+
+	create(logic_gate_container, key, init_state){
+		var logic_gate =  new this.gate_lib[key](init_state);
+		logic_gate_container.add_logic_gate(logic_gate);
+		return logic_gate;
+	}
+
+	create_connector(logic_gate_container, from, to, from_connector, to_connector){
+		var connector = new Connector(from, to, from_connector, to_connector);
+		logic_gate_container.add_connector(logic_gate);
+		return connector;
+	}
+}
+
+class Connector{
+
+	constructor(in_logic_gate, out_logic_gate, input_connector, output_connector){
+		this.in_logic_gate = in_logic_gate;
+		this.out_logic_gate = out_logic_gate;
+
+		this.input_connector = input_connector;
+		this.output_connector = output_connector;
+
+		this.in_logic_gate.inputs[input_connector] = this;
+	}
+
+	state(){
+		return this.out_logic_gate.state[this.output_connector];
+	}
+}
+
+
+class LogicGateContainerRenderer{
+
+	constructor(logic_gate_container, svg){
+		this.svg = svg;
+		this.logic_gate_container = logic_gate_container;
+		this.gates = this.svg.append("g");
+		this.connectors = this.svg.append("g");
+		this.connecting = false;
+		this.connecting_logic_gate = null;
+		this.connecting_connector = null;
+		this.connecting_type = null;
+	}
+
+	connect(logic_gate, connector_id, is_input){
+
+		if(this.connecting == false){
+			this.connecting = true;
+			this.connecting_logic_gate = logic_gate;
+			this.connecting_connector = connector_id;
+			this.connecting_type = is_input;
+		}else{
+			this.connecting = false;
+			var from, to, from_connector, to_connector;
+			if(this.connecting_type){
+				// first is input
+				from = this.connecting_logic_gate;
+				to = logic_gate;
+				from_connector = this.connecting_connector;
+				to_connector = connector_id;
+
+			}else{
+				// second is input
+				to = this.connecting_logic_gate;
+				from = logic_gate;
+				to_connector = this.connecting_connector;
+				from_connector = connector_id;
+			}
+
+			var connector = lgf.create_connector(lgc, from, to, from_connector, to_connector);
+			connector.render_attributes = new ConnectorRenderAttributes();
+
+			lgr.render_connector(connector);
+
+
+		}	
+
+	}
+
+
+
+	render_connector(connector){
+		connector.svg_group = this.connectors.append("g");
+		var output_gate = connector.out_logic_gate;
+		var input_gate = connector.in_logic_gate;
+		var out_con = connector.output_connector;
+		var in_con = connector.input_connector;
+
+
+		var out_x = output_gate.render_attributes.x + output_gate.render_attributes.width/2;
+		var out_y = output_gate.render_attributes.y - output_gate.render_attributes.height/2 + (out_con+1)*output_gate.render_attributes.height/(output_gate.n_outputs+1);
+
+		var in_x = input_gate.render_attributes.x - input_gate.render_attributes.width/2;
+		var in_y = input_gate.render_attributes.y - input_gate.render_attributes.height/2 + (in_con+1)*input_gate.render_attributes.height/(input_gate.n_inputs+1);
+
+
+		connector.svg_group.append("path")
+			.attr("d","M" + out_x + "," + out_y +" L " + in_x + "," + in_y)
+			.attr("fill","none")
+			.attr("stroke","#000")
+
+	}
+
+	step(){
+		for(var i=0; i<this.logic_gate_container.logic_gates.length;i++){
+			this.update_state_logic_gate(this.logic_gate_container.logic_gates[i])
+		}
+	}
+
+	update_state_logic_gate(logic_gate){
+		logic_gate.svg_group.selectAll(".logic_gate_rect")
+								.style("fill",(logic_gate.state[0])?"#aaea9d":"#ea9d9d")
+	}
+
+
+	render_logic_gate(logic_gate){
+
+		if(logic_gate.svg_group){
+			logic_gate.select(".logic_gate_rect")
+					.attr("width",logic_gate.render_attributes.width)
+					.attr("height",logic_gate.render_attributes.height)
+					.attr("x",logic_gate.render_attributes.x - logic_gate.render_attributes.width/2)
+					.attr("y",logic_gate.render_attributes.y - logic_gate.render_attributes.height/2)
+					.style("border","1px solid black")
+					.style("fill",(logic_gate.state[0])?"#aaea9d":"#ea9d9d")
+
+			lgt.select(".logic_gate_text")
+					.attr("class","main_text")
+					.attr("x",logic_gate.render_attributes.x)
+					.attr("y",logic_gate.render_attributes.y)
+					.attr("text-anchor","middle")
+					.text(logic_gate.get_type())
+		}else{
+			logic_gate.svg_group = this.gates.append("g");
+			// basic rectangle
+			logic_gate.svg_group.append("rect")
+					.attr("class","logic_gate_rect")
+					.attr("width",logic_gate.render_attributes.width)
+					.attr("height",logic_gate.render_attributes.height)
+					.attr("x",logic_gate.render_attributes.x - logic_gate.render_attributes.width/2)
+					.attr("y",logic_gate.render_attributes.y - logic_gate.render_attributes.height/2)
+					.style("stroke","#000")
+					.style("fill",(logic_gate.state[0])?"#aaea9d":"#ea9d9d")
+			// text
+			logic_gate.svg_group.append("text")
+					.attr("class","logic_gate_text")
+					.attr("x",logic_gate.render_attributes.x)
+					.attr("y",logic_gate.render_attributes.y)
+					.attr("text-anchor","middle")
+					.attr("alignment-baseline","middle")
+					.text(logic_gate.get_type())
+
+			// connector 
+			var r = 5;
+			// input connector
+			for (var i=0;i<logic_gate.n_inputs;i++){
+				var x = logic_gate.render_attributes.x - logic_gate.render_attributes.width/2;
+				var y = logic_gate.render_attributes.y - logic_gate.render_attributes.height/2 + (i+1)*logic_gate.render_attributes.height/(logic_gate.n_inputs+1) -r;
+				logic_gate.svg_group.append("path")
+					.attr("d","M" + x + "," + y +" a " + r + "," + r + " 0 1,1 0," + (2*r))
+					.attr("fill","#555")
+					.on("mousedown", (function(i, lgr) {
+    								return function (){
+    											d3.event.stopPropagation();
+    											this.connect(logic_gate, i, true)
+    										}.bind(lgr)
+    									})(i, this))
+			}
+
+			// output connector
+			for (var i=0;i<logic_gate.n_outputs;i++){
+				var x = logic_gate.render_attributes.x + logic_gate.render_attributes.width/2;
+				var y = logic_gate.render_attributes.y - logic_gate.render_attributes.height/2 + (i+1)*logic_gate.render_attributes.height/(logic_gate.n_outputs+1) -r;
+				logic_gate.svg_group.append("path")
+					.attr("d","M" + x + "," + y +" a " + r + "," + r + " 0 1,0 0," + (2*r))
+					.attr("fill","#555")
+					.on("mousedown", (function(i, lgr) {
+    								return function (){
+    											d3.event.stopPropagation();
+    											this.connect(logic_gate, i, false)
+    										}.bind(lgr)
+    									})(i, this))
+			}
+		}
+
+
+	}
+}
+
+
+class LogicGateRenderAttributes{
+	constructor(x, y, width, height){
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		this.svg_group = null;
+	}
+}
+
+class ConnectorRenderAttributes{
+	constructor(){
+		this.svg_group = null;
+	}
+}
+
+
+
+var lgf = new LogicGateFactory();
+var lgc = new LogicGateContainer("lgc");
+
+//lgc.print_state();
+//lgc.step();
+
+
+
+
+function click(){
+	if(tool=="true"){
+		logic_gate = lgf.create(lgc, "src", [true]);
+	}else if(tool=="false"){
+		logic_gate = lgf.create(lgc, "src", [false]);
+	}else{
+		logic_gate = lgf.create(lgc, tool, [false]);
+	}
+
+	var coords = d3.mouse(this);
+	logic_gate.render_attributes = new LogicGateRenderAttributes(coords[0],coords[1], block_width, block_height);
+
+	lgr.render_logic_gate(logic_gate);
+}
+
+function set_tool(key){
+
+	tool = key;
+
+}
+
+var tool = "and";
+var block_width = 40;
+var block_height = 40;
+
+var svg = d3.select("#logic").append("svg")
+			.style("width","100%")
+			.style("border","1px solid black")
+			.attr("viewBox","0 0 " + 500 +  " " + 300)
+			.on("mousedown", click)
+
+var lgr = new LogicGateContainerRenderer(lgc, svg);
+
+</script>
+
+https://en.wikipedia.org/wiki/Arithmetic_logic_unit
+
+Output of ALU will change asynchronously
+
+https://en.wikipedia.org/wiki/Combinational_logic
+
+vs.
+
+https://en.wikipedia.org/wiki/Sequential_logic
+
+https://en.wikipedia.org/wiki/Synchronous_circuit
+https://en.wikipedia.org/wiki/Asynchronous_circuit
+
 
 Logic gates
 CPU

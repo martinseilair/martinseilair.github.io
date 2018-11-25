@@ -36,10 +36,10 @@ By clicking on the empty canvas you can design your custom shape. If you close t
 
 
 
-
+<button onclick="moore();" class="button">Moore curve</button>
 <div id="fourier"></div>
 
-<button onclick="toggle_ellipses();" id="ell_btn" class="button">Toggle ellipses</button> <button onclick="toggle_lines();"  id="lin_btn" class="button">Toggle lines</button>
+<button onclick="toggle_ellipses();"  class="button">Toggle ellipses</button> <button onclick="toggle_lines();"  class="button">Toggle lines</button> <button onclick="reset();" class="button">Reset</button>
 
 
 
@@ -51,6 +51,65 @@ By clicking on the empty canvas you can design your custom shape. If you close t
 
 
 <script type="text/javascript">
+
+function moore(){
+	reset();
+
+	var i = 3;
+	var hill = 50;
+
+	hilbert(width/2 - hill, height/2 + hill, 3, i, hill, true);
+	hilbert(width/2 - hill, height/2 - hill, 3, i, hill, true);
+
+
+	hilbert(width/2 + hill, height/2 - hill, 1, i, hill, true);
+	hilbert(width/2 + hill, height/2 + hill, 1, i, hill, true);
+
+
+
+	svg.on("mousedown",null)
+	points.push(points[0]);
+	update_path();
+	calc_y();
+	//draw_components();
+
+	cx = calc_coeff(y.x);
+	cy = calc_coeff(y.y);
+	calc_fourier_ramp(cx,cy);
+	calc_ellipse()
+
+	timer = window.setInterval(animate, 1000*dt );
+
+}
+var rot = [];
+
+rot.push([-1,+1]);
+rot.push([-1,-1]);
+rot.push([+1,-1]);
+rot.push([+1,+1]);
+
+var or = [1,0,0,-1];
+var nc = [true, false, false, true]
+var iter = [0,1,2,3]
+function hilbert(px, py, o, i, l, n){
+
+	if(o==4) o = 0;
+	if(o==-1) o = 3;
+	//o=Math.min(4,Math.max(o,0))
+	if(i==0){
+		points.push([px,py]);
+	}else{
+		var biter = (n==false)?iter.slice(0).reverse():iter;
+		for (var j=0;j<biter.length;j++){
+				hilbert(px+rot[(biter[j]+o) % 4][0]*l/2, py+rot[(biter[j]+o) % 4][1]*l/2, o + or[biter[j]], i-1, l/2, n?!nc[biter[j]]:nc[biter[j]]);
+		}
+	}
+}
+
+
+
+
+
 
 var show_ellipses = true;
 var show_lines = true;
@@ -75,37 +134,58 @@ var points = [];
 var r_0 = 7;
 var r = 4;
 var T = 5;
-
 var omega = 2*Math.PI/T;
-
 var y = {x: [], y: []};
-
 var time;
-
-
-
 var N_start = 1;
-var N_max = 30;
+var N_max = 256;
 var N_inc = 1;
-
 var N = N_start;
-
 var cx;
 var cy;
-
-
 var NP;
-
 var curr_step = 0;
-var steps = 400;
-
+var steps = 1000;
 var dt = T/steps;
-
 var fp;
-
 var vp;
-
 var ells = [];
+
+
+var svg;
+var path;
+var path_f;
+var vg;
+var eg;
+var timer = null;
+
+var width = 500;
+var height = 300;
+
+function reset(){
+	d3.select('#fourier').selectAll("svg").remove();
+
+	clearInterval(timer);
+
+	points = [];
+	N = N_start;
+	curr_step = 0;
+	ells = [];
+	y = {x: [], y: []};
+	cx=null;
+	cy=null;
+
+	svg = d3.select('#fourier').append('svg')
+			.style("width","100%")
+			.style("border","1px solid black")
+			.attr("viewBox","0 0 " + width +  " " + height)
+			.on("mousedown", click)
+
+	path = svg.append("path");
+	path_f = svg.append("path");
+	vg = svg.append("g");
+	eg = svg.append("g");
+}
 
 function calc_coeff(f){
 	// pre calculate sin and cos
@@ -216,7 +296,6 @@ function draw_fourier_ramp(){
 
 function calc_ellipse(){
 	ells = [];
-	console.log(eg)
 	eg.selectAll("g").remove()
 	//var eg = svg.append("g");
 	for (var k=1; k<N+1;k++){
@@ -229,7 +308,6 @@ function calc_ellipse(){
 	    c_x = vp[curr_step][k-1][0];
 	    c_y = vp[curr_step][k-1][1];
 
-	    console.log(eg)
 		eeg = eg.append("g")
 				.attr("transform","translate(" + c_x + "," + c_y + ")")
 		path_e = eeg.append("path");
@@ -283,7 +361,8 @@ function animate(){
 	
 	if(curr_step>steps){
 		curr_step = 0;
-		N+=N_inc;
+		//N+=N_inc;
+		N*=2;
 		if(N>N_max){
 			N = N_start;
 		}
@@ -313,7 +392,7 @@ function click_circ(i){
 	calc_fourier_ramp(cx,cy);
 	calc_ellipse()
 
-	window.setInterval(animate, 1000*dt );
+	timer = window.setInterval(animate, 1000*dt );
 }
 
 function dist(x1,x2){
@@ -431,22 +510,8 @@ var line = d3.line()
             .x(function(d) { return d[0]; })
             .y(function(d) { return d[1]; })
 
-var svg = d3.select('#fourier').append('svg')
-			.style("width","100%")
-			.style("border","1px solid black")
-			.attr("viewBox","0 0 " + 500 +  " " + 300)
-			.on("mousedown", click)
 
-var path = svg.append("path");
-
-var path_f = svg.append("path");
-
-
-
-var vg = svg.append("g");
-
-var eg = svg.append("g");
-
+reset();
 
 
 
