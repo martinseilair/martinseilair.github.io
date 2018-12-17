@@ -1,0 +1,147 @@
+---
+layout: post
+title:  "Playing with Gaussian processes"
+date:   2018-11-30 08:04:07 +0900
+categories: jekyll update
+comments: true
+excerpt_separator: <!--more-->
+---
+
+<!--more-->
+
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+
+
+Gaussian processes are the continuous version of multivariate Gaussian distributions.
+
+$$ \mathcal{N}\left(f(x)\middle|\mu(x),k(x,x')\right) $$
+
+
+The mean is a function \\(\mu(x)\\) and the covariance is a two dimensional function \\(k(x',x)\\) and is often called kernel.
+The variable \\(x\\) does not have to be onedimensional.
+
+If the kernel is 
+
+$$ k(x,x') = \sigma^2\delta(x-x') $$
+
+with Dirac delta function \\(\delta{x}\\), then all points \\(x\\) are independent. A sample from this distribution is simply white noise, if the mean \\(\mu(x)\\) is zero.
+
+A Gaussian process can be imagined as a probability distribution over functions. In some sense it is a distribution of (probability) mass in the function space. We also know how this distributions looks like: The equipotential surfaces of the distributions are uncountable infinite ellipsoids.
+
+Let's assume we have a conditional distriubution 
+
+$$ p(g(y)|f(x)) = \mathcal{N}\left(g(y)\middle|\mathcal{A}f(x) + b(y),c(y,y')\right), $$
+
+where \\(\mathcal{A}\\) is linear operator and \\(c(y,y')\\) the corresponding covariance kernel.
+
+Let's assume we observe the function \\(g(y)\\), what can we say about the posterior \\(p(f(x)\|g(y)\\)?
+
+We can use Bayesian inference to arrrive at
+
+$$ p(f(x)|g(y)) = \frac{\mathcal{N}\left(g(y)\middle|\mathcal{A}f(x) + b(y),c(y,y')\right)\mathcal{N}\left(f(x)\middle|\mu(x),k(x,x')\right)}{\int_f \mathcal{N}\left(g(y)\middle|\mathcal{A}f(x) + b(y),c(y,y')\right)\mathcal{N}\left(f(x)\middle|\mu(x),k(x,x')\right) \,df} $$
+
+$$ \mathcal{N}\left(f(x)\middle|\hat{\mu}(x),\hat{k}(x,x')\right) $$
+
+$$ \begin{align} \hat{\mu}(x) &= \mu(x) + k(x,x')\mathcal{A}^*(c(y,y') + \mathcal{A}k(x,x')\mathcal{A}^*)^{-1}(g(y)-\mathcal{A}\mu(x) - b(y)) \\ 
+\hat{k}(x,x') &= k(x,x') - k(x,x')\mathcal{A}^*(c(y,y') + \mathcal{A}k(x,x')\mathcal{A}^*)^{-1}\mathcal{A}k(x,x'). \end{align} $$
+
+As a special case with \\(k(x,x') = \delta(x-x') = \text{id}_x \\), \\(c(y,y') = \epsilon\delta(y-y') = \epsilon\text{id}_y \\), \\(b(y) = 0\\) and \\(\mu(x) = 0\\) we arrive at
+
+$$ \begin{align} \hat{\mu}(x) &= \mathcal{A}^*(\epsilon\text{id}_y + \mathcal{A}\mathcal{A}^*)^{-1}g(y) \\ 
+\hat{k}(x,x') &= \text{id}_x - \mathcal{A}^*(\epsilon\text{id}_y + \mathcal{A}\mathcal{A}^*)^{-1}\mathcal{A}. \end{align} $$
+
+We identify the pseudo inverse and the orthogonal projector onto the kernel of \\(\mathcal{A}\\). If we let \\(\epsilon\\) go to zero, all the probability mass is located at functions, that can produce \\(g(y)\\).
+
+Let's see some examples.
+
+# Differential operator
+
+The differential operator \\(\frac{\text{d}}{\text{d}x}\\) is linear operator. Let's assume we have observed the derivative of a function. Now is the question which function could have produced this derivative. We know, that the integral is the inverse operation of the derivative. But this is not a one-to-one mapping, because the constant term is lost.
+
+$$ \begin{align} \hat{\mu}\left(x\right) &= \frac{\text{d}}{\text{d}x}^*\left(\epsilon\text{id}_x + \frac{\text{d}}{\text{d}x}\frac{\text{d}}{\text{d}x}^*\right)^{-1}g\left(x\right) \\ 
+\hat{k}\left(x,x'\right) &= \text{id}_x - \frac{\text{d}}{\text{d}x}^*\left(\epsilon\text{id}_x + \frac{\text{d}}{\text{d}x}\frac{\text{d}}{\text{d}x}^*\right)^{-1}\frac{\text{d}}{\text{d}x}. \end{align} $$
+
+If \\(\epsilon\\) goes to zero, all probability mass will lie at functions, that has \\(g(y)\\) as derivative.
+
+# Fourier transform
+
+$$ \mathcal{N}(f(t)|\mu(t),k(t,t')) $$
+
+
+$$ \mathcal{N}\left((\mathcal{F}[f(t)])(\omega)\middle|\int\limits_{-\infty}^{\infty} f(t) e^{i\omega t} \,dt ,c(\omega,\omega')\right) $$
+
+$$ \mathcal{N}(f(t)|\mu(t),k(t,t')) \mathcal{N}\left((\mathcal{F}[f(t)])(\omega)\middle|\int\limits_{-\infty}^{\infty} f(t) e^{i\omega t} \,dt ,c(\omega,\omega')\right) $$
+
+$$
+\mathcal{N}\left(\begin{matrix}f(t) \\(\mathcal{F}[f(t)])(\omega)\end{matrix}\middle|\begin{matrix}\mu(t)\\\int\limits_{-\infty}^{\infty} \mu(t) e^{i\omega t} \,dt\end{matrix},\begin{matrix}k(t,t') & \int\limits_{-\infty}^{\infty}k(t,t')e^{i\omega t} \,dt \\\int\limits_{-\infty}^{\infty}k(t,t')e^{i\omega t} \,dt & c(\omega,\omega') + \int\limits_{-\infty}^{\infty}\int\limits_{-\infty}^{\infty} e^{i\omega t}k(t,t') e^{i\omega' t}\,dt \,dt'\end{matrix}\right)
+$$
+
+# Non-function observations
+
+Let's assume we are not observing the complete function but just one value \\(f(x_0)\\) with additive noise.
+How can we handle this?
+We can define this also with a Gaussian process conditional.
+
+
+$$ p(\hat{f}(x_0)|f(x)) = \mathcal{N}\left(\hat{f}(x_0)\middle|\int_x\delta(x-x_0)f(x) \,dx, c(x_0,x_0')\right) $$
+
+
+$$ \begin{align} \hat{\mu}(x) &= \mu(x) + k(x,x')\mathcal{A}^*(c(y,y') + \mathcal{A}k(x,x')\mathcal{A}^*)^{-1}(g(y)-\mathcal{A}\mu(x) \\ 
+\hat{k}(x,x') &= k(x,x') - k(x,x')\mathcal{A}^*(c(x_0,x_0') + \mathcal{A}k(x,x')\mathcal{A}^*)^{-1}\mathcal{A}k(x,x'). \end{align} $$
+
+$$ \begin{align} \hat{\mu}(x) &= \mu(x) + k(x,x_0')(c(x_0,x_0') + k(x_0,x_0'))^{-1}(\hat{f}(x_0)-\mu(x_0)) \\ 
+\hat{k}(x,x') &= k(x,x') - k(x,x_0')(c(x_0,x_0') + k(x_0,x_0'))^{-1}k(x_0,x'). \end{align} $$
+
+How can we interpret this? 
+
+The mean is updated by adding the corresponding column of the kernel weighted by a factor dependend on the measurement error. If there is no error nothing will be added. The shape of the kernel tells you how the mean is updated.
+
+The kernel is updated every step.s Therefore, the kernel changes at every time step.
+
+You have to subtract the outer product of the column at \\(x_0\\) weighted by a factor.
+
+Now we can also combine functional conditional and value conditionals. For example if we want to set the derivative of a function at a certain point, we have to first take the differntial operation and then the selection operation in order to reverse it. In this case you would also have to perform a forward pass through the derivative.
+
+# Prior construction
+
+We can also construct priors. If we want n-times differential functions we simply have to invert all functions n-times through the derivative and obtain the space of n times differntiable functions.
+
+Have to check if this is true. Actually I would have to observe twice differntiablitiy?
+
+# Rest
+
+
+Marginal results in original function and Fourier transform.
+
+State Space Representation of Gaussian Processes
+http://gpss.cc/gpss13/assets/Sheffield-GPSS2013-Sarkka.pdf
+http://www.gaussianprocess.org/gpml/chapters/RW.pdf
+https://www.youtube.com/watch?v=JXbBvXBzhpo
+
+14/51
+
+Der Kernel gibt die Eigendynamik an?
+
+Stochastic differntial equation
+
+Zeitlösung faltet über den Kernel
+
+In welchen Fällen?
+
+$$ \dot{f}(t) = Af(t) + Lw(t) $$
+
+$$ f(t) = e^{At}f(0) + \int_0^t e^{A(t-\tau)}Lw(\tau)\,d\tau $$
+
+$$ K(t,t') = P_\infty e^{A^T(t-t')} for t' \leq  t $$
+
+$$ K(t,t') = e^{A(t-t')}  P_\infty for t' \geq  t $$
+
+with 
+
+$$ A P_\infty +  P_\infty A + LQL^T = 0 $$
+
+
+

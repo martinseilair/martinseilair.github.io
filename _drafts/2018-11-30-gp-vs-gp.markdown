@@ -1,0 +1,305 @@
+---
+layout: post
+title:  "Gaussian processes vs. Gaussian processes"
+date:   2018-11-30 08:04:07 +0900
+categories: jekyll update
+comments: true
+excerpt_separator: <!--more-->
+---
+
+<!--more-->
+
+<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+
+
+* Diskret\Kontinuierlich
+* Regression\No regression
+* Feature\No feature
+* Special prior\General prior
+
+
+Effect of different kernel
+Is multivariate Gauss displayable as Markov process?
+
+
+## Discrete
+
+We can write a multivariate Gaussian distribution as 
+
+$$ \mathcal{N}(x_{0:T}|\mu,\Sigma) = \mathcal{N}\left(\begin{matrix}x_0 \\ \vdots \\ x_T \end{matrix}\middle|\begin{matrix}\mu_0 \\ \vdots \\ \mu_T \end{matrix},\begin{matrix}\Sigma_{00} & \ldots & \Sigma_{0T} \\ \vdots & & \vdots \\ \Sigma_{T0} & \ldots & \Sigma_{TT} \end{matrix}\right) $$ 
+
+We can express the parameter by a function, that is dependent on the index \\(t\\).
+
+$$ \mu_t = f(t) $$
+
+$$ \Sigma_{tt'} = k(t,t') $$
+
+This will result in 
+
+$$ \mathcal{N}(x_{0:T}|\mu,\Sigma) = \mathcal{N}\left(\begin{matrix}x_0\\ \vdots \\ x_T \end{matrix}\middle|\begin{matrix}f(0) \\ \vdots \\ f(T)\end{matrix},\begin{matrix}k(0,0) & \ldots & k(0,T) \\ \vdots & & \vdots \\ k(T,0) & \ldots & k(T,T) \end{matrix}\right) $$ 
+
+Furthermore, we assume that we have an observations \\(y_t \sim p(y_t\|x_t)\\).
+
+$$ p(y_t|x_t) =  \mathcal{N}(y_t|C_tx_t + c_t,R_t) $$
+
+
+How can we infer the hidden states \\(x_t\\) by observing \\(y_t\\)?
+
+We are performing Bayesian inference. Conceptually, we have to send messages originating from the observed node \\(y_t\\) to the hidden nodes \\(x_t\\). 
+
+But our model is in form of a joint probability distribution and has no graphical model representation yet.
+
+$$ p(x) = p(x_T|x_{0:T-1})p(x_{T-1}|x_{0:T-2}) \ldots p(x_1|x_0)p(x_0) $$
+
+Can we express it as a Markov model?
+
+$$ p(x) = p(x_T|x_{T-1})p(x_{T-1}|x_{T-2}) \ldots p(x_1|x_0)p(x_0) $$
+
+
+We know that 
+
+
+$$ \mathcal{N}\left(\begin{matrix}x \\y\end{matrix}\middle|\begin{matrix}a\\b\end{matrix},\begin{matrix}A & C\\C^T & B\end{matrix}\right) = \mathcal{N}(x|a,A)\mathcal{N}(y|b + C^TA^{-1}(x-a),B - C^T A^{-1}C) .$$
+
+Therefore
+
+
+$$ \mathcal{N}\left(\begin{matrix}x_0 \\x_{1:T}\end{matrix}\middle|\begin{matrix}\mu_0\\\mu_{1:T}\end{matrix},\begin{matrix}\Sigma_{0,0} & \Sigma_{0,1:T}\\\Sigma_{1:T,0}& \Sigma_{1:T,1:T}\end{matrix}\right) = \mathcal{N}(x_0|\mu_0,\Sigma_0)\mathcal{N}(x_{1:T}|\mu_{1:T} + \Sigma_{1:T,0}\Sigma_{0,0}^{-1}(x_0-\mu_0),\Sigma_{1:T,1:T} - \Sigma_{1:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1:T}) .$$
+
+$$ \mathcal{N}\left(\begin{matrix}x_1 \\x_{2:T}\end{matrix}\middle|\begin{matrix}\mu_{1} + \Sigma_{1,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)\\\mu_{2:T} + \Sigma_{2:T,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)\end{matrix},\begin{matrix}(\Sigma_{1:T,1:T} - \Sigma_{1:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1:T})_{0,0} & (\Sigma_{1:T,1:T} - \Sigma_{1:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1:T})_{0,1:T-1}\\(\Sigma_{1:T,1:T} - \Sigma_{1:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1:T})_{1:T-1,0}& (\Sigma_{1:T,1:T} - \Sigma_{1:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1:T})_{1:T-1,1:T-1}\end{matrix}\right)  .$$
+
+$$ \mathcal{N}\left(\begin{matrix}x_1 \\x_{2:T}\end{matrix}\middle|\begin{matrix}\mu_{1} + \Sigma_{1,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)\\\mu_{2:T} + \Sigma_{2:T,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)\end{matrix},
+\begin{matrix}
+\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1} & 
+\Sigma_{1,2:T} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,2:T}\\
+\Sigma_{2:T,1} - \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1}& 
+\Sigma_{2:T,2:T} - \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,2:T}
+\end{matrix}\right) $$
+
+$$
+\mathcal{N}(x_1|\mu_{1} + \Sigma_{1,0}\Sigma_{0,0}^{-1}(x_0-\mu_0),\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})
+\mathcal{N}(x_{2:T}|\mu_{2:T} + \Sigma_{2:T,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)
+ + (\Sigma_{2:T,1} - \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})
+ (\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ (x_1-(\mu_{1} + \Sigma_{1,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)),
+ (\Sigma_{2:T,2:T} - \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,2:T}) - 
+ (\Sigma_{2:T,1} - \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})
+(\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ (\Sigma_{1,2:T} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,2:T})) .$$
+
+ What has to be satisfied, that it is indeoendent from \\(x_0\\)?
+
+ $$ \mu_{2:T} + \Sigma_{2:T,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)
+ + (\Sigma_{2:T,1} - \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})
+ (\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ (x_1-(\mu_{1} + \Sigma_{1,0}\Sigma_{0,0}^{-1}(x_0-\mu_0)) $$
+
+ $$ \Sigma_{2:T,0}\Sigma_{0,0}^{-1}
+ - (\Sigma_{2:T,1} - \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})
+ (\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ \Sigma_{1,0}\Sigma_{0,0}^{-1} = 0 $$
+
+
+ $$ \Sigma_{2:T,0}\Sigma_{0,0}^{-1}
+ - \Sigma_{2:T,1}(\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ \Sigma_{1,0}\Sigma_{0,0}^{-1} + \Sigma_{2:T,0} \Sigma_{0,0}^{-1}\Sigma_{0,1}
+ (\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ \Sigma_{1,0}\Sigma_{0,0}^{-1} = 0 $$
+
+
+ $$ \Sigma_{2:T,0}(\Sigma_{0,0}^{-1} + \Sigma_{0,0}^{-1}\Sigma_{0,1}
+ (\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ \Sigma_{1,0}\Sigma_{0,0}^{-1})
+ = \Sigma_{2:T,1}(\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1})^{-1}
+ \Sigma_{1,0}\Sigma_{0,0}^{-1} $$
+
+  $$ \Sigma_{2:T,1} = \Sigma_{2:T,0}\left(\frac{\Sigma_{1,1} - \Sigma_{1,0} \Sigma_{0,0}^{-1}\Sigma_{0,1}}{\Sigma_{1,0}} + \frac{\Sigma_{0,1}}{\Sigma_{0,0}}\right)
+ $$
+ Therefore, we cant express the model as markov
+
+ We can factorize the joint in several ways. But all factorzations will yield the same result
+
+We can also have a belief over unobserved observations.
+
+
+Fourier
+
+$$ \mathcal{N}(f(t)|\mu(t),k(t,t')) $$
+
+
+$$ \mathcal{N}\left((\mathcal{F}[f(t)])(\omega)\middle|\int\limits_{-\infty}^{\infty} f(t) e^{i\omega t} \,dt ,c(\omega,\omega')\right) $$
+
+
+
+
+$$ \mathcal{N}(f(t)|\mu(t),k(t,t')) \mathcal{N}\left((\mathcal{F}[f(t)])(\omega)\middle|\int\limits_{-\infty}^{\infty} f(t) e^{i\omega t} \,dt ,c(\omega,\omega')\right) $$
+
+$$
+\mathcal{N}\left(\begin{matrix}f(t) \\(\mathcal{F}[f(t)])(\omega)\end{matrix}\middle|\begin{matrix}\mu(t)\\\int\limits_{-\infty}^{\infty} \mu(t) e^{i\omega t} \,dt\end{matrix},\begin{matrix}k(t,t') & \int\limits_{-\infty}^{\infty}k(t,t')e^{i\omega t} \,dt \\\int\limits_{-\infty}^{\infty}k(t,t')e^{i\omega t} \,dt & c(\omega,\omega') + \int\limits_{-\infty}^{\infty}\int\limits_{-\infty}^{\infty} e^{i\omega t}k(t,t') e^{i\omega' t}\,dt \,dt'\end{matrix}\right)
+$$
+
+Marginal results in original function and Fourier transform.
+
+
+State Space Representation of Gaussian Processes
+http://gpss.cc/gpss13/assets/Sheffield-GPSS2013-Sarkka.pdf
+http://www.gaussianprocess.org/gpml/chapters/RW.pdf
+https://www.youtube.com/watch?v=JXbBvXBzhpo
+
+14/51
+
+Der Kernel gibt die Eigendynamik an?
+
+Stochastic differntial equation
+
+Zeitlösung faltet über den Kernel
+
+In welchen Fällen?
+
+$$ \dot{f}(t) = Af(t) + Lw(t) $$
+
+$$ f(t) = e^{At}f(0) + \int_0^t e^{A(t-\tau)}Lw(\tau)\,d\tau $$
+
+$$ K(t,t') = P_\infty e^{A^T(t-t')} for t' \leq  t $$
+
+$$ K(t,t') = e^{A(t-t')}  P_\infty for t' \geq  t $$
+
+with 
+
+$$ A P_\infty +  P_\infty A + LQL^T = 0 $$
+
+Gaussian Process
+
+$$ \mathcal{N}(x(t)|\mu(t),K(t,t')) $$ 
+
+$$ K(t,t') = \text{Cov}(x_t, x_{t'}) $$
+
+
+Kernel
+
+$$ \phi(x_n) = \begin{pmatrix} \phi_1(x_n) \\ \vdots \\ \phi_D(x_n) \end{pmatrix} $$
+
+$$ f_w(x) = w^T\phi(x_n) $$
+
+$$
+\begin{align} 
+p(w|y_{1:N},x_{1:N}) &= \prod_{n=1}^N\mathcal{N}(y_n|w^T\phi(x_n),I)\mathcal{N}(w|0,\frac{1}{\lambda} I) \\
+&=\prod_{n=1}^N\mathcal{N}(y_n|\phi(x_n)^Tw,I)\mathcal{N}(w|0,\frac{1}{\lambda} I) \end{align}
+$$ 
+
+
+General case with multiple outputs (Bishop 146)
+
+$$
+\begin{align} 
+p(w|y_{1:N},x_{1:N}) &=\prod_{n=1}^N\mathcal{N}(y_n|\phi(x_n)^T W,A)\mathcal{N}(w|0,P) \\
+\end{align}
+$$ 
+
+
+$$ w = \Phi^T a $$
+
+$$ 
+\begin{align}
+p(a|y_{1:N},x_{1:N})  &=\prod_{n=1}^N\mathcal{N}(y_n|\phi(x_n)^T\Phi^Ta,I)\mathcal{N}(\Phi^Ta|0,\lambda I) \\
+&=\prod_{n=1}^N\mathcal{N}(y_n|k(x_n,x)a,I)\mathcal{N}(\Phi^Ta|0,\lambda I) \\
+&=  \mathcal{N}(y_1:N|\Phi\Phi^T a-y_{1:N},I)\mathcal{N}(a|0,\frac{1}{\lambda} (\Phi\Phi^T)^{-1}) \\
+&= \mathcal{N}(y_1:N|K a-y_{1:N},I)\mathcal{N}(a|0,\frac{1}{\lambda}K^{-1} )
+\end{align}
+$$ 
+
+$$ a  = (K + \lambda I_N)^{-1}t $$
+
+
+$$ \mathcal{N}(x|a,A)\mathcal{N}(y|Fx+b,B)\mathcal{N}(z|Gy+c,C)  = \mathcal{N}\left(\begin{matrix}x \\ y \end{matrix}\middle|\begin{matrix}a \\ Fa + b \end{matrix},\begin{matrix} A & A^TF^T \\  FA &  FA^TF^T + B \end{matrix}\right)\mathcal{N}(z|Gy+c,C) $$
+
+$$  \mathcal{N}\left(\begin{matrix}x \\ y \end{matrix}\middle|\begin{matrix}a \\ Fa + b \end{matrix},\begin{matrix} A & A^TF^T \\  FA &  FA^TF^T + B \end{matrix}\right)\mathcal{N}(z|\begin{pmatrix} 0 & G \end{pmatrix}\begin{pmatrix} x \\ y \end{pmatrix}+c,C) $$
+
+$$  \mathcal{N}\left(\begin{matrix}x \\ y \\ z \end{matrix}\middle|\begin{matrix}a \\ Fa + b \\ GFa + Gb + c \end{matrix},\begin{matrix} A & A^TF^T & A^TF^TG^T \\  FA &  FA^TF^T + B & FA^TF^TG^T + BG^T \\
+GFA &  GFA^TF^T + GB & GFA^TF^TG^T + GBG^T + C \end{matrix}\right) $$
+
+
+Discrete time
+
+First
+
+$$ p(y) = \mathcal{N}(y|0,K) $$
+
+$$ p(t_{1:N}|y_{1:N}) = \prod_{n=1}^N p(t_n|y_n) = \prod_{n=1}^N \mathcal{N}(t_n|y_n,\beta^{-1}) $$
+
+Observation of $t_n$
+
+$$ p(y|t_n) = \frac{\mathcal{N}(t_n|y_n,\beta^{-1})\mathcal{N}(y|0,K)}{\int_y \mathcal{N}(t_n|y_n,\beta^{-1})\mathcal{N}(y|0,K)\,dy} $$
+
+$$ p(y|t_n) = \frac{\mathcal{N}(t_n|y_n,\beta^{-1})\mathcal{N}(y|0,K)}{\int_y p(t_n|y_n)\mathcal{N}(y|0,K)\,dy} $$
+
+$$ p(y|t_n) = \frac{\mathcal{N}(t_n|e_n^T y,\beta^{-1})\mathcal{N}(y|0,K)}{\int_y p(t_n|e_n^Ty)\mathcal{N}(y|0,K)\,dy} $$
+
+
+$$ p(y|t_n) = \mathcal{N}(y|\Sigma e_n \beta t_n,\Sigma) = \mathcal{N}(y|\beta\Sigma_n t_n,\Sigma) $$
+
+with 
+
+$$ \Sigma = (K^{-1} + e_n \beta e_n^T)^{-1}  = K -Ke_n(\beta^{-1} + e_n^TKe_n)^{-1}e_n^TK $$
+
+$$ = K -(\beta^{-1} + K_{nn})^{-1}Ke_ne_n^TK $$
+
+$$ = K -(\beta^{-1} + K_{nn})^{-1}K_{nn}^2e_ne_n^T $$
+
+$$ = K -\frac{K_{nn}^2}{\beta^{-1} + K_{nn}}e_ne_n^T $$
+After first
+
+$$ p(y) = \mathcal{N}(y|\mu,K) $$
+
+$$ p(t_{1:N}|y_{1:N}) = \prod_{n=1}^N p(t_n|y_n) = \prod_{n=1}^N \mathcal{N}(t_n|y_n,\beta^{-1}) $$
+
+Observation of $t_n$
+
+
+$$ p(y|t_n) = \frac{\mathcal{N}(t_n|e_n^T y,\beta^{-1})\mathcal{N}(y|\mu,K)}{\int_y p(t_n|e_n^Ty)\mathcal{N}(y|\mu,K)\,dy} $$
+
+
+$$ p(y|t_n) = \mathcal{N}(y|\Sigma(e_n \beta t_n + K^{-1}\mu) ,\Sigma)  $$
+
+with 
+
+$$ \Sigma = (K^{-1} + e_n \beta e_n^T)^{-1} $$
+
+
+
+Gleichzeitig
+
+
+$$ p(y) = \mathcal{N}(y|0,K) $$
+
+$$ p(t_{1:N}|y_{1:N}) = \prod_{n=1}^N p(t_n|y_n) = \prod_{n=1}^N \mathcal{N}(t_n|y_n,\beta^{-1}) = \mathcal{N}(t_{1:N}|y_{1:N},\beta^{-1} I_N) $$
+
+Observation of $t_{1:N}$
+
+$$ p(y|t_{1:N}) = \frac{\mathcal{N}(t_{1:N}|y_{1:N},\beta^{-1} I_N)\mathcal{N}(y|0,K)}{\int_y \mathcal{N}(t_{1:N}|y_{1:N},\beta^{-1} I_N)\mathcal{N}(y|0,K)\,dy} $$
+
+
+$$ p(y|t_{1:N}) = \mathcal{N}(y|\beta\Sigma t_{1:N}) ,\Sigma) $$
+
+with 
+
+$$ \Sigma = (K^{-1} + \beta I_N)^{-1} = K - K(\beta^{-1} I_N + K)^{-1}K $$
+
+
+
+
+Questions:
+
+Dual representation just for linear models? (Bishop 293)
+
+
+
+
+
+
+
+
+
